@@ -100,16 +100,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c3266e0a-acef-40b4-bf12-5ae7c640da85/id-preview-276901a2--a287d24e-1400-4907-96f0-2f1a8ef01ee9.lovable.app-1780293203462.png",
+        content: "/og-image.png",
       },
       {
         name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c3266e0a-acef-40b4-bf12-5ae7c640da85/id-preview-276901a2--a287d24e-1400-4907-96f0-2f1a8ef01ee9.lovable.app-1780293203462.png",
+        content: "/og-image.png",
       },
     ],
     links: [
+      { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png" },
+      { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16x16.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/site.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
