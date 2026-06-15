@@ -147,18 +147,10 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r">
-      <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
+      <SidebarHeader className="border-b border-sidebar-border px-3 h-14 flex flex-row items-center">
         <Link to="/app/dashboard" className="flex items-center">
           <Logo showText={!collapsed} />
         </Link>
-        {!collapsed && (
-          <Badge
-            variant="outline"
-            className="mt-2 w-fit border-primary/30 bg-primary-soft text-[10px] font-medium uppercase tracking-wider text-primary"
-          >
-            {ROLE_LABELS[role]}
-          </Badge>
-        )}
       </SidebarHeader>
       <SidebarContent>
         {groups.map((g) => (

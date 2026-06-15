@@ -2,11 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
-import { DataTable } from "@/shared/components/common/DataTable";
-import { Plus, X } from "lucide-react";
+import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
+import { Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
 import { getLandlordTenants } from "@/core/db/supabase-queries";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/shared/components/ui/dialog";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/tenants")({
   head: () => ({ meta: [{ title: "Tenants — HomeSure" }] }),
@@ -56,7 +66,7 @@ function TenantsPage() {
     e.preventDefault();
 
     if (!form.tenant_id || !form.property_id || !form.onboarding_date) {
-      alert("Please fill all fields");
+      toast.error("Please fill all fields");
       return;
     }
 
@@ -71,11 +81,11 @@ function TenantsPage() {
     ]);
 
     if (error) {
-      alert("Error inviting tenant: " + error.message);
+      toast.error("Error inviting tenant: " + error.message);
       return;
     }
 
-    alert("Tenant invited successfully!");
+    toast.success("Tenant invited successfully!");
 
     setForm({
       tenant_id: "",
@@ -100,42 +110,38 @@ function TenantsPage() {
         }
       />
 
-      {showInviteForm && (
-        <div className="mb-6 rounded-lg border bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Invite Tenant</h2>
-            <Button variant="ghost" size="sm" onClick={() => setShowInviteForm(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+      {/* Invite Tenant Dialog */}
+      <Dialog open={showInviteForm} onOpenChange={setShowInviteForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite Tenant</DialogTitle>
+          </DialogHeader>
 
-          <form onSubmit={handleInviteTenant} className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium">Tenant ID</label>
-              <input
+          <form onSubmit={handleInviteTenant} className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Tenant ID</Label>
+              <Input
                 type="number"
-                className="mt-1 w-full rounded-md border px-3 py-2"
                 placeholder="Example: 1"
                 value={form.tenant_id}
                 onChange={(e) => setForm({ ...form, tenant_id: e.target.value })}
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium">Property ID</label>
-              <input
+            <div className="grid gap-2">
+              <Label>Property ID</Label>
+              <Input
                 type="number"
-                className="mt-1 w-full rounded-md border px-3 py-2"
                 placeholder="Example: 1"
                 value={form.property_id}
                 onChange={(e) => setForm({ ...form, property_id: e.target.value })}
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium">Status</label>
+            <div className="grid gap-2">
+              <Label>Status</Label>
               <select
-                className="mt-1 w-full rounded-md border px-3 py-2"
+                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 value={form.onboarding_status}
                 onChange={(e) => setForm({ ...form, onboarding_status: e.target.value })}
               >
@@ -145,42 +151,72 @@ function TenantsPage() {
               </select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium">Onboarding Date</label>
-              <input
+            <div className="grid gap-2">
+              <Label>Onboarding Date</Label>
+              <Input
                 type="date"
-                className="mt-1 w-full rounded-md border px-3 py-2"
                 value={form.onboarding_date}
                 onChange={(e) => setForm({ ...form, onboarding_date: e.target.value })}
               />
             </div>
 
-            <div className="flex items-end gap-2">
-              <Button type="submit">Save Tenant</Button>
+            <DialogFooter className="mt-4">
               <Button type="button" variant="outline" onClick={() => setShowInviteForm(false)}>
                 Cancel
               </Button>
-            </div>
+              <Button type="submit">Save Tenant</Button>
+            </DialogFooter>
           </form>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {isLoading ? (
         <div className="p-8 text-center">Loading tenants...</div>
       ) : (
-        <DataTable
+        <DataCardGrid
           rows={landlordTenants}
           filterKeys={["onboarding_id", "tenant_id", "property_id", "onboarding_status"]}
-          columns={[
-            { key: "onboarding_id", header: "Onboarding ID", sortable: true },
-            { key: "tenant_id", header: "Tenant ID", sortable: true },
-            { key: "property_id", header: "Property ID", sortable: true },
+          fields={[
+            {
+              key: "onboarding_id",
+              label: "Onboarding",
+              primary: true,
+              render: (t) => <>Onboarding #{t.onboarding_id}</>,
+            },
+            {
+              key: "onboarding_date",
+              label: "Date",
+              secondary: true,
+              render: (t) => <>Joined {t.onboarding_date}</>,
+            },
+            {
+              key: "tenant_id",
+              label: "Tenant ID",
+              render: (t) => (
+                <span className="font-mono text-[11px] text-muted-foreground">#{t.tenant_id}</span>
+              ),
+            },
+            {
+              key: "property_id",
+              label: "Property ID",
+              render: (t) => (
+                <span className="font-mono text-[11px] text-muted-foreground">
+                  #{t.property_id}
+                </span>
+              ),
+            },
             {
               key: "onboarding_status",
-              header: "Status",
+              label: "Status",
               render: (t: SupabaseTenant) => <StatusBadge value={t.onboarding_status} />,
             },
-            { key: "onboarding_date", header: "Onboarding Date" },
+            {
+              key: "onboarding_date_value",
+              label: "Date",
+              render: (t) => (
+                <span className="text-xs text-muted-foreground">{t.onboarding_date}</span>
+              ),
+            },
           ]}
         />
       )}
