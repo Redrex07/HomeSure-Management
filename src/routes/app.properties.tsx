@@ -31,6 +31,7 @@ interface SupabaseProperty {
   address: string;
   rent_amount: number;
   availability_status: string;
+  image_url?: string;
   [key: string]: unknown;
 }
 
@@ -41,6 +42,7 @@ function PropertiesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPropertyForImage, setSelectedPropertyForImage] = useState<SupabaseProperty | null>(null);
 
   const [form, setForm] = useState({
     property_name: "",
@@ -48,6 +50,7 @@ function PropertiesPage() {
     address: "",
     rent_amount: "",
     availability_status: "Available",
+    image_url: "",
   });
 
   const loadProperties = async () => {
@@ -85,6 +88,7 @@ function PropertiesPage() {
         address: form.address,
         rent_amount: Number(form.rent_amount),
         availability_status: form.availability_status,
+        image_url: form.image_url,
       },
     ]);
 
@@ -101,6 +105,7 @@ function PropertiesPage() {
       address: "",
       rent_amount: "",
       availability_status: "Available",
+      image_url: "",
     });
 
     setIsAdding(false);
@@ -226,6 +231,15 @@ function PropertiesPage() {
               </select>
             </div>
 
+            <div className="grid gap-2">
+              <Label>Picture URL (Optional)</Label>
+              <Input
+                placeholder="https://example.com/image.jpg"
+                value={form.image_url}
+                onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+              />
+            </div>
+
             <DialogFooter className="mt-4">
               <Button type="button" variant="outline" onClick={() => setIsAdding(false)}>
                 Cancel
@@ -233,6 +247,31 @@ function PropertiesPage() {
               <Button type="submit">Save Property</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Image Dialog */}
+      <Dialog open={!!selectedPropertyForImage} onOpenChange={(open) => !open && setSelectedPropertyForImage(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{selectedPropertyForImage?.property_name} - Pictures</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4 bg-muted/30 rounded-lg min-h-[300px]">
+            {selectedPropertyForImage?.image_url ? (
+              <img
+                src={selectedPropertyForImage.image_url}
+                alt={selectedPropertyForImage.property_name}
+                className="max-h-[60vh] max-w-full rounded-md object-contain shadow-md"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "https://placehold.co/600x400?text=Image+Not+Found";
+                }}
+              />
+            ) : (
+              <div className="text-center text-muted-foreground">
+                <p>No pictures uploaded for this property yet.</p>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -251,6 +290,7 @@ function PropertiesPage() {
       ) : (
         <DataCardGrid
           rows={landlordProps}
+          onCardClick={(p) => setSelectedPropertyForImage(p)}
           filterKeys={["property_name", "address", "property_id"]}
           fields={[
             {
