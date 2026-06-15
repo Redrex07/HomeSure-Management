@@ -3,7 +3,7 @@ import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
 import { getLandlordTenants } from "@/core/db/supabase-queries";
@@ -95,6 +95,24 @@ function TenantsPage() {
     });
 
     setShowInviteForm(false);
+    loadTenants();
+  };
+
+  const handleDeleteTenant = async (onboardingId: string) => {
+    const confirmDelete = confirm("Are you sure you want to delete this tenant?");
+    if (!confirmDelete) return;
+
+    const { error } = await supabase
+      .from("tenant_onboarding")
+      .delete()
+      .eq("onboarding_id", onboardingId);
+
+    if (error) {
+      toast.error("Error deleting tenant: " + error.message);
+      return;
+    }
+
+    toast.success("Tenant deleted successfully!");
     loadTenants();
   };
 
@@ -218,6 +236,16 @@ function TenantsPage() {
               ),
             },
           ]}
+          actions={(t) => (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => handleDeleteTenant(t.onboarding_id)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
         />
       )}
     </>
