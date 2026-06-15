@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable } from "@/components/common/DataTable";
-import { auditLogs } from "@/lib/mock-data";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { DataTable } from "@/shared/components/common/DataTable";
+import { auditLogs } from "@/shared/utils/mock-data";
 
 export const Route = createFileRoute("/app/audit-logs")({
   head: () => ({ meta: [{ title: "Audit Logs — HomeSure" }] }),

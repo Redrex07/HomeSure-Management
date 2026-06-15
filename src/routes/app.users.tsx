@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PageHeader } from "@/components/common/PageHeader";
-import { StatusBadge } from "@/components/common/StatusBadge";
-import { DataTable } from "@/components/common/DataTable";
-import { users } from "@/lib/mock-data";
+import { Button } from "@/shared/components/ui/button";
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { StatusBadge } from "@/shared/components/common/StatusBadge";
+import { DataTable } from "@/shared/components/common/DataTable";
+import { users } from "@/shared/utils/mock-data";
 import { Plus, MoreHorizontal } from "lucide-react";
 
 export const Route = createFileRoute("/app/users")({

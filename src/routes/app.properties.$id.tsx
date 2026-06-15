@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageHeader } from "@/components/common/PageHeader";
-import { StatusBadge } from "@/components/common/StatusBadge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { properties, serviceRequests, leaseDocs } from "@/lib/mock-data";
-import { StatCard } from "@/components/common/StatCard";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { StatusBadge } from "@/shared/components/common/StatusBadge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/components/ui/tabs";
+import { properties, serviceRequests, leaseDocs } from "@/shared/utils/mock-data";
+import { StatCard } from "@/shared/components/common/StatCard";
 import { ChevronLeft, DollarSign, Users, Wrench, FileText, MapPin, Edit } from "lucide-react";
 
 export const Route = createFileRoute("/app/properties/$id")({

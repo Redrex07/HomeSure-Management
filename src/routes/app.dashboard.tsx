@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSession } from "@/lib/auth-store";
+import { useSession } from "@/features/auth/store/auth-store";
 import {
   SuperAdminDashboard, ServiceAdminDashboard, LandlordDashboard,
   TenantDashboard, ContractorDashboard, RealtorDashboard,
-} from "@/components/dashboards/Dashboards";
+} from "@/features/dashboard/components";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — HomeSure" }] }),

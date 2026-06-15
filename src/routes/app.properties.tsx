@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/common/PageHeader";
-import { StatusBadge } from "@/components/common/StatusBadge";
-import { DataTable } from "@/components/common/DataTable";
+import { Button } from "@/shared/components/ui/button";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { StatusBadge } from "@/shared/components/common/StatusBadge";
+import { DataTable } from "@/shared/components/common/DataTable";
 import { Plus, Download, X, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { getAllProperties, testSupabaseConnection } from "@/lib/supabase-queries";
+import { supabase } from "@/core/db/supabase";
+import { getAllProperties, testSupabaseConnection } from "@/core/db/supabase-queries";
 
 export const Route = createFileRoute("/app/properties")({
   head: () => ({ meta: [{ title: "Properties — HomeSure" }] }),

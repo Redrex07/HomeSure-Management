@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Logo } from "@/components/brand/Logo";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { Badge } from "@/shared/components/ui/badge";
+import { Logo } from "@/shared/components/brand/Logo";
 import {
   ArrowRight, Building2, Wrench, Users, Calendar, Receipt, ShieldCheck,
   Star, Check, Sparkles, BarChart3, Bell,

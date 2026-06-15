@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { PageHeader } from "@/components/common/PageHeader";
-import { notifications as seed } from "@/lib/mock-data";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { notifications as seed } from "@/shared/utils/mock-data";
 import { Check, Bell } from "lucide-react";
 
 export const Route = createFileRoute("/app/notifications")({

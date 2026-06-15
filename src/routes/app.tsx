@@ -1,9 +1,9 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app/AppSidebar";
-import { AppTopbar } from "@/components/app/AppTopbar";
-import { useSession, setSession } from "@/lib/auth-store";
+import { SidebarProvider, SidebarInset } from "@/shared/components/ui/sidebar";
+import { AppSidebar } from "@/shared/components/app/AppSidebar";
+import { AppTopbar } from "@/shared/components/app/AppTopbar";
+import { useSession, setSession } from "@/features/auth/store/auth-store";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,

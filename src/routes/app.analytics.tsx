@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader } from "@/components/common/PageHeader";
-import { StatCard } from "@/components/common/StatCard";
-import { ChartCard, RevenueArea, RequestsBar, CategoryPie } from "@/components/charts/Charts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { revenueSeries, requestsSeries, categoryBreakdown } from "@/lib/mock-data";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { StatCard } from "@/shared/components/common/StatCard";
+import { ChartCard, RevenueArea, RequestsBar, CategoryPie } from "@/shared/components/charts/Charts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Progress } from "@/shared/components/ui/progress";
+import { revenueSeries, requestsSeries, categoryBreakdown } from "@/shared/utils/mock-data";
 import { DollarSign, Building2, Users, Wrench } from "lucide-react";
 
 export const Route = createFileRoute("/app/analytics")({

@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/common/PageHeader";
-import { StatusBadge } from "@/components/common/StatusBadge";
-import { DataTable } from "@/components/common/DataTable";
-import { estimates } from "@/lib/mock-data";
+import { Button } from "@/shared/components/ui/button";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { StatusBadge } from "@/shared/components/common/StatusBadge";
+import { DataTable } from "@/shared/components/common/DataTable";
+import { estimates } from "@/shared/utils/mock-data";
 import { Plus, Check, X } from "lucide-react";
 import { toast } from "sonner";
 

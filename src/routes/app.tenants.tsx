@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/common/PageHeader";
-import { StatusBadge } from "@/components/common/StatusBadge";
-import { DataTable } from "@/components/common/DataTable";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/shared/components/ui/button";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { StatusBadge } from "@/shared/components/common/StatusBadge";
+import { DataTable } from "@/shared/components/common/DataTable";
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { Plus, Mail } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useSession } from "@/lib/auth-store";
-import { getLandlordTenants } from "@/lib/supabase-queries";
+import { useSession } from "@/features/auth/store/auth-store";
+import { getLandlordTenants } from "@/core/db/supabase-queries";
 
 export const Route = createFileRoute("/app/tenants")({
   head: () => ({ meta: [{ title: "Tenants — HomeSure" }] }),

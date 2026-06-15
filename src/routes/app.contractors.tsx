@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/common/PageHeader";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { contractors } from "@/lib/mock-data";
+import { Button } from "@/shared/components/ui/button";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
+import { Badge } from "@/shared/components/ui/badge";
+import { contractors } from "@/shared/utils/mock-data";
 import { Plus, Star, Phone } from "lucide-react";
 
 export const Route = createFileRoute("/app/contractors")({

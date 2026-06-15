@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/common/PageHeader";
-import { DataTable } from "@/components/common/DataTable";
-import { tenants, leaseDocs } from "@/lib/mock-data";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { DataTable } from "@/shared/components/common/DataTable";
+import { tenants, leaseDocs } from "@/shared/utils/mock-data";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { FileText, Download } from "lucide-react";
 
 export const Route = createFileRoute("/app/leases")({
