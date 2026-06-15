@@ -48,91 +48,122 @@ export async function getAllProperties() {
   }
 }
 export async function getLandlordProperties(landlordId: string) {
-  const { data, error } = await supabase
-    .from("properties")
-    .select("*")
-    .eq("landlord_id", landlordId);
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("*")
+      .eq("landlord_id", landlordId);
 
-  if (error) {
-    console.error("Error fetching properties:", error);
+    if (error) {
+      console.error("Error fetching properties:", error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error("Exception fetching properties:", err);
     return [];
   }
-  return data || [];
 }
 
 /**
  * STEP 2: Get all tenants for the landlord's properties
  */
 export async function getLandlordTenants(landlordId: string) {
-  const { data, error } = await supabase.from("tenant_onboarding").select("*");
+  try {
+    const { data, error } = await supabase.from("tenant_onboarding").select("*");
 
-  if (error) {
-    console.error(error);
+    if (error) {
+      console.error(error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("Exception fetching tenants:", err);
     return [];
   }
-
-  return data || [];
 }
 /**
  * STEP 3: Get invoices/rent data for the landlord
  */
 export async function getLandlordInvoices(landlordId: string) {
-  const { data, error } = await supabase.from("invoices").select("*").eq("landlord_id", landlordId);
+  try {
+    const { data, error } = await supabase.from("invoices").select("*").eq("landlord_id", landlordId);
 
-  if (error) {
-    console.error("Error fetching invoices:", error);
+    if (error) {
+      console.error("Error fetching invoices:", error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error("Exception fetching invoices:", err);
     return [];
   }
-  return data || [];
 }
 
 /**
  * STEP 4: Get service requests for the landlord's properties
  */
 export async function getLandlordServiceRequests(landlordId: string) {
-  const { data, error } = await supabase
-    .from("service_requests")
-    .select("*")
-    .eq("landlord_id", landlordId)
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("service_requests")
+      .select("*")
+      .eq("landlord_id", landlordId)
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching service requests:", error);
+    if (error) {
+      console.error("Error fetching service requests:", error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error("Exception fetching service requests:", err);
     return [];
   }
-  return data || [];
 }
 
 /**
  * STEP 5: Get revenue statistics for charts
  */
 export async function getLandlordRevenueStats(landlordId: string) {
-  const { data, error } = await supabase
-    .from("invoices")
-    .select("amount, paid_at")
-    .eq("landlord_id", landlordId)
-    .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()); // Last 30 days
+  try {
+    const { data, error } = await supabase
+      .from("invoices")
+      .select("amount, paid_at")
+      .eq("landlord_id", landlordId)
+      .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()); // Last 30 days
 
-  if (error) {
-    console.error("Error fetching revenue stats:", error);
+    if (error) {
+      console.error("Error fetching revenue stats:", error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error("Exception fetching revenue stats:", err);
     return [];
   }
-  return data || [];
 }
 
 /**
  * Get all invoices/rent for a landlord (for Rent Collection page)
  */
 export async function getLandlordRentCollection(landlordId: string) {
-  const { data, error } = await supabase
-    .from("invoices")
-    .select("*")
-    .eq("landlord_id", landlordId)
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("invoices")
+      .select("*")
+      .eq("landlord_id", landlordId)
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching rent collection:", error);
+    if (error) {
+      console.error("Error fetching rent collection:", error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error("Exception fetching rent collection:", err);
     return [];
   }
-  return data || [];
 }
+

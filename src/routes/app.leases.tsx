@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
-import { DataTable } from "@/shared/components/common/DataTable";
+import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { tenants as mockTenants, leaseDocs } from "@/shared/utils/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { FileText, Download, Plus, Trash2 } from "lucide-react";
@@ -233,35 +233,53 @@ function LeasesPage() {
         </DialogContent>
       </Dialog>
 
-      <DataTable
+      <DataCardGrid
         rows={leases}
         filterKeys={["name", "property"]}
-        columns={[
-          { key: "name", header: "Tenant" },
-          { key: "property", header: "Property" },
-          { key: "leaseStart", header: "Start" },
-          { key: "leaseEnd", header: "End" },
-          { key: "rent", header: "Rent", render: (t) => `$${t.rent.toLocaleString()}` },
+        fields={[
           {
-            key: "actions",
-            header: "",
+            key: "name",
+            label: "Tenant",
+            primary: true,
+          },
+          {
+            key: "property",
+            label: "Property",
+            secondary: true,
+          },
+          {
+            key: "leaseStart",
+            label: "Start Date",
+          },
+          {
+            key: "leaseEnd",
+            label: "End Date",
+          },
+          {
+            key: "rent",
+            label: "Rent",
             render: (t) => (
-              <div className="flex items-center gap-2 justify-end">
-                <Button variant="ghost" size="sm" onClick={() => handleDownloadLease(t.name)}>
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => handleDeleteLease(t.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+              <span className="font-semibold text-foreground">
+                ₹{t.rent?.toLocaleString()}
+              </span>
             ),
           },
         ]}
+        actions={(t) => (
+          <div className="flex items-center gap-1 justify-end">
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary" onClick={(e) => { e.stopPropagation(); handleDownloadLease(t.name); }}>
+              <Download className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={(e) => { e.stopPropagation(); handleDeleteLease(t.id); }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
       />
       <Card className="border-border/70 shadow-card mt-6">
         <CardHeader>
