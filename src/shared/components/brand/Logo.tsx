@@ -4,7 +4,7 @@ import { cn } from "@/shared/utils/utils";
 export function Logo({ className, showText = true }: { className?: string; showText?: boolean }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 shadow-elegant">
+      <div className="flex h-fit w-fit p-2 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 shadow-elegant">
         <Home className="h-4 w-4 text-primary-foreground" strokeWidth={2.5} />
       </div>
       {showText && (
