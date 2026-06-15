@@ -10,7 +10,9 @@ export function Logo({ className, showText = true }: { className?: string; showT
       {showText && (
         <div className="leading-none">
           <div className="text-sm font-semibold tracking-tight text-foreground">HomeSure</div>
-          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Management</div>
+          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Management
+          </div>
         </div>
       )}
     </div>

@@ -14,10 +14,19 @@ export const Route = createFileRoute("/app/tenants")({
   component: TenantsPage,
 });
 
+interface SupabaseTenant {
+  onboarding_id: string;
+  tenant_id: string;
+  property_id: string;
+  onboarding_status: string;
+  onboarding_date: string;
+  [key: string]: unknown;
+}
+
 function TenantsPage() {
   const session = useSession();
   const landlordId = "2"; // Using landlord_id from Supabase
-  const [landlordTenants, setLandlordTenants] = useState<any[]>([]);
+  const [landlordTenants, setLandlordTenants] = useState<SupabaseTenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -41,46 +50,47 @@ function TenantsPage() {
 
   return (
     <>
-      <PageHeader title="Tenants" description="Manage tenant profiles and lease details." actions={<Button size="sm"><Plus className="mr-2 h-4 w-4" /> Invite tenant</Button>} />
+      <PageHeader
+        title="Tenants"
+        description="Manage tenant profiles and lease details."
+        actions={
+          <Button size="sm">
+            <Plus className="mr-2 h-4 w-4" /> Invite tenant
+          </Button>
+        }
+      />
       {isLoading ? (
         <div className="p-8 text-center">Loading tenants...</div>
       ) : (
         <DataTable
           rows={displayData}
-          filterKeys={[
-  "onboarding_id",
-  "tenant_id",
-  "property_id",
-  "onboarding_status"
-] as any}
+          filterKeys={["onboarding_id", "tenant_id", "property_id", "onboarding_status"]}
           columns={[
-  {
-    key: "onboarding_id",
-    header: "Onboarding ID",
-    sortable: true,
-  },
-  {
-    key: "tenant_id",
-    header: "Tenant ID",
-    sortable: true,
-  },
-  {
-    key: "property_id",
-    header: "Property ID",
-    sortable: true,
-  },
-  {
-    key: "onboarding_status",
-    header: "Status",
-    render: (t: any) => (
-      <StatusBadge value={t.onboarding_status} />
-    ),
-  },
-  {
-    key: "onboarding_date",
-    header: "Onboarding Date",
-  },
-]}
+            {
+              key: "onboarding_id",
+              header: "Onboarding ID",
+              sortable: true,
+            },
+            {
+              key: "tenant_id",
+              header: "Tenant ID",
+              sortable: true,
+            },
+            {
+              key: "property_id",
+              header: "Property ID",
+              sortable: true,
+            },
+            {
+              key: "onboarding_status",
+              header: "Status",
+              render: (t) => <StatusBadge value={t.onboarding_status} />,
+            },
+            {
+              key: "onboarding_date",
+              header: "Onboarding Date",
+            },
+          ]}
         />
       )}
     </>

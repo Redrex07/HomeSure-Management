@@ -15,23 +15,63 @@ export const Route = createFileRoute("/app/estimates")({
 function EstimatesPage() {
   return (
     <>
-      <PageHeader title="Estimates" description="Submitted estimates awaiting approval." actions={<Button size="sm"><Plus className="mr-2 h-4 w-4" /> Submit estimate</Button>} />
+      <PageHeader
+        title="Estimates"
+        description="Submitted estimates awaiting approval."
+        actions={
+          <Button size="sm">
+            <Plus className="mr-2 h-4 w-4" /> Submit estimate
+          </Button>
+        }
+      />
       <DataTable
         rows={estimates}
-        filterKeys={["id", "request", "contractor"] as any}
+        filterKeys={["id", "request", "contractor"]}
         columns={[
-          { key: "id", header: "Estimate", render: (e) => <span className="font-mono text-xs">{e.id}</span> },
-          { key: "request", header: "Request", render: (e) => <span className="font-mono text-xs">{e.request}</span> },
+          {
+            key: "id",
+            header: "Estimate",
+            render: (e) => <span className="font-mono text-xs">{e.id}</span>,
+          },
+          {
+            key: "request",
+            header: "Request",
+            render: (e) => <span className="font-mono text-xs">{e.request}</span>,
+          },
           { key: "contractor", header: "Contractor" },
           { key: "submitted", header: "Submitted" },
-          { key: "amount", header: "Amount", sortable: true, render: (e) => <span className="font-medium">${e.amount.toLocaleString()}</span> },
+          {
+            key: "amount",
+            header: "Amount",
+            sortable: true,
+            render: (e) => <span className="font-medium">${e.amount.toLocaleString()}</span>,
+          },
           { key: "status", header: "Status", render: (e) => <StatusBadge value={e.status} /> },
-          { key: "actions", header: "", render: (e) => e.status === "Pending" ? (
-            <div className="flex gap-1">
-              <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => toast.success("Estimate approved")}><Check className="h-3.5 w-3.5 text-success" /></Button>
-              <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => toast.error("Estimate rejected")}><X className="h-3.5 w-3.5 text-destructive" /></Button>
-            </div>
-          ) : null },
+          {
+            key: "actions",
+            header: "",
+            render: (e) =>
+              e.status === "Pending" ? (
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-2"
+                    onClick={() => toast.success("Estimate approved")}
+                  >
+                    <Check className="h-3.5 w-3.5 text-success" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-2"
+                    onClick={() => toast.error("Estimate rejected")}
+                  >
+                    <X className="h-3.5 w-3.5 text-destructive" />
+                  </Button>
+                </div>
+              ) : null,
+          },
         ]}
       />
     </>

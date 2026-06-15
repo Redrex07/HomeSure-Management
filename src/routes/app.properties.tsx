@@ -13,10 +13,21 @@ export const Route = createFileRoute("/app/properties")({
   component: PropertiesPage,
 });
 
+interface SupabaseProperty {
+  property_id: number;
+  landlord_id: number;
+  property_name: string;
+  property_type: string;
+  address: string;
+  rent_amount: number;
+  availability_status: string;
+  [key: string]: unknown;
+}
+
 function PropertiesPage() {
   const landlordId = 2;
 
-  const [landlordProps, setLandlordProps] = useState<any[]>([]);
+  const [landlordProps, setLandlordProps] = useState<SupabaseProperty[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,59 +104,49 @@ function PropertiesPage() {
     setIsAdding(false);
     loadProperties();
   };
-     const handleExport = () => {
-  const headers = [
-    "Property ID",
-    "Property Name",
-    "Type",
-    "Address",
-    "Rent Amount",
-    "Status",
-  ];
+  const handleExport = () => {
+    const headers = ["Property ID", "Property Name", "Type", "Address", "Rent Amount", "Status"];
 
-  const rows = landlordProps.map((p) => [
-    p.property_id,
-    p.property_name,
-    p.property_type,
-    p.address,
-    p.rent_amount,
-    p.availability_status,
-  ]);
+    const rows = landlordProps.map((p) => [
+      p.property_id,
+      p.property_name,
+      p.property_type,
+      p.address,
+      p.rent_amount,
+      p.availability_status,
+    ]);
 
-  const csvContent = [
-    headers.join(","),
-    ...rows.map((row) => row.map((value) => `"${value ?? ""}"`).join(",")),
-  ].join("\n");
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map((value) => `"${value ?? ""}"`).join(",")),
+    ].join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "properties.csv";
-  link.click();
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "properties.csv";
+    link.click();
 
-  URL.revokeObjectURL(url);
-};
+    URL.revokeObjectURL(url);
+  };
 
-const handleDeleteProperty = async (propertyId: number) => {
-  const confirmDelete = confirm("Are you sure you want to delete this property?");
+  const handleDeleteProperty = async (propertyId: number) => {
+    const confirmDelete = confirm("Are you sure you want to delete this property?");
 
-  if (!confirmDelete) return;
+    if (!confirmDelete) return;
 
-  const { error } = await supabase
-    .from("properties")
-    .delete()
-    .eq("property_id", propertyId);
+    const { error } = await supabase.from("properties").delete().eq("property_id", propertyId);
 
-  if (error) {
-    alert("Error deleting property: " + error.message);
-    return;
-  }
+    if (error) {
+      alert("Error deleting property: " + error.message);
+      return;
+    }
 
-  alert("Property deleted successfully!");
-  loadProperties();
-};
+    alert("Property deleted successfully!");
+    loadProperties();
+  };
   return (
     <>
       <PageHeader
@@ -154,8 +155,8 @@ const handleDeleteProperty = async (propertyId: number) => {
         actions={
           <>
             <Button variant="outline" size="sm" onClick={handleExport}>
-  <Download className="mr-2 h-4 w-4" /> Export
-</Button>
+              <Download className="mr-2 h-4 w-4" /> Export
+            </Button>
 
             <Button size="sm" onClick={() => setIsAdding(true)}>
               <Plus className="mr-2 h-4 w-4" /> Add property
@@ -238,9 +239,7 @@ const handleDeleteProperty = async (propertyId: number) => {
       )}
 
       {isLoading ? (
-        <div className="p-8 text-center text-gray-600">
-          Loading properties from Supabase...
-        </div>
+        <div className="p-8 text-center text-gray-600">Loading properties from Supabase...</div>
       ) : error ? (
         <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-8">
           <p className="text-yellow-800">
@@ -254,13 +253,13 @@ const handleDeleteProperty = async (propertyId: number) => {
       ) : (
         <DataTable
           rows={landlordProps}
-          filterKeys={["property_name", "address", "property_id"] as any}
+          filterKeys={["property_name", "address", "property_id"]}
           columns={[
             {
               key: "property_name",
               header: "Property",
               sortable: true,
-              render: (p: any) => (
+              render: (p) => (
                 <div>
                   <Link
                     to="/app/properties/$id"
@@ -276,10 +275,8 @@ const handleDeleteProperty = async (propertyId: number) => {
             {
               key: "property_id",
               header: "ID",
-              render: (p: any) => (
-                <span className="font-mono text-xs text-muted-foreground">
-                  {p.property_id}
-                </span>
+              render: (p) => (
+                <span className="font-mono text-xs text-muted-foreground">{p.property_id}</span>
               ),
             },
             {
@@ -296,31 +293,29 @@ const handleDeleteProperty = async (propertyId: number) => {
               key: "rent_amount",
               header: "Rent",
               sortable: true,
-              render: (p: any) => (
-                <span className="font-medium">
-                  ₹{p.rent_amount?.toLocaleString()}
-                </span>
+              render: (p) => (
+                <span className="font-medium">₹{p.rent_amount?.toLocaleString()}</span>
               ),
             },
             {
               key: "availability_status",
               header: "Status",
-              render: (p: any) => <StatusBadge value={p.availability_status} />,
+              render: (p) => <StatusBadge value={p.availability_status} />,
             },
             {
-  key: "actions",
-  header: "Actions",
-  render: (p: any) => (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => handleDeleteProperty(p.property_id)}
-      className="text-red-600 hover:text-red-700"
-    >
-      <Trash2 className="h-4 w-4" />
-    </Button>
-  ),  
-},
+              key: "actions",
+              header: "Actions",
+              render: (p) => (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteProperty(p.property_id)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              ),
+            },
           ]}
         />
       )}

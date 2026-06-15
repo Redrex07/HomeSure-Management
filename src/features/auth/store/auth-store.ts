@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import type { Role } from "./roles";
+import type { Role } from "@/features/auth/utils/roles";
 
 const KEY = "homesure.session";
 
@@ -55,7 +55,9 @@ export function useSession(): Session | null {
     const fn = () => setS(getSession());
     listeners.add(fn);
     fn();
-    return () => { listeners.delete(fn); };
+    return () => {
+      listeners.delete(fn);
+    };
   }, []);
   return s;
 }

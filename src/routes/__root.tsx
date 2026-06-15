@@ -79,20 +79,43 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "HomeSure Management — Property & Home Warranty Platform" },
-      { name: "description", content: "Unified property management and home warranty platform for landlords, tenants, contractors, realtors and admins." },
+      {
+        name: "description",
+        content:
+          "Unified property management and home warranty platform for landlords, tenants, contractors, realtors and admins.",
+      },
       { property: "og:title", content: "HomeSure Management — Property & Home Warranty Platform" },
-      { property: "og:description", content: "Unified property management and home warranty platform for landlords, tenants, contractors, realtors and admins." },
+      {
+        property: "og:description",
+        content:
+          "Unified property management and home warranty platform for landlords, tenants, contractors, realtors and admins.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "HomeSure Management — Property & Home Warranty Platform" },
-      { name: "twitter:description", content: "Unified property management and home warranty platform for landlords, tenants, contractors, realtors and admins." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c3266e0a-acef-40b4-bf12-5ae7c640da85/id-preview-276901a2--a287d24e-1400-4907-96f0-2f1a8ef01ee9.lovable.app-1780293203462.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c3266e0a-acef-40b4-bf12-5ae7c640da85/id-preview-276901a2--a287d24e-1400-4907-96f0-2f1a8ef01ee9.lovable.app-1780293203462.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Unified property management and home warranty platform for landlords, tenants, contractors, realtors and admins.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c3266e0a-acef-40b4-bf12-5ae7c640da85/id-preview-276901a2--a287d24e-1400-4907-96f0-2f1a8ef01ee9.lovable.app-1780293203462.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c3266e0a-acef-40b4-bf12-5ae7c640da85/id-preview-276901a2--a287d24e-1400-4907-96f0-2f1a8ef01ee9.lovable.app-1780293203462.png",
+      },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,

@@ -14,12 +14,24 @@ function AuditPage() {
       <PageHeader title="Audit logs" description="A complete record of platform activity." />
       <DataTable
         rows={auditLogs}
-        filterKeys={["action", "actor", "ip"] as any}
+        filterKeys={["action", "actor", "ip"]}
         columns={[
-          { key: "time", header: "Time", render: (l) => <span className="font-mono text-xs">{l.time}</span> },
+          {
+            key: "time",
+            header: "Time",
+            render: (l) => <span className="font-mono text-xs">{l.time}</span>,
+          },
           { key: "actor", header: "Actor" },
-          { key: "action", header: "Action", render: (l) => <span className="text-sm">{l.action}</span> },
-          { key: "ip", header: "IP", render: (l) => <span className="font-mono text-xs text-muted-foreground">{l.ip}</span> },
+          {
+            key: "action",
+            header: "Action",
+            render: (l) => <span className="text-sm">{l.action}</span>,
+          },
+          {
+            key: "ip",
+            header: "IP",
+            render: (l) => <span className="font-mono text-xs text-muted-foreground">{l.ip}</span>,
+          },
         ]}
       />
     </>

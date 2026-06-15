@@ -13,20 +13,34 @@ export const Route = createFileRoute("/app/appointments")({
 
 function AppointmentsPage() {
   // Mock calendar: week strip
-  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  const dates = [1,2,3,4,5,6,7];
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const dates = [1, 2, 3, 4, 5, 6, 7];
 
   return (
     <>
-      <PageHeader title="Appointments" description="Schedule and manage service visits." actions={<Button size="sm"><Plus className="mr-2 h-4 w-4" /> New appointment</Button>} />
+      <PageHeader
+        title="Appointments"
+        description="Schedule and manage service visits."
+        actions={
+          <Button size="sm">
+            <Plus className="mr-2 h-4 w-4" /> New appointment
+          </Button>
+        }
+      />
 
       <Card className="border-border/70 shadow-card">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-sm font-semibold">June 2026 · This week</CardTitle>
           <div className="flex gap-1">
-            <Button variant="outline" size="sm">Today</Button>
-            <Button variant="outline" size="sm">Week</Button>
-            <Button variant="outline" size="sm">Month</Button>
+            <Button variant="outline" size="sm">
+              Today
+            </Button>
+            <Button variant="outline" size="sm">
+              Week
+            </Button>
+            <Button variant="outline" size="sm">
+              Month
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -36,12 +50,18 @@ function AppointmentsPage() {
                 <div className="text-xs font-medium text-muted-foreground">{d}</div>
                 <div className="mt-1 text-2xl font-bold tracking-tight">{dates[i]}</div>
                 <div className="mt-3 space-y-1">
-                  {appointments.filter((_, idx) => idx % 7 === i % appointments.length).slice(0, 2).map(a => (
-                    <div key={a.id + i} className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-1 text-[10px] text-primary">
-                      <div className="truncate font-medium">{a.time}</div>
-                      <div className="truncate">{a.title}</div>
-                    </div>
-                  ))}
+                  {appointments
+                    .filter((_, idx) => idx % 7 === i % appointments.length)
+                    .slice(0, 2)
+                    .map((a) => (
+                      <div
+                        key={a.id + i}
+                        className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-1 text-[10px] text-primary"
+                      >
+                        <div className="truncate font-medium">{a.time}</div>
+                        <div className="truncate">{a.title}</div>
+                      </div>
+                    ))}
                 </div>
               </div>
             ))}
@@ -60,15 +80,26 @@ function AppointmentsPage() {
                 <div>
                   <div className="font-medium">{a.title}</div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1"><CalIcon className="h-3 w-3" />{a.date}</span>
-                    <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{a.time}</span>
-                    <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{a.property}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <CalIcon className="h-3 w-3" />
+                      {a.date}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {a.time}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {a.property}
+                    </span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <StatusBadge value={a.status} />
-                <Button variant="outline" size="sm">Reschedule</Button>
+                <Button variant="outline" size="sm">
+                  Reschedule
+                </Button>
               </div>
             </CardContent>
           </Card>

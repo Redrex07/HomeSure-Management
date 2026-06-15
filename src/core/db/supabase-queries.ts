@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { useSession } from "./auth-store";
+import { useSession } from "@/features/auth/store/auth-store";
 
 /**
  * DEBUG: Test Supabase connection
@@ -7,18 +7,15 @@ import { useSession } from "./auth-store";
 export async function testSupabaseConnection() {
   try {
     console.log("🧪 Testing Supabase connection...");
-    
+
     // Try to query any table to see if connection works
-    const { data, error } = await supabase
-      .from("properties")
-      .select("*")
-      .limit(1);
-    
+    const { data, error } = await supabase.from("properties").select("*").limit(1);
+
     if (error) {
       console.error("❌ Supabase Error:", error);
       return { connected: false, error: error.message };
     }
-    
+
     console.log("✅ Supabase connected!");
     return { connected: true, error: null };
   } catch (err) {
@@ -34,9 +31,7 @@ export async function getAllProperties() {
   try {
     console.log("🔍 Fetching ALL properties...");
 
-    const { data, error } = await supabase
-      .from("properties")
-      .select("*");
+    const { data, error } = await supabase.from("properties").select("*");
 
     console.log("📊 DATA:", data);
     console.log("❌ ERROR:", error);
@@ -69,9 +64,7 @@ export async function getLandlordProperties(landlordId: string) {
  * STEP 2: Get all tenants for the landlord's properties
  */
 export async function getLandlordTenants(landlordId: string) {
-  const { data, error } = await supabase
-    .from("tenant_onboarding")
-    .select("*");
+  const { data, error } = await supabase.from("tenant_onboarding").select("*");
 
   if (error) {
     console.error(error);
@@ -84,10 +77,7 @@ export async function getLandlordTenants(landlordId: string) {
  * STEP 3: Get invoices/rent data for the landlord
  */
 export async function getLandlordInvoices(landlordId: string) {
-  const { data, error } = await supabase
-    .from("invoices")
-    .select("*")
-    .eq("landlord_id", landlordId);
+  const { data, error } = await supabase.from("invoices").select("*").eq("landlord_id", landlordId);
 
   if (error) {
     console.error("Error fetching invoices:", error);
