@@ -4,7 +4,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { tenants as mockTenants, leaseDocs } from "@/shared/utils/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
-import { FileText, Download, Plus, Trash2 } from "lucide-react";
+import { FileText, Download, Plus, Trash2, Printer } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
@@ -60,8 +60,8 @@ function LeasesPage() {
     toast.success("Lease deleted successfully");
   };
 
-  const handleDownloadLease = (leaseName: string) => {
-    const htmlContent = `
+  const getLeaseHTML = (leaseName: string) => {
+    return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -86,6 +86,10 @@ function LeasesPage() {
         .sign-box { border-top: 2px dashed #cbd5e1; padding-top: 15px; }
         .sign-title { font-weight: 600; color: #334155; }
         .footer { text-align: center; margin-top: 50px; font-size: 12px; color: #94a3b8; }
+        @media print {
+            body { background-color: #fff; padding: 0; }
+            .document { box-shadow: none; border-top: none; padding: 0; max-width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -148,6 +152,10 @@ function LeasesPage() {
 </body>
 </html>
     `;
+  };
+
+  const handleDownloadLease = (leaseName: string) => {
+    const htmlContent = getLeaseHTML(leaseName);
     const blob = new Blob([htmlContent], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -156,6 +164,20 @@ function LeasesPage() {
     link.click();
     URL.revokeObjectURL(url);
     toast.success(`Downloaded colorful lease for ${leaseName}`);
+  };
+
+  const handlePrintLease = (leaseName: string) => {
+    const htmlContent = getLeaseHTML(leaseName);
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    } else {
+      toast.error("Please allow popups to print the lease.");
+    }
   };
 
   return (
@@ -267,7 +289,10 @@ function LeasesPage() {
         ]}
         actions={(t) => (
           <div className="flex items-center gap-1 justify-end">
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary" onClick={(e) => { e.stopPropagation(); handleDownloadLease(t.name); }}>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary" onClick={(e) => { e.stopPropagation(); handlePrintLease(t.name); }} title="Print">
+              <Printer className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary" onClick={(e) => { e.stopPropagation(); handleDownloadLease(t.name); }} title="Download">
               <Download className="h-3.5 w-3.5" />
             </Button>
             <Button
@@ -275,6 +300,7 @@ function LeasesPage() {
               size="sm"
               className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={(e) => { e.stopPropagation(); handleDeleteLease(t.id); }}
+              title="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -300,9 +326,14 @@ function LeasesPage() {
                   {d.size} · {d.updated}
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => handleDownloadLease(d.name)}>
-                <Download className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => handlePrintLease(d.name)} title="Print">
+                  <Printer className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleDownloadLease(d.name)} title="Download">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           ))}
         </CardContent>
