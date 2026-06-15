@@ -6,7 +6,7 @@ import { DataTable } from "@/shared/components/common/DataTable";
 import { Plus, Download, X, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
-import { getAllProperties, testSupabaseConnection } from "@/core/db/supabase-queries";
+import { getLandlordProperties } from "@/core/db/supabase-queries";
 
 export const Route = createFileRoute("/app/properties")({
   head: () => ({ meta: [{ title: "Properties — HomeSure" }] }),
@@ -45,15 +45,7 @@ function PropertiesPage() {
       setIsLoading(true);
       setError(null);
 
-      const connTest = await testSupabaseConnection();
-
-      if (!connTest.connected) {
-        setError(`Connection Error: ${connTest.error}`);
-        setLandlordProps([]);
-        return;
-      }
-
-      const data = await getAllProperties();
+      const data = await getLandlordProperties(String(landlordId));
       setLandlordProps(data || []);
     } catch (err) {
       setError(`Error: ${String(err)}`);
