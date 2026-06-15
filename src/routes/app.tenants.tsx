@@ -7,6 +7,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
 import { getLandlordTenants } from "@/core/db/supabase-queries";
+import { sendTenantInviteEmail } from "@/core/api/email.functions";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ function TenantsPage() {
 
   const [form, setForm] = useState({
     tenant_id: "",
+    email: "",
     property_id: "",
     onboarding_status: "Active",
     onboarding_date: new Date().toISOString().split("T")[0],
@@ -65,7 +67,7 @@ function TenantsPage() {
   const handleInviteTenant = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.tenant_id || !form.property_id || !form.onboarding_date) {
+    if (!form.tenant_id || !form.email || !form.property_id || !form.onboarding_date) {
       toast.error("Please fill all fields");
       return;
     }
@@ -73,6 +75,7 @@ function TenantsPage() {
     const { error } = await supabase.from("tenant_onboarding").insert([
       {
         tenant_id: Number(form.tenant_id),
+        email: form.email,
         realtor_id: null,
         property_id: Number(form.property_id),
         onboarding_status: form.onboarding_status,
@@ -85,10 +88,36 @@ function TenantsPage() {
       return;
     }
 
-    toast.success("Tenant invited successfully!");
+    if (form.email) {
+      const loadingId = toast.loading("Sending invite email...");
+      const emailResult = await sendTenantInviteEmail({
+        data: {
+          email: form.email,
+          propertyId: form.property_id,
+          status: form.onboarding_status,
+        },
+      });
+
+      toast.dismiss(loadingId);
+      
+      if (emailResult?.success && emailResult.previewUrl) {
+        toast.success("Tenant invited and email sent successfully!", {
+          duration: 10000,
+          action: {
+            label: "View Email",
+            onClick: () => window.open(emailResult.previewUrl, "_blank"),
+          },
+        });
+      } else {
+        toast.error("Tenant invited, but failed to send email.");
+      }
+    } else {
+      toast.success("Tenant invited successfully!");
+    }
 
     setForm({
       tenant_id: "",
+      email: "",
       property_id: "",
       onboarding_status: "Active",
       onboarding_date: new Date().toISOString().split("T")[0],
@@ -147,6 +176,16 @@ function TenantsPage() {
             </div>
 
             <div className="grid gap-2">
+              <Label>Email ID</Label>
+              <Input
+                type="email"
+                placeholder="tenant@example.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
+
+            <div className="grid gap-2">
               <Label>Property ID</Label>
               <Input
                 type="number"
@@ -193,7 +232,7 @@ function TenantsPage() {
       ) : (
         <DataCardGrid
           rows={landlordTenants}
-          filterKeys={["onboarding_id", "tenant_id", "property_id", "onboarding_status"]}
+          filterKeys={["onboarding_id", "tenant_id", "email", "property_id", "onboarding_status"]}
           fields={[
             {
               key: "onboarding_id",
@@ -212,6 +251,13 @@ function TenantsPage() {
               label: "Tenant ID",
               render: (t) => (
                 <span className="font-mono text-[11px] text-muted-foreground">#{t.tenant_id}</span>
+              ),
+            },
+            {
+              key: "email",
+              label: "Email",
+              render: (t) => (
+                <span className="text-xs text-muted-foreground">{t.email as string || "N/A"}</span>
               ),
             },
             {
