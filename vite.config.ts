@@ -1,18 +1,22 @@
-import { defineConfig } from "@tanstack/react-start/config";
+import { defineConfig } from "vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { nitro } from "nitro/vite";
+import path from "path";
 
 export default defineConfig({
-  nitro: false,
-  tanstackStart: {
-    server: {
-      entry: "server",
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
     },
   },
-  vite: {
-    plugins: [
-      nitro({
-        preset: "vercel",
-      }),
-    ],
-  },
+  plugins: [
+    tanstackStart({
+      server: {
+        entry: "server",
+      },
+    }),
+    nitro({
+      preset: "vercel",
+    }),
+  ],
 });
