@@ -41,6 +41,7 @@ function PropertiesPage() {
   const [landlordProps, setLandlordProps] = useState<SupabaseProperty[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPropertyForImage, setSelectedPropertyForImage] = useState<SupabaseProperty | null>(null);
 
@@ -110,6 +111,37 @@ function PropertiesPage() {
 
     setIsAdding(false);
     loadProperties();
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `property-images/${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('property-images')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('property-images')
+        .getPublicUrl(filePath);
+
+      setForm((prev) => ({ ...prev, image_url: publicUrl }));
+      toast.success("Image uploaded successfully!");
+    } catch (error: any) {
+      toast.error("Error uploading image. Did you create the public 'property-images' bucket in Supabase? Details: " + error.message);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleExport = () => {
@@ -232,12 +264,27 @@ function PropertiesPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label>Picture URL (Optional)</Label>
-              <Input
-                placeholder="https://example.com/image.jpg"
-                value={form.image_url}
-                onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-              />
+              <Label>Picture (Upload or URL)</Label>
+              <div className="flex gap-2">
+                <Input
+                  className="flex-1"
+                  placeholder="https://example.com/image.jpg"
+                  value={form.image_url}
+                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                />
+                <div className="relative">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                  />
+                  <Button type="button" variant="outline" disabled={isUploading}>
+                    {isUploading ? "Uploading..." : "Upload File"}
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <DialogFooter className="mt-4">
