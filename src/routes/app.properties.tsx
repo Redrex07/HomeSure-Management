@@ -424,12 +424,12 @@ function PropertiesPage() {
                   gridTemplateColumns: "1fr 1fr",
                   gridTemplateRows:
                     imgs.length === 3 ? "1fr 1fr" : "1fr",
-                  height: "420px",
+                  height: "450px",
                 }}
               >
                 {/* Main large image — spans left column */}
                 <div
-                  className="relative overflow-hidden rounded-lg"
+                  className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center"
                   style={{
                     gridRow:
                       imgs.length === 3 ? "1 / 3" : "1",
@@ -438,7 +438,7 @@ function PropertiesPage() {
                   <img
                     src={imgs[0]}
                     alt="Main"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
                         "https://placehold.co/600x400?text=Image+Not+Found";
@@ -446,11 +446,11 @@ function PropertiesPage() {
                   />
                 </div>
                 {/* Second image — top right */}
-                <div className="relative overflow-hidden rounded-lg">
+                <div className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center">
                   <img
                     src={imgs[1]}
                     alt="Second"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
                         "https://placehold.co/600x400?text=Image+Not+Found";
@@ -459,11 +459,11 @@ function PropertiesPage() {
                 </div>
                 {/* Third image — bottom right (if exists) */}
                 {imgs.length === 3 && (
-                  <div className="relative overflow-hidden rounded-lg">
+                  <div className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center">
                     <img
                       src={imgs[2]}
                       alt="Third"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src =
                           "https://placehold.co/600x400?text=Image+Not+Found";
