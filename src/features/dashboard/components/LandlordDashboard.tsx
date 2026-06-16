@@ -39,7 +39,6 @@ import {
   contractors,
   appointments,
   estimates,
-  invoices,
   tickets,
   users,
   subscriptions,
@@ -53,6 +52,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
 import { getLandlordProperties, getLandlordTenants } from "@/core/db/supabase-queries";
+import { useInvoices } from "@/shared/utils/invoices-store";
 
 const fmt = (n: number) => `$${n.toLocaleString()}`;
 
@@ -77,6 +77,8 @@ export function LandlordDashboard() {
   const [dbProperties, setDbProperties] = useState<any[]>([]);
   const [dbTenants, setDbTenants] = useState<any[]>([]);
   
+  const invoices = useInvoices();
+
   useEffect(() => {
     async function loadData() {
       const p = await getLandlordProperties(landlordId);
