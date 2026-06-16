@@ -3,7 +3,7 @@ import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus, Download, Trash2 } from "lucide-react";
+import { Plus, Download, Trash2, ImagePlus, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
 import { getLandlordProperties } from "@/core/db/supabase-queries";
@@ -32,7 +32,7 @@ interface SupabaseProperty {
   address: string;
   rent_amount: number;
   availability_status: string;
-  image_url?: string;
+  image_url?: string; // JSON array string e.g. '["url1","url2"]' or single URL
   [key: string]: unknown;
 }
 
@@ -44,9 +44,9 @@ function PropertiesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPropertyForImage, setSelectedPropertyForImage] = useState<SupabaseProperty | null>(
-    null,
-  );
+  const [selectedPropertyForImage, setSelectedPropertyForImage] =
+    useState<SupabaseProperty | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     property_name: "",
@@ -54,7 +54,6 @@ function PropertiesPage() {
     address: "",
     rent_amount: "",
     availability_status: "Available",
-    image_url: "",
   });
 
   const loadProperties = async () => {
@@ -92,7 +91,8 @@ function PropertiesPage() {
         address: form.address,
         rent_amount: Number(form.rent_amount),
         availability_status: form.availability_status,
-        image_url: form.image_url,
+        image_url:
+          uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : null,
       },
     ]);
 
@@ -109,8 +109,8 @@ function PropertiesPage() {
       address: "",
       rent_amount: "",
       availability_status: "Available",
-      image_url: "",
     });
+    setUploadedImages([]);
 
     setIsAdding(false);
     loadProperties();
@@ -120,15 +120,19 @@ function PropertiesPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (uploadedImages.length >= 3) {
+      toast.error("Maximum 3 images allowed per property.");
+      return;
+    }
+
     try {
       setIsUploading(true);
       const fileExt = file.name.split(".").pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
 
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("property-images")
-        .upload(filePath, file);
+        .upload(fileName, file);
 
       if (uploadError) {
         throw uploadError;
@@ -136,17 +140,37 @@ function PropertiesPage() {
 
       const {
         data: { publicUrl },
-      } = supabase.storage.from("property-images").getPublicUrl(filePath);
+      } = supabase.storage.from("property-images").getPublicUrl(fileName);
 
-      setForm((prev) => ({ ...prev, image_url: publicUrl }));
-      toast.success("Image uploaded successfully!");
+      setUploadedImages((prev) => [...prev, publicUrl]);
+      toast.success(
+        `Image ${uploadedImages.length + 1} uploaded! (${3 - uploadedImages.length - 1} slots remaining)`,
+      );
     } catch (error) {
       toast.error(
-        "Error uploading image. Did you create the public 'property-images' bucket in Supabase? Details: " +
+        "Error uploading image: " +
           (error instanceof Error ? error.message : String(error)),
       );
     } finally {
       setIsUploading(false);
+      // Reset file input
+      e.target.value = "";
+    }
+  };
+
+  const removeUploadedImage = (index: number) => {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  /** Parse image_url field — supports JSON array or single URL */
+  const parseImageUrls = (imageUrl?: string): string[] => {
+    if (!imageUrl) return [];
+    try {
+      const parsed = JSON.parse(imageUrl);
+      if (Array.isArray(parsed)) return parsed;
+      return [String(parsed)];
+    } catch {
+      return [imageUrl];
     }
   };
 
@@ -271,27 +295,53 @@ function PropertiesPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label>Picture (Upload or URL)</Label>
-              <div className="flex gap-2">
-                <Input
-                  className="flex-1"
-                  placeholder="https://example.com/image.jpg"
-                  value={form.image_url}
-                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                />
+              <Label>Pictures (Up to 3)</Label>
+
+              {/* Thumbnail preview of uploaded images */}
+              {uploadedImages.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {uploadedImages.map((url, idx) => (
+                    <div
+                      key={idx}
+                      className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
+                    >
+                      <img
+                        src={url}
+                        alt={`Upload ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeUploadedImage(idx)}
+                        className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload button */}
+              {uploadedImages.length < 3 && (
                 <div className="relative">
                   <Input
                     type="file"
                     accept="image/*"
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     onChange={handleImageUpload}
                     disabled={isUploading}
                   />
-                  <Button type="button" variant="outline" disabled={isUploading}>
-                    {isUploading ? "Uploading..." : "Upload File"}
-                  </Button>
+                  <div className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                    <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {isUploading
+                        ? "Uploading..."
+                        : `Click to upload (${3 - uploadedImages.length} remaining)`}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <DialogFooter className="mt-4">
@@ -304,33 +354,107 @@ function PropertiesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* View Image Dialog */}
+      {/* View Image Gallery Dialog */}
       <Dialog
         open={!!selectedPropertyForImage}
         onOpenChange={(open) => !open && setSelectedPropertyForImage(null)}
       >
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>{selectedPropertyForImage?.property_name} - Pictures</DialogTitle>
-            <DialogDescription className="sr-only">Image viewer for the property</DialogDescription>
+            <DialogTitle>
+              {selectedPropertyForImage?.property_name} - Pictures
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Image gallery for the property
+            </DialogDescription>
           </DialogHeader>
-          <div className="flex items-center justify-center p-4 bg-muted/30 rounded-lg min-h-[300px]">
-            {selectedPropertyForImage?.image_url ? (
-              <img
-                src={selectedPropertyForImage.image_url}
-                alt={selectedPropertyForImage.property_name}
-                className="max-h-[60vh] max-w-full rounded-md object-contain shadow-md"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    "https://placehold.co/600x400?text=Image+Not+Found";
+          {(() => {
+            const imgs = parseImageUrls(
+              selectedPropertyForImage?.image_url,
+            );
+            if (imgs.length === 0) {
+              return (
+                <div className="flex items-center justify-center p-8 bg-muted/30 rounded-lg min-h-[300px]">
+                  <div className="text-center text-muted-foreground">
+                    <ImagePlus className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                    <p>No pictures uploaded for this property yet.</p>
+                  </div>
+                </div>
+              );
+            }
+            if (imgs.length === 1) {
+              return (
+                <div className="rounded-xl overflow-hidden bg-muted/30">
+                  <img
+                    src={imgs[0]}
+                    alt={selectedPropertyForImage?.property_name}
+                    className="w-full max-h-[65vh] object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://placehold.co/600x400?text=Image+Not+Found";
+                    }}
+                  />
+                </div>
+              );
+            }
+            // 2 or 3 images — gallery grid layout
+            return (
+              <div
+                className="grid gap-2 rounded-xl overflow-hidden"
+                style={{
+                  gridTemplateColumns: "1fr 1fr",
+                  gridTemplateRows:
+                    imgs.length === 3 ? "1fr 1fr" : "1fr",
+                  height: "420px",
                 }}
-              />
-            ) : (
-              <div className="text-center text-muted-foreground">
-                <p>No pictures uploaded for this property yet.</p>
+              >
+                {/* Main large image — spans left column */}
+                <div
+                  className="relative overflow-hidden rounded-lg"
+                  style={{
+                    gridRow:
+                      imgs.length === 3 ? "1 / 3" : "1",
+                  }}
+                >
+                  <img
+                    src={imgs[0]}
+                    alt="Main"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://placehold.co/600x400?text=Image+Not+Found";
+                    }}
+                  />
+                </div>
+                {/* Second image — top right */}
+                <div className="relative overflow-hidden rounded-lg">
+                  <img
+                    src={imgs[1]}
+                    alt="Second"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://placehold.co/600x400?text=Image+Not+Found";
+                    }}
+                  />
+                </div>
+                {/* Third image — bottom right (if exists) */}
+                {imgs.length === 3 && (
+                  <div className="relative overflow-hidden rounded-lg">
+                    <img
+                      src={imgs[2]}
+                      alt="Third"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "https://placehold.co/600x400?text=Image+Not+Found";
+                      }}
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
