@@ -3,7 +3,7 @@ import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
 import { getLandlordTenants } from "@/core/db/supabase-queries";
@@ -45,6 +45,15 @@ function TenantsPage() {
     property_id: "",
     onboarding_status: "Active",
     onboarding_date: new Date().toISOString().split("T")[0],
+  });
+
+  const [editingTenant, setEditingTenant] = useState<SupabaseTenant | null>(null);
+  const [editForm, setEditForm] = useState({
+    tenant_id: "",
+    email: "",
+    property_id: "",
+    onboarding_status: "Active",
+    onboarding_date: "",
   });
 
   const loadTenants = async () => {
@@ -142,6 +151,47 @@ function TenantsPage() {
     }
 
     toast.success("Tenant deleted successfully!");
+    loadTenants();
+  };
+
+  const openEditDialog = (t: SupabaseTenant) => {
+    setEditingTenant(t);
+    setEditForm({
+      tenant_id: String(t.tenant_id),
+      email: (t.email as string) || "",
+      property_id: String(t.property_id),
+      onboarding_status: t.onboarding_status,
+      onboarding_date: t.onboarding_date || new Date().toISOString().split("T")[0],
+    });
+  };
+
+  const handleUpdateTenant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTenant) return;
+
+    if (!editForm.tenant_id || !editForm.email || !editForm.property_id || !editForm.onboarding_date) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("tenant_onboarding")
+      .update({
+        tenant_id: Number(editForm.tenant_id),
+        email: editForm.email,
+        property_id: Number(editForm.property_id),
+        onboarding_status: editForm.onboarding_status,
+        onboarding_date: editForm.onboarding_date,
+      })
+      .eq("onboarding_id", editingTenant.onboarding_id);
+
+    if (error) {
+      toast.error("Error updating tenant: " + error.message);
+      return;
+    }
+
+    toast.success("Tenant updated successfully!");
+    setEditingTenant(null);
     loadTenants();
   };
 
@@ -285,17 +335,102 @@ function TenantsPage() {
             },
           ]}
           actions={(t) => (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => handleDeleteTenant(t.onboarding_id)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            <div className="flex items-center gap-0.5 justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openEditDialog(t);
+                }}
+                title="Edit"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteTenant(t.onboarding_id);
+                }}
+                title="Delete"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           )}
         />
       )}
+
+      {/* Edit Tenant Dialog */}
+      <Dialog open={!!editingTenant} onOpenChange={(open) => !open && setEditingTenant(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Tenant</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleUpdateTenant} className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Tenant ID</Label>
+              <Input
+                type="number"
+                value={editForm.tenant_id}
+                onChange={(e) => setEditForm({ ...editForm, tenant_id: e.target.value })}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Email ID</Label>
+              <Input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Property ID</Label>
+              <Input
+                type="number"
+                value={editForm.property_id}
+                onChange={(e) => setEditForm({ ...editForm, property_id: e.target.value })}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Status</Label>
+              <select
+                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                value={editForm.onboarding_status}
+                onChange={(e) => setEditForm({ ...editForm, onboarding_status: e.target.value })}
+              >
+                <option value="Active">Active</option>
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Onboarding Date</Label>
+              <Input
+                type="date"
+                value={editForm.onboarding_date}
+                onChange={(e) => setEditForm({ ...editForm, onboarding_date: e.target.value })}
+              />
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setEditingTenant(null)}>
+                Cancel
+              </Button>
+              <Button type="submit">Update Tenant</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

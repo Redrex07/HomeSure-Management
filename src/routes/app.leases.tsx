@@ -4,7 +4,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { tenants as mockTenants, leaseDocs } from "@/shared/utils/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
-import { FileText, Download, Plus, Trash2, Printer } from "lucide-react";
+import { FileText, Download, Plus, Trash2, Printer, Pencil } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -26,6 +26,15 @@ function LeasesPage() {
   const [leases, setLeases] = useState(() => mockTenants.filter((t) => t.status === "Active"));
   const [showNewLease, setShowNewLease] = useState(false);
   const [form, setForm] = useState({
+    name: "",
+    property: "",
+    leaseStart: "",
+    leaseEnd: "",
+    rent: "",
+  });
+
+  const [editingLease, setEditingLease] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
     name: "",
     property: "",
     leaseStart: "",
@@ -64,6 +73,46 @@ function LeasesPage() {
 
     setLeases(leases.filter((lease) => lease.id !== id));
     toast.success("Lease deleted successfully");
+  };
+
+  const openEditDialog = (lease: any) => {
+    setEditingLease(lease);
+    setEditForm({
+      name: lease.name,
+      property: lease.property,
+      leaseStart: lease.leaseStart,
+      leaseEnd: lease.leaseEnd,
+      rent: String(lease.rent),
+    });
+  };
+
+  const handleUpdateLease = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLease) return;
+
+    if (!editForm.name || !editForm.property || !editForm.leaseStart || !editForm.leaseEnd || !editForm.rent) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    setLeases(
+      leases.map((lease) => {
+        if (lease.id === editingLease.id) {
+          return {
+            ...lease,
+            name: editForm.name,
+            property: editForm.property,
+            leaseStart: editForm.leaseStart,
+            leaseEnd: editForm.leaseEnd,
+            rent: Number(editForm.rent),
+          };
+        }
+        return lease;
+      }),
+    );
+
+    toast.success("Lease updated successfully");
+    setEditingLease(null);
   };
 
   const getLeaseHTML = (leaseName: string) => {
@@ -299,6 +348,18 @@ function LeasesPage() {
               className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
               onClick={(e) => {
                 e.stopPropagation();
+                openEditDialog(t);
+              }}
+              title="Edit"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+              onClick={(e) => {
+                e.stopPropagation();
                 handlePrintLease(t.name);
               }}
               title="Print"
@@ -332,6 +393,67 @@ function LeasesPage() {
           </div>
         )}
       />
+
+      {/* Edit Lease Dialog */}
+      <Dialog open={!!editingLease} onOpenChange={(open) => !open && setEditingLease(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Lease</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleUpdateLease} className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Tenant Name</Label>
+              <Input
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Property</Label>
+              <Input
+                value={editForm.property}
+                onChange={(e) => setEditForm({ ...editForm, property: e.target.value })}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Lease Start</Label>
+              <Input
+                type="date"
+                value={editForm.leaseStart}
+                onChange={(e) => setEditForm({ ...editForm, leaseStart: e.target.value })}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Lease End</Label>
+              <Input
+                type="date"
+                value={editForm.leaseEnd}
+                onChange={(e) => setEditForm({ ...editForm, leaseEnd: e.target.value })}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Rent Amount</Label>
+              <Input
+                type="number"
+                value={editForm.rent}
+                onChange={(e) => setEditForm({ ...editForm, rent: e.target.value })}
+              />
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setEditingLease(null)}>
+                Cancel
+              </Button>
+              <Button type="submit">Update Lease</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <Card className="border-border/70 shadow-card mt-6">
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Recent lease documents</CardTitle>

@@ -3,7 +3,7 @@ import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus, Download, Trash2, ImagePlus, X } from "lucide-react";
+import { Plus, Download, Trash2, ImagePlus, X, Pencil } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
 import { getLandlordProperties } from "@/core/db/supabase-queries";
@@ -47,6 +47,16 @@ function PropertiesPage() {
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
     useState<SupabaseProperty | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [editingProperty, setEditingProperty] = useState<SupabaseProperty | null>(null);
+  const [editForm, setEditForm] = useState({
+    property_name: "",
+    property_type: "",
+    address: "",
+    rent_amount: "",
+    availability_status: "Available",
+  });
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [isEditUploading, setIsEditUploading] = useState(false);
 
   const [form, setForm] = useState({
     property_name: "",
@@ -233,6 +243,98 @@ function PropertiesPage() {
     }
 
     toast.success("Property deleted successfully!");
+    loadProperties();
+  };
+
+  const openEditDialog = (p: SupabaseProperty) => {
+    setEditingProperty(p);
+    setEditForm({
+      property_name: p.property_name,
+      property_type: p.property_type,
+      address: p.address,
+      rent_amount: String(p.rent_amount),
+      availability_status: p.availability_status,
+    });
+    setEditImages(parseImageUrls(p.image_url));
+  };
+
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const slotsLeft = 3 - editImages.length;
+    if (slotsLeft <= 0) {
+      toast.error("Maximum 3 images allowed.");
+      return;
+    }
+
+    const filesToUpload = Array.from(files).slice(0, slotsLeft);
+    try {
+      setIsEditUploading(true);
+      const newUrls: string[] = [];
+      for (const file of filesToUpload) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("property-images")
+          .upload(fileName, file);
+        if (uploadError) {
+          toast.error(`Failed to upload ${file.name}: ${uploadError.message}`);
+          continue;
+        }
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("property-images").getPublicUrl(fileName);
+        newUrls.push(publicUrl);
+      }
+      if (newUrls.length > 0) {
+        setEditImages((prev) => [...prev, ...newUrls]);
+        toast.success(`${newUrls.length} image(s) uploaded!`);
+      }
+    } catch (error) {
+      toast.error(
+        "Error uploading: " +
+          (error instanceof Error ? error.message : String(error)),
+      );
+    } finally {
+      setIsEditUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleUpdateProperty = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProperty) return;
+
+    if (
+      !editForm.property_name ||
+      !editForm.property_type ||
+      !editForm.address ||
+      !editForm.rent_amount
+    ) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("properties")
+      .update({
+        property_name: editForm.property_name,
+        property_type: editForm.property_type,
+        address: editForm.address,
+        rent_amount: Number(editForm.rent_amount),
+        availability_status: editForm.availability_status,
+        image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
+      })
+      .eq("property_id", editingProperty.property_id);
+
+    if (error) {
+      toast.error("Error updating property: " + error.message);
+      return;
+    }
+
+    toast.success("Property updated successfully!");
+    setEditingProperty(null);
     loadProperties();
   };
 
@@ -544,17 +646,166 @@ function PropertiesPage() {
             },
           ]}
           actions={(p) => (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => handleDeleteProperty(p.property_id)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            <div className="flex items-center gap-0.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                onClick={() => openEditDialog(p)}
+                title="Edit"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => handleDeleteProperty(p.property_id)}
+                title="Delete"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           )}
         />
       )}
+
+      {/* Edit Property Dialog */}
+      <Dialog
+        open={!!editingProperty}
+        onOpenChange={(open) => !open && setEditingProperty(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Property</DialogTitle>
+            <DialogDescription className="sr-only">
+              Edit the details of this property.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleUpdateProperty} className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Property Name</Label>
+              <Input
+                value={editForm.property_name}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, property_name: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Property Type</Label>
+              <Input
+                value={editForm.property_type}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, property_type: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Address</Label>
+              <Input
+                value={editForm.address}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, address: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Rent Amount</Label>
+              <Input
+                type="number"
+                value={editForm.rent_amount}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, rent_amount: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Status</Label>
+              <select
+                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
+                value={editForm.availability_status}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    availability_status: e.target.value,
+                  })
+                }
+              >
+                <option value="Available">Available</option>
+                <option value="Occupied">Occupied</option>
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Pictures (Up to 3)</Label>
+              {editImages.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {editImages.map((url, idx) => (
+                    <div
+                      key={idx}
+                      className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
+                    >
+                      <img
+                        src={url}
+                        alt={`Image ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditImages((prev) =>
+                            prev.filter((_, i) => i !== idx),
+                          )
+                        }
+                        className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {editImages.length < 3 && (
+                <div className="relative">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    onChange={handleEditImageUpload}
+                    disabled={isEditUploading}
+                  />
+                  <div className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                    <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {isEditUploading
+                        ? "Uploading..."
+                        : `Click to upload (${3 - editImages.length} remaining)`}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingProperty(null)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Update Property</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
