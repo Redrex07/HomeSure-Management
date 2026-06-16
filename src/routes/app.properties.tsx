@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
@@ -43,7 +44,9 @@ function PropertiesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPropertyForImage, setSelectedPropertyForImage] = useState<SupabaseProperty | null>(null);
+  const [selectedPropertyForImage, setSelectedPropertyForImage] = useState<SupabaseProperty | null>(
+    null,
+  );
 
   const [form, setForm] = useState({
     property_name: "",
@@ -119,26 +122,29 @@ function PropertiesPage() {
 
     try {
       setIsUploading(true);
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `property-images/${fileName}`;
+      const filePath = `${fileName}`;
 
       const { error: uploadError, data } = await supabase.storage
-        .from('property-images')
+        .from("property-images")
         .upload(filePath, file);
 
       if (uploadError) {
         throw uploadError;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('property-images')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("property-images").getPublicUrl(filePath);
 
       setForm((prev) => ({ ...prev, image_url: publicUrl }));
       toast.success("Image uploaded successfully!");
-    } catch (error: any) {
-      toast.error("Error uploading image. Did you create the public 'property-images' bucket in Supabase? Details: " + error.message);
+    } catch (error) {
+      toast.error(
+        "Error uploading image. Did you create the public 'property-images' bucket in Supabase? Details: " +
+          (error instanceof Error ? error.message : String(error)),
+      );
     } finally {
       setIsUploading(false);
     }
@@ -211,6 +217,7 @@ function PropertiesPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Property</DialogTitle>
+            <DialogDescription className="sr-only">Fill out this form to add a new property.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleAddProperty} className="grid gap-4 py-4">
@@ -298,10 +305,14 @@ function PropertiesPage() {
       </Dialog>
 
       {/* View Image Dialog */}
-      <Dialog open={!!selectedPropertyForImage} onOpenChange={(open) => !open && setSelectedPropertyForImage(null)}>
+      <Dialog
+        open={!!selectedPropertyForImage}
+        onOpenChange={(open) => !open && setSelectedPropertyForImage(null)}
+      >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>{selectedPropertyForImage?.property_name} - Pictures</DialogTitle>
+            <DialogDescription className="sr-only">Image viewer for the property</DialogDescription>
           </DialogHeader>
           <div className="flex items-center justify-center p-4 bg-muted/30 rounded-lg min-h-[300px]">
             {selectedPropertyForImage?.image_url ? (
@@ -310,7 +321,8 @@ function PropertiesPage() {
                 alt={selectedPropertyForImage.property_name}
                 className="max-h-[60vh] max-w-full rounded-md object-contain shadow-md"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "https://placehold.co/600x400?text=Image+Not+Found";
+                  (e.target as HTMLImageElement).src =
+                    "https://placehold.co/600x400?text=Image+Not+Found";
                 }}
               />
             ) : (

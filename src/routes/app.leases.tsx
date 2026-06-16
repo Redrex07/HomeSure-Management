@@ -6,7 +6,13 @@ import { tenants as mockTenants, leaseDocs } from "@/shared/utils/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { FileText, Download, Plus, Trash2, Printer } from "lucide-react";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/shared/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { toast } from "sonner";
@@ -168,7 +174,7 @@ function LeasesPage() {
 
   const handlePrintLease = (leaseName: string) => {
     const htmlContent = getLeaseHTML(leaseName);
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (printWindow) {
       printWindow.document.write(htmlContent);
       printWindow.document.close();
@@ -281,25 +287,44 @@ function LeasesPage() {
             key: "rent",
             label: "Rent",
             render: (t) => (
-              <span className="font-semibold text-foreground">
-                ₹{t.rent?.toLocaleString()}
-              </span>
+              <span className="font-semibold text-foreground">₹{t.rent?.toLocaleString()}</span>
             ),
           },
         ]}
         actions={(t) => (
           <div className="flex items-center gap-1 justify-end">
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary" onClick={(e) => { e.stopPropagation(); handlePrintLease(t.name); }} title="Print">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrintLease(t.name);
+              }}
+              title="Print"
+            >
               <Printer className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary" onClick={(e) => { e.stopPropagation(); handleDownloadLease(t.name); }} title="Download">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownloadLease(t.name);
+              }}
+              title="Download"
+            >
               <Download className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={(e) => { e.stopPropagation(); handleDeleteLease(t.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteLease(t.id);
+              }}
               title="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -327,10 +352,20 @@ function LeasesPage() {
                 </div>
               </div>
               <div className="flex gap-1">
-                <Button variant="ghost" size="sm" onClick={() => handlePrintLease(d.name)} title="Print">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handlePrintLease(d.name)}
+                  title="Print"
+                >
                   <Printer className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDownloadLease(d.name)} title="Download">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownloadLease(d.name)}
+                  title="Download"
+                >
                   <Download className="h-4 w-4" />
                 </Button>
               </div>
@@ -341,4 +376,3 @@ function LeasesPage() {
     </>
   );
 }
-
