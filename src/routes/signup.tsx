@@ -34,7 +34,7 @@ function SignupPage() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSession({ email, name: name || "Alex Morgan", role });
+    setSession({ email, name: name || "Adithya", role });
     toast.success("Account created — welcome to HomeSure!");
     nav({ to: "/app/dashboard" });
   };

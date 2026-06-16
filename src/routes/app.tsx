@@ -16,7 +16,7 @@ function AppLayout() {
   useEffect(() => {
     // Auto-create demo session if missing so the prototype is always navigable.
     if (typeof window !== "undefined" && !session) {
-      setSession({ email: "demo@homesure.app", name: "Alex Morgan", role: "landlord" });
+      setSession({ email: "demo@homesure.app", name: "Adithya", role: "landlord" });
     }
   }, [session, nav]);
 

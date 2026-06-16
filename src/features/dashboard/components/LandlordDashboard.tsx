@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
@@ -34,8 +35,6 @@ import {
   Home,
 } from "lucide-react";
 import {
-  properties,
-  tenants,
   serviceRequests,
   contractors,
   appointments,
@@ -53,20 +52,53 @@ import {
 } from "@/shared/utils/mock-data";
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
+import { getLandlordProperties, getLandlordTenants } from "@/core/db/supabase-queries";
 
 const fmt = (n: number) => `$${n.toLocaleString()}`;
 
+const parseImageUrls = (val: unknown): string[] => {
+  if (!val) return [];
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      return [val];
+    }
+  }
+  return [];
+};
+
 /* ---------------- LANDLORD ---------------- */
 export function LandlordDashboard() {
-  const occupied = properties.filter((p) => p.status === "Occupied").length;
-  const occupancy = Math.round((occupied / properties.length) * 100);
+  const { session } = useSession();
+  const landlordId = "2"; // Same fixed landlordId for now
+
+  const [dbProperties, setDbProperties] = useState<any[]>([]);
+  const [dbTenants, setDbTenants] = useState<any[]>([]);
+  
+  useEffect(() => {
+    async function loadData() {
+      const p = await getLandlordProperties(landlordId);
+      const t = await getLandlordTenants(landlordId);
+      setDbProperties(p);
+      setDbTenants(t);
+    }
+    loadData();
+  }, []);
+
+  const occupied = dbProperties.filter((p) => p.availability_status === "Occupied").length;
+  const occupancy = dbProperties.length > 0 ? Math.round((occupied / dbProperties.length) * 100) : 0;
+  
+  const activeTenants = dbTenants.filter((t) => t.onboarding_status === "Active" || t.onboarding_status === "Completed").length;
+
   const collected = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
   const outstanding = invoices.filter((i) => i.status !== "Paid").reduce((s, i) => s + i.amount, 0);
 
   return (
     <>
       <PageHeader
-        title="Welcome back, Alex"
+        title={`Welcome back, ${session?.name || "Adithya"}`}
         description="Here's how your portfolio is performing today."
         actions={
           <Link to="/app/properties">
@@ -77,10 +109,10 @@ export function LandlordDashboard() {
         }
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Properties" value={String(properties.length)} icon={Building2} delta={4} />
+        <StatCard label="Properties" value={String(dbProperties.length)} icon={Building2} delta={4} />
         <StatCard
           label="Active tenants"
-          value={String(tenants.filter((t) => t.status === "Active").length)}
+          value={String(activeTenants)}
           icon={Users}
           tone="info"
           delta={2}
@@ -113,7 +145,7 @@ export function LandlordDashboard() {
             <div className="flex items-baseline gap-2">
               <div className="text-4xl font-bold">{occupancy}%</div>
               <div className="text-sm text-muted-foreground">
-                {occupied} of {properties.length}
+                {occupied} of {dbProperties.length}
               </div>
             </div>
             <Progress value={occupancy} className="mt-4" />
@@ -146,24 +178,29 @@ export function LandlordDashboard() {
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
-            {properties.slice(0, 4).map((p) => (
-              <Link
-                key={p.id}
-                to="/app/properties/$id"
-                params={{ id: p.id }}
-                className="flex items-center gap-3 rounded-md border border-border/60 p-2.5 hover:bg-muted/40"
-              >
-                <img src={p.image} alt="" className="h-12 w-16 rounded-md object-cover" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{p.name}</div>
-                  <div className="truncate text-xs text-muted-foreground">{p.address}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-semibold">{fmt(p.rent)}</div>
-                  <StatusBadge value={p.status} />
-                </div>
-              </Link>
-            ))}
+            {dbProperties.slice(0, 4).map((p) => {
+              const images = parseImageUrls(p.image_url);
+              const firstImage = images.length > 0 ? images[0] : "https://placehold.co/100x100?text=No+Image";
+              
+              return (
+                <Link
+                  key={p.property_id}
+                  to="/app/properties/$id"
+                  params={{ id: String(p.property_id) }}
+                  className="flex items-center gap-3 rounded-md border border-border/60 p-2.5 hover:bg-muted/40"
+                >
+                  <img src={firstImage} alt="" className="h-12 w-16 rounded-md object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{p.property_name}</div>
+                    <div className="truncate text-xs text-muted-foreground">{p.address}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold">{fmt(p.rent_amount)}</div>
+                    <StatusBadge value={p.availability_status} />
+                  </div>
+                </Link>
+              );
+            })}
           </CardContent>
         </Card>
 

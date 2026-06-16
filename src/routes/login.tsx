@@ -33,7 +33,7 @@ function LoginPage() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSession({ email, name: "Alex Morgan", role });
+    setSession({ email, name: "Adithya", role });
     toast.success(`Welcome back, signing in as ${ROLE_LABELS[role]}`);
     nav({ to: "/app/dashboard" });
   };
