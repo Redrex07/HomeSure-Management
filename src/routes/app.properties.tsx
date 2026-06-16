@@ -117,38 +117,56 @@ function PropertiesPage() {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    if (uploadedImages.length >= 3) {
+    const slotsLeft = 3 - uploadedImages.length;
+    if (slotsLeft <= 0) {
       toast.error("Maximum 3 images allowed per property.");
       return;
     }
 
+    // Take only as many files as slots remaining
+    const filesToUpload = Array.from(files).slice(0, slotsLeft);
+    if (files.length > slotsLeft) {
+      toast.warning(
+        `Only ${slotsLeft} slot(s) remaining. Uploading first ${slotsLeft} of ${files.length} selected.`,
+      );
+    }
+
     try {
       setIsUploading(true);
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const newUrls: string[] = [];
 
-      const { error: uploadError } = await supabase.storage
-        .from("property-images")
-        .upload(fileName, file);
+      for (const file of filesToUpload) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
 
-      if (uploadError) {
-        throw uploadError;
+        const { error: uploadError } = await supabase.storage
+          .from("property-images")
+          .upload(fileName, file);
+
+        if (uploadError) {
+          toast.error(`Failed to upload ${file.name}: ${uploadError.message}`);
+          continue;
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("property-images").getPublicUrl(fileName);
+
+        newUrls.push(publicUrl);
       }
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("property-images").getPublicUrl(fileName);
-
-      setUploadedImages((prev) => [...prev, publicUrl]);
-      toast.success(
-        `Image ${uploadedImages.length + 1} uploaded! (${3 - uploadedImages.length - 1} slots remaining)`,
-      );
+      if (newUrls.length > 0) {
+        setUploadedImages((prev) => [...prev, ...newUrls]);
+        toast.success(
+          `${newUrls.length} image${newUrls.length > 1 ? "s" : ""} uploaded successfully!`,
+        );
+      }
     } catch (error) {
       toast.error(
-        "Error uploading image: " +
+        "Error uploading images: " +
           (error instanceof Error ? error.message : String(error)),
       );
     } finally {
@@ -328,6 +346,7 @@ function PropertiesPage() {
                   <Input
                     type="file"
                     accept="image/*"
+                    multiple
                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     onChange={handleImageUpload}
                     disabled={isUploading}
