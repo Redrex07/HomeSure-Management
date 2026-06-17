@@ -200,24 +200,24 @@ function InvoicesPage() {
     <>
       <PageHeader title="Invoices" description="Track billing, payments and overdue accounts." />
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Paid (mo)"
-          value={`$${paid.toLocaleString()}`}
-          icon={DollarSign}
-          tone="success"
-        />
-        <StatCard
-          label="Pending"
-          value={`$${pending.toLocaleString()}`}
-          icon={Clock}
-          tone="warning"
-        />
-        <StatCard
-          label="Overdue"
-          value={`$${overdue.toLocaleString()}`}
-          icon={AlertTriangle}
-          tone="destructive"
-        />
+<StatCard
+  label="Paid (mo)"
+  value={`₹${paid.toLocaleString("en-IN")}`}
+  icon={DollarSign}
+  tone="success"
+/>
+<StatCard
+  label="Pending"
+  value={`₹${pending.toLocaleString("en-IN")}`}
+  icon={Clock}
+  tone="warning"
+/>
+<StatCard
+  label="Overdue"
+  value={`₹${overdue.toLocaleString("en-IN")}`}
+  icon={AlertTriangle}
+  tone="destructive"
+/>
       </div>
       <DataTable
         rows={invoices}
@@ -241,7 +241,11 @@ function InvoicesPage() {
             key: "amount",
             header: "Amount",
             sortable: true,
-            render: (i) => <span className="font-medium">${i.amount.toLocaleString()}</span>,
+            render: (i) => (
+  <span className="font-medium">
+    ₹{i.amount.toLocaleString("en-IN")}
+  </span>
+),
           },
           { 
             key: "status", 
