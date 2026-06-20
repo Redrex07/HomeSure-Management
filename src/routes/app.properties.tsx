@@ -3,7 +3,7 @@ import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus, Download, Trash2, ImagePlus, X, Pencil } from "lucide-react";
+import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
 import { getLandlordProperties } from "@/core/db/supabase-queries";
@@ -595,7 +595,6 @@ function PropertiesPage() {
       ) : (
         <DataCardGrid
           rows={landlordProps}
-          onCardClick={(p) => setSelectedPropertyForImage(p)}
           filterKeys={["property_name", "address", "property_id"]}
           fields={[
             {
@@ -645,7 +644,22 @@ function PropertiesPage() {
               label: "Status",
               render: (p) => <StatusBadge value={p.availability_status} />,
             },
-
+            {
+              key: "image_url",
+              label: "Pictures",
+              render: (p) => (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPropertyForImage(p);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                >
+                  <Image className="h-3 w-3" />
+                  View Pictures
+                </button>
+              ),
+            },
           ]}
           actions={(p) => (
             <div className="flex items-center gap-0.5">
