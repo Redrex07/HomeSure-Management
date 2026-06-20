@@ -53,8 +53,9 @@ import {
 } from "@/shared/utils/mock-data";
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
+import { formatINR } from "@/shared/utils/utils";
 
-const fmt = (n: number) => `$${n.toLocaleString()}`;
+const fmt = (n: number) => formatINR(n);
 
 /* ---------------- CONTRACTOR ---------------- */
 export function ContractorDashboard() {

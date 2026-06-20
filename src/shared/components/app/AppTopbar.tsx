@@ -136,9 +136,9 @@ export function AppTopbar() {
                 </AvatarFallback>
               </Avatar>
               <div className="hidden text-left sm:block">
-                <div className="text-xs font-medium leading-none">{session?.name}</div>
+                <div className="text-xs font-medium leading-none">{session?.name ?? "User"}</div>
                 <div className="mt-0.5 text-[10px] leading-none text-muted-foreground">
-                  {session?.email}
+                  {session?.email ?? "user@homesure.app"}
                 </div>
               </div>
             </Button>

@@ -26,6 +26,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getInvoices, updateInvoiceStatus } from "@/core/db/supabase-queries";
 import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { formatINR } from "@/shared/utils/utils";
 
 export const Route = createFileRoute("/app/invoices")({
   head: () => ({ meta: [{ title: "Invoices — HomeSure" }] }),
@@ -162,8 +163,8 @@ function InvoicesPage() {
                         <span style="color: #64748b; font-size: 13px;">Labor and materials for ${invoice.request}</span>
                     </td>
                     <td class="qty">1</td>
-                    <td class="price">$${invoice.amount.toLocaleString()}</td>
-                    <td class="total">$${invoice.amount.toLocaleString()}</td>
+                    <td class="price">${formatINR(invoice.amount)}</td>
+                    <td class="total">${formatINR(invoice.amount)}</td>
                 </tr>
             </tbody>
         </table>
@@ -171,15 +172,15 @@ function InvoicesPage() {
         <div class="summary">
             <div class="summary-row">
                 <span>Subtotal</span>
-                <span>$${invoice.amount.toLocaleString()}</span>
+                <span>${formatINR(invoice.amount)}</span>
             </div>
             <div class="summary-row">
                 <span>Tax (0%)</span>
-                <span>$0.00</span>
+                <span>₹0</span>
             </div>
             <div class="summary-row summary-total">
                 <span>Total Due</span>
-                <span>$${invoice.amount.toLocaleString()}</span>
+                <span>${formatINR(invoice.amount)}</span>
             </div>
         </div>
 
@@ -231,19 +232,19 @@ function InvoicesPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <StatCard
               label="Paid (mo)"
-              value={`$${paid.toLocaleString()}`}
+              value={formatINR(paid)}
               icon={DollarSign}
               tone="success"
             />
             <StatCard
               label="Pending"
-              value={`$${pending.toLocaleString()}`}
+              value={formatINR(pending)}
               icon={Clock}
               tone="warning"
             />
             <StatCard
               label="Overdue"
-              value={`$${overdue.toLocaleString()}`}
+              value={formatINR(overdue)}
               icon={AlertTriangle}
               tone="destructive"
             />
@@ -270,7 +271,7 @@ function InvoicesPage() {
                 key: "amount",
                 header: "Amount",
                 sortable: true,
-                render: (i) => <span className="font-medium">${i.amount.toLocaleString()}</span>,
+                render: (i) => <span className="font-medium">{formatINR(i.amount)}</span>,
               },
               { 
                 key: "status", 

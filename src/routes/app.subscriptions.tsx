@@ -6,6 +6,7 @@ import { DataTable } from "@/shared/components/common/DataTable";
 import { StatCard } from "@/shared/components/common/StatCard";
 import { subscriptions } from "@/shared/utils/mock-data";
 import { CreditCard, DollarSign, TrendingUp, Plus } from "lucide-react";
+import { formatINR } from "@/shared/utils/utils";
 
 export const Route = createFileRoute("/app/subscriptions")({
   head: () => ({ meta: [{ title: "Subscriptions — HomeSure" }] }),
@@ -34,7 +35,7 @@ function SubsPage() {
         />
         <StatCard
           label="MRR"
-          value={`$${mrr.toLocaleString()}`}
+          value={formatINR(mrr)}
           icon={DollarSign}
           tone="success"
           delta={14}
@@ -63,7 +64,7 @@ function SubsPage() {
           },
           { key: "plan", header: "Plan" },
           { key: "seats", header: "Seats" },
-          { key: "mrr", header: "MRR", render: (s) => `$${s.mrr}` },
+          { key: "mrr", header: "MRR", render: (s) => formatINR(s.mrr) },
           { key: "renews", header: "Renews" },
           { key: "status", header: "Status", render: (s) => <StatusBadge value={s.status} /> },
         ]}

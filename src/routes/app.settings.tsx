@@ -125,7 +125,7 @@ function SettingsPage() {
             <CardContent>
               <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary-soft p-4">
                 <div>
-                  <div className="text-base font-semibold">Pro · $149/month</div>
+                  <div className="text-base font-semibold">Pro · ₹149/month</div>
                   <div className="text-xs text-muted-foreground">Renews July 1, 2026</div>
                 </div>
                 <Button variant="outline" size="sm">

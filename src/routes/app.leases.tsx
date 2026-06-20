@@ -16,6 +16,7 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { toast } from "sonner";
+import { formatINR } from "@/shared/utils/utils";
 
 export const Route = createFileRoute("/app/leases")({
   head: () => ({ meta: [{ title: "Leases — HomeSure" }] }),
@@ -336,7 +337,7 @@ function LeasesPage() {
             key: "rent",
             label: "Rent",
             render: (t) => (
-              <span className="font-semibold text-foreground">₹{t.rent?.toLocaleString()}</span>
+              <span className="font-semibold text-foreground">{formatINR(t.rent ?? 0)}</span>
             ),
           },
         ]}

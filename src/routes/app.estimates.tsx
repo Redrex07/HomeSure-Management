@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getEstimates, updateEstimateStatus } from "@/core/db/supabase-queries";
 import { Plus, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { formatINR } from "@/shared/utils/utils";
 
 export const Route = createFileRoute("/app/estimates")({
   head: () => ({ meta: [{ title: "Estimates — HomeSure" }] }),
@@ -79,7 +80,7 @@ function EstimatesPage() {
               key: "amount",
               header: "Amount",
               sortable: true,
-              render: (e) => <span className="font-medium">${e.amount.toLocaleString()}</span>,
+              render: (e) => <span className="font-medium">{formatINR(e.amount)}</span>,
             },
             { key: "status", header: "Status", render: (e) => <StatusBadge value={e.status} /> },
             {
