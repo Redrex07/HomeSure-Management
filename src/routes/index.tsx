@@ -229,7 +229,7 @@ function Landing() {
                     { l: "Properties", v: "128", d: "+12%" },
                     { l: "Active tenants", v: "412", d: "+4%" },
                     { l: "Open requests", v: "37", d: "-8%" },
-                    { l: "MRR", v: "$71.9k", d: "+18%" },
+                    { l: "MRR", v: "₹71.9k", d: "+18%" },
                   ].map((s) => (
                     <div key={s.l} className="rounded-lg border border-border bg-card p-3">
                       <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">

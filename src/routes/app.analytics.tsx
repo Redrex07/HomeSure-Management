@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui
 import { Progress } from "@/shared/components/ui/progress";
 import { revenueSeries, requestsSeries, categoryBreakdown } from "@/shared/utils/mock-data";
 import { DollarSign, Building2, Users, Wrench } from "lucide-react";
+import { formatINR } from "@/shared/utils/utils";
 
 export const Route = createFileRoute("/app/analytics")({
   head: () => ({ meta: [{ title: "Analytics — HomeSure" }] }),
@@ -24,7 +25,7 @@ function AnalyticsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Revenue (mo)"
-          value="$71,900"
+          value={formatINR(71900)}
           icon={DollarSign}
           tone="success"
           delta={18}

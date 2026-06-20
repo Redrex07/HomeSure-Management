@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/components/ui
 import { properties, serviceRequests, leaseDocs } from "@/shared/utils/mock-data";
 import { StatCard } from "@/shared/components/common/StatCard";
 import { ChevronLeft, DollarSign, Users, Wrench, FileText, MapPin, Edit } from "lucide-react";
+import { formatINR } from "@/shared/utils/utils";
 
 export const Route = createFileRoute("/app/properties/$id")({
   head: () => ({ meta: [{ title: "Property details — HomeSure" }] }),
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/app/properties/$id")({
 function PropertyDetail() {
   const { id } = Route.useParams();
   const p = properties.find((x) => x.id === id) ?? properties[0];
-  const reqs = serviceRequests.filter((r) => r.property === p.name);
+  const reqs = serviceRequests.filter((r) => r.propertyId ? r.propertyId === p.id : r.property === p.name);
 
   return (
     <>
@@ -57,7 +58,7 @@ function PropertyDetail() {
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Monthly rent</div>
-                <div className="text-sm font-medium">${p.rent.toLocaleString()}</div>
+                <div className="text-sm font-medium">{formatINR(p.rent)}</div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Status</div>
@@ -70,7 +71,7 @@ function PropertyDetail() {
         <div className="space-y-4">
           <StatCard
             label="Rent collected"
-            value={`$${(p.rent * 6).toLocaleString()}`}
+            value={formatINR(p.rent * 6)}
             icon={DollarSign}
             tone="success"
             delta={8}
@@ -118,7 +119,7 @@ function PropertyDetail() {
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Deposit</div>
-                <div className="text-sm font-medium">${(p.rent * 1.5).toLocaleString()}</div>
+                <div className="text-sm font-medium">{formatINR(p.rent * 1.5)}</div>
               </div>
             </CardContent>
           </Card>

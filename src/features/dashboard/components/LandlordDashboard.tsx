@@ -53,8 +53,9 @@ import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
 import { getLandlordProperties, getLandlordTenants } from "@/core/db/supabase-queries";
 import { useInvoices } from "@/shared/utils/invoices-store";
+import { formatINR } from "@/shared/utils/utils";
 
-const fmt = (n: number) => `$${n.toLocaleString()}`;
+const fmt = (n: number) => formatINR(n);
 
 const parseImageUrls = (val: unknown): string[] => {
   if (!val) return [];
@@ -71,7 +72,7 @@ const parseImageUrls = (val: unknown): string[] => {
 
 /* ---------------- LANDLORD ---------------- */
 export function LandlordDashboard() {
-  const { session } = useSession();
+  const session = useSession();
   const landlordId = "2"; // Same fixed landlordId for now
 
   const [dbProperties, setDbProperties] = useState<any[]>([]);

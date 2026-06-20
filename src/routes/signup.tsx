@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { setSession } from "@/features/auth/store/auth-store";
+import { registerUser } from "@/features/auth/store/users-store";
 import { ROLE_LABELS, type Role } from "@/features/auth/utils/roles";
 import { toast } from "sonner";
 
@@ -34,8 +35,14 @@ function SignupPage() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSession({ email, name: name || "Adithya", role });
-    toast.success("Account created — welcome to HomeSure!");
+    const newUser = registerUser(name || "Adithya", email, role);
+    setSession({ email, name: name || "Adithya", role, status: newUser.status });
+    
+    if (newUser.status === "Pending") {
+      toast.info("Registration submitted. Awaiting Super Admin approval.");
+    } else {
+      toast.success("Account created — welcome to HomeSure!");
+    }
     nav({ to: "/app/dashboard" });
   };
 

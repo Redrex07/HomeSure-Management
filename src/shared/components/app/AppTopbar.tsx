@@ -11,13 +11,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
 } from "@/shared/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
-import { useSession, setSession, setRole } from "@/features/auth/store/auth-store";
-import { ROLE_LABELS, type Role } from "@/features/auth/utils/roles";
+import { useSession, setSession } from "@/features/auth/store/auth-store";
 import { notifications } from "@/shared/utils/mock-data";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -52,34 +49,6 @@ export function AppTopbar() {
         </kbd>
       </div>
       <div className="ml-auto flex items-center gap-1.5">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 gap-2">
-              <UserCircle2 className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                View as: {ROLE_LABELS[session?.role ?? "landlord"]}
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Switch role (demo)</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuRadioGroup
-              value={session?.role}
-              onValueChange={(v) => {
-                setRole(v as Role);
-                toast.success(`Viewing as ${ROLE_LABELS[v as Role]}`);
-              }}
-            >
-              {(Object.keys(ROLE_LABELS) as Role[]).map((r) => (
-                <DropdownMenuRadioItem key={r} value={r}>
-                  {ROLE_LABELS[r]}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative h-9 w-9">
@@ -136,9 +105,9 @@ export function AppTopbar() {
                 </AvatarFallback>
               </Avatar>
               <div className="hidden text-left sm:block">
-                <div className="text-xs font-medium leading-none">{session?.name}</div>
+                <div className="text-xs font-medium leading-none">{session?.name ?? "User"}</div>
                 <div className="mt-0.5 text-[10px] leading-none text-muted-foreground">
-                  {session?.email}
+                  {session?.email ?? "user@homesure.app"}
                 </div>
               </div>
             </Button>

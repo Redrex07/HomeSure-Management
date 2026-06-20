@@ -22,9 +22,11 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatCard } from "@/shared/components/common/StatCard";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
-import { useInvoices, updateInvoice } from "@/shared/utils/invoices-store";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getInvoices, updateInvoiceStatus } from "@/core/db/supabase-queries";
 import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { formatINR } from "@/shared/utils/utils";
 
 export const Route = createFileRoute("/app/invoices")({
   head: () => ({ meta: [{ title: "Invoices — HomeSure" }] }),
@@ -32,7 +34,26 @@ export const Route = createFileRoute("/app/invoices")({
 });
 
 function InvoicesPage() {
-  const invoices = useInvoices();
+  const queryClient = useQueryClient();
+
+  const { data: invoices = [], isLoading } = useQuery({
+    queryKey: ["invoices"],
+    queryFn: getInvoices,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (payload: { id: string; status: string; reason?: string }) =>
+      updateInvoiceStatus(payload.id, { status: payload.status, reason: payload.reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success("Invoice updated successfully!");
+      setEditingInvoice(null);
+    },
+    onError: (err: any) => {
+      toast.error("Error updating invoice: " + (err.message || String(err)));
+    },
+  });
+
   const paid = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
   const pending = invoices.filter((i) => i.status === "Pending").reduce((s, i) => s + i.amount, 0);
   const overdue = invoices.filter((i) => i.status === "Overdue").reduce((s, i) => s + i.amount, 0);
@@ -41,13 +62,16 @@ function InvoicesPage() {
 
   const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!editingInvoice) return;
     const formData = new FormData(e.currentTarget);
     const newStatus = formData.get("status") as string;
     const newReason = formData.get("reason") as string;
     
-    updateInvoice(editingInvoice.id, { status: newStatus, reason: newReason });
-    toast.success("Invoice updated successfully!");
-    setEditingInvoice(null);
+    updateMutation.mutate({
+      id: editingInvoice.id,
+      status: newStatus,
+      reason: newReason,
+    });
   };
 
   const getInvoiceHTML = (invoice: any) => {
@@ -139,8 +163,8 @@ function InvoicesPage() {
                         <span style="color: #64748b; font-size: 13px;">Labor and materials for ${invoice.request}</span>
                     </td>
                     <td class="qty">1</td>
-                    <td class="price">$${invoice.amount.toLocaleString()}</td>
-                    <td class="total">$${invoice.amount.toLocaleString()}</td>
+                    <td class="price">${formatINR(invoice.amount)}</td>
+                    <td class="total">${formatINR(invoice.amount)}</td>
                 </tr>
             </tbody>
         </table>
@@ -148,15 +172,15 @@ function InvoicesPage() {
         <div class="summary">
             <div class="summary-row">
                 <span>Subtotal</span>
-                <span>$${invoice.amount.toLocaleString()}</span>
+                <span>${formatINR(invoice.amount)}</span>
             </div>
             <div class="summary-row">
                 <span>Tax (0%)</span>
-                <span>$0.00</span>
+                <span>₹0</span>
             </div>
             <div class="summary-row summary-total">
                 <span>Total Due</span>
-                <span>$${invoice.amount.toLocaleString()}</span>
+                <span>${formatINR(invoice.amount)}</span>
             </div>
         </div>
 
@@ -199,101 +223,112 @@ function InvoicesPage() {
   return (
     <>
       <PageHeader title="Invoices" description="Track billing, payments and overdue accounts." />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Paid (mo)"
-          value={`$${paid.toLocaleString()}`}
-          icon={DollarSign}
-          tone="success"
-        />
-        <StatCard
-          label="Pending"
-          value={`$${pending.toLocaleString()}`}
-          icon={Clock}
-          tone="warning"
-        />
-        <StatCard
-          label="Overdue"
-          value={`$${overdue.toLocaleString()}`}
-          icon={AlertTriangle}
-          tone="destructive"
-        />
-      </div>
-      <DataTable
-        rows={invoices}
-        filterKeys={["id", "request"]}
-        columns={[
-          {
-            key: "id",
-            header: "Invoice",
-            render: (i) => <span className="font-mono text-xs">{i.id}</span>,
-          },
-          {
-            key: "request",
-            header: "Request",
-            render: (i) => (
-              <span className="font-mono text-xs text-muted-foreground">{i.request}</span>
-            ),
-          },
-          { key: "issued", header: "Issued" },
-          { key: "due", header: "Due" },
-          {
-            key: "amount",
-            header: "Amount",
-            sortable: true,
-            render: (i) => <span className="font-medium">${i.amount.toLocaleString()}</span>,
-          },
-          { 
-            key: "status", 
-            header: "Status", 
-            render: (i) => (
-              <div className="flex flex-col items-start gap-1">
-                <StatusBadge value={i.status} />
-                {i.reason && (
-                  <span className="text-[10px] text-muted-foreground max-w-[120px] truncate" title={i.reason}>
-                    {i.reason}
-                  </span>
-                )}
-              </div>
-            )
-          },
-          {
-            key: "actions",
-            header: "",
-            render: (i) => (
-              <div className="flex items-center gap-1 justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                  onClick={() => setEditingInvoice(i)}
-                  title="Edit"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                  onClick={() => handlePrintInvoice(i)}
-                  title="Print"
-                >
-                  <Printer className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                  onClick={() => handleDownloadInvoice(i)}
-                  title="Download"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ),
-          },
-        ]}
-      />
+
+      {isLoading ? (
+        <div className="flex h-64 items-center justify-center border border-border/60 rounded-md bg-background/50">
+          <p className="text-sm text-muted-foreground animate-pulse">Loading invoices...</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <StatCard
+              label="Paid (mo)"
+              value={formatINR(paid)}
+              icon={DollarSign}
+              tone="success"
+            />
+            <StatCard
+              label="Pending"
+              value={formatINR(pending)}
+              icon={Clock}
+              tone="warning"
+            />
+            <StatCard
+              label="Overdue"
+              value={formatINR(overdue)}
+              icon={AlertTriangle}
+              tone="destructive"
+            />
+          </div>
+          <DataTable
+            rows={invoices}
+            filterKeys={["id", "request"]}
+            columns={[
+              {
+                key: "id",
+                header: "Invoice",
+                render: (i) => <span className="font-mono text-xs">{i.id}</span>,
+              },
+              {
+                key: "request",
+                header: "Request",
+                render: (i) => (
+                  <span className="font-mono text-xs text-muted-foreground">{i.request}</span>
+                ),
+              },
+              { key: "issued", header: "Issued" },
+              { key: "due", header: "Due" },
+              {
+                key: "amount",
+                header: "Amount",
+                sortable: true,
+                render: (i) => <span className="font-medium">{formatINR(i.amount)}</span>,
+              },
+              { 
+                key: "status", 
+                header: "Status", 
+                render: (i) => (
+                  <div className="flex flex-col items-start gap-1">
+                    <StatusBadge value={i.status} />
+                    {i.reason && (
+                      <span className="text-[10px] text-muted-foreground max-w-[120px] truncate" title={i.reason}>
+                        {i.reason}
+                      </span>
+                    )}
+                  </div>
+                )
+              },
+              {
+                key: "actions",
+                header: "",
+                render: (i) => (
+                  <div className="flex items-center gap-1 justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                      disabled={updateMutation.isPending}
+                      onClick={() => setEditingInvoice(i)}
+                      title="Edit"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                      onClick={() => handlePrintInvoice(i)}
+                      title="Print"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                      onClick={() => handleDownloadInvoice(i)}
+                      title="Download"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ),
+              },
+            ]}
+          />
+        </>
+      )}
+
 
       <Dialog open={!!editingInvoice} onOpenChange={(open) => !open && setEditingInvoice(null)}>
         <DialogContent>

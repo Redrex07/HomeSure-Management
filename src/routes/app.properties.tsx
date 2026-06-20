@@ -18,6 +18,7 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { toast } from "sonner";
+import { formatINR } from "@/shared/utils/utils";
 
 export const Route = createFileRoute("/app/properties")({
   head: () => ({ meta: [{ title: "Properties — HomeSure" }] }),
@@ -635,7 +636,7 @@ function PropertiesPage() {
               label: "Rent",
               render: (p) => (
                 <span className="font-semibold text-foreground">
-                  ₹{p.rent_amount?.toLocaleString()}
+                  {formatINR(p.rent_amount ?? 0)}
                 </span>
               ),
             },
