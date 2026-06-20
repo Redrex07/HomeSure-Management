@@ -167,3 +167,135 @@ export async function getLandlordRentCollection(landlordId: string) {
   }
 }
 
+// ================= SERVICE REQUESTS =================
+
+export async function getServiceRequests() {
+  try {
+    const { data, error } = await supabase
+      .from("service_requests")
+      .select(`
+        service_request_id,
+        title,
+        description,
+        category,
+        priority,
+        status,
+        created_at,
+        properties (
+          property_name
+        ),
+        tenant:users!tenant_id (
+          name
+        )
+      `)
+      .order("service_request_id", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching service requests:", error);
+      return [];
+    }
+
+    return (data || []).map((r: any) => ({
+      id: `SR-${r.service_request_id}`,
+      title: r.title,
+      property: r.properties?.property_name || "Unassigned Property",
+      tenant: r.tenant?.name || "Unassigned Tenant",
+      category: r.category,
+      priority: r.priority,
+      status: r.status,
+      contractor: null,
+      created: r.created_at ? new Date(r.created_at).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    }));
+  } catch (err) {
+    console.error("Exception fetching service requests:", err);
+    return [];
+  }
+}
+
+export async function createServiceRequest(payload: {
+  title: string;
+  category: string;
+  priority: string;
+  description: string;
+  property_id?: number;
+  tenant_id?: number;
+  created_by?: number;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from("service_requests")
+      .insert([
+        {
+          title: payload.title,
+          category: payload.category,
+          priority: payload.priority,
+          description: payload.description,
+          status: "Pending",
+          property_id: payload.property_id || 1,
+          tenant_id: payload.tenant_id || 3,
+          created_by: payload.created_by || 6,
+        },
+      ])
+      .select();
+
+    if (error) {
+      console.error("Error creating service request:", error);
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception creating service request:", err);
+    throw err;
+  }
+}
+
+export async function updateServiceRequest(
+  id: string,
+  payload: {
+    title?: string;
+    category?: string;
+    priority?: string;
+    status?: string;
+    description?: string;
+  }
+) {
+  try {
+    const numericId = parseInt(id.replace("SR-", ""), 10);
+    const { data, error } = await supabase
+      .from("service_requests")
+      .update(payload)
+      .eq("service_request_id", numericId)
+      .select();
+
+    if (error) {
+      console.error("Error updating service request:", error);
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception updating service request:", err);
+    throw err;
+  }
+}
+
+export async function deleteServiceRequest(id: string) {
+  try {
+    const numericId = parseInt(id.replace("SR-", ""), 10);
+    const { data, error } = await supabase
+      .from("service_requests")
+      .delete()
+      .eq("service_request_id", numericId)
+      .select();
+
+    if (error) {
+      console.error("Error deleting service request:", error);
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception deleting service request:", err);
+    throw err;
+  }
+}
+
+
