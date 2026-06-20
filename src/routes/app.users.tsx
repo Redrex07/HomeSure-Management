@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PageHeader } from "@/components/common/PageHeader";
-import { StatusBadge } from "@/components/common/StatusBadge";
-import { DataTable } from "@/components/common/DataTable";
-import { Plus, MoreHorizontal, Check, X, ShieldAlert } from "lucide-react";
-import { useUsers, approveUser, declineUser } from "@/lib/users-store";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ROLE_LABELS, type Role } from "@/lib/roles";
+import { Button } from "@/shared/components/ui/button";
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { StatusBadge } from "@/shared/components/common/StatusBadge";
+import { DataTable } from "@/shared/components/common/DataTable";
+import { Plus, MoreHorizontal, Check, X } from "lucide-react";
+import { useUsers, approveUser, declineUser } from "@/features/auth/store/users-store";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { ROLE_LABELS, type Role } from "@/features/auth/utils/roles";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/users")({

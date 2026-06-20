@@ -1,12 +1,12 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app/AppSidebar";
-import { AppTopbar } from "@/components/app/AppTopbar";
-import { useSession, setSession } from "@/lib/auth-store";
-import { ROLE_LABELS } from "@/lib/roles";
+import { SidebarProvider, SidebarInset } from "@/shared/components/ui/sidebar";
+import { AppSidebar } from "@/shared/components/app/AppSidebar";
+import { AppTopbar } from "@/shared/components/app/AppTopbar";
+import { useSession, setSession } from "@/features/auth/store/auth-store";
+import { ROLE_LABELS } from "@/features/auth/utils/roles";
 import { Clock, XCircle, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -19,7 +19,7 @@ function AppLayout() {
   useEffect(() => {
     // Auto-create demo session if missing so the prototype is always navigable.
     if (typeof window !== "undefined" && !session) {
-      setSession({ email: "demo@homesure.app", name: "Alex Morgan", role: "landlord" });
+      setSession({ email: "demo@homesure.app", name: "Adithya", role: "landlord" });
     }
   }, [session, nav]);
 
