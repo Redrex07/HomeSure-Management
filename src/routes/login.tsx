@@ -4,16 +4,9 @@ import { AuthShell } from "@/features/auth/components/AuthShell";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/components/ui/select";
 import { setSession } from "@/features/auth/store/auth-store";
-import { getUsers } from "@/features/auth/store/users-store";
-import { ROLE_LABELS, type Role } from "@/features/auth/utils/roles";
+import { type Role } from "@/features/auth/utils/roles";
+import { supabase } from "@/core/db/supabase";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -28,31 +21,80 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const nav = useNavigate();
-  const [email, setEmail] = useState("demo@homesure.app");
-  const [password, setPassword] = useState("demo1234");
-  const [role, setRole] = useState<Role>("landlord");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const users = getUsers();
-    const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (found) {
-      // Support matching roles (in mock data it might be capitalized, normalize it)
-      const mappedRole = (found.role.toLowerCase().replace(" ", "_")) as Role;
-      setSession({
-        email: found.email,
-        name: found.name,
-        role: mappedRole,
-        status: found.status,
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      toast.success(`Welcome back, signing in as ${found.name} (${ROLE_LABELS[mappedRole]})`);
-    } else {
-      // Fallback for new demo emails
-      setSession({ email, name: "Adithya", role, status: "Active" });
-      toast.success(`Welcome back, signing in as ${ROLE_LABELS[role]}`);
+
+      if (error) {
+        toast.error(error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      const authUser = data.user;
+      if (!authUser) {
+        toast.error("No authenticated user returned.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Query users table for profile details using auth_user_id.
+      // WARNING: One auth account may be linked to multiple business roles.
+      // To prevent query failure, we avoid .single() and use .limit(1).
+      const { data: userProfiles, error: userError } = await supabase
+        .from("users")
+        .select("name, role_id, status")
+        .eq("auth_user_id", authUser.id)
+        .limit(1);
+
+      if (userError || !userProfiles || userProfiles.length === 0) {
+        toast.error("User profile data not found in database.");
+        setIsLoading(false);
+        return;
+      }
+
+      const userData = userProfiles[0];
+
+      const roleMap: Record<number, Role> = {
+        1: "super_admin",
+        2: "landlord",
+        3: "tenant",
+        4: "contractor",
+        5: "realtor",
+        6: "service_admin",
+      };
+
+      const role = roleMap[userData.role_id];
+      if (!role) {
+        toast.error("Invalid role configuration.");
+        setIsLoading(false);
+        return;
+      }
+
+      setSession({
+        email: authUser.email || email,
+        name: userData.name,
+        role,
+        status: userData.status as "Active" | "Pending" | "Declined" | "Invited",
+      });
+
+      toast.success(`Welcome back, signing in as ${userData.name}`);
+      nav({ to: "/app/dashboard" });
+    } catch (err: any) {
+      toast.error(err.message || "An unexpected error occurred.");
+    } finally {
+      setIsLoading(false);
     }
-    nav({ to: "/app/dashboard" });
   };
 
   return (
@@ -97,23 +139,8 @@ function LoginPage() {
             required
           />
         </div>
-        <div className="space-y-1.5">
-          <Label>Sign in as (demo)</Label>
-          <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.keys(ROLE_LABELS) as Role[]).map((r) => (
-                <SelectItem key={r} value={r}>
-                  {ROLE_LABELS[r]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Button type="submit" className="w-full">
-          Sign in
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Signing in..." : "Sign in"}
         </Button>
       </form>
     </AuthShell>
