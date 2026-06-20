@@ -1,5 +1,6 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import type { Role } from "./roles";
+import { getUsers, subscribeToUsers } from "./users-store";
 
 const KEY = "homesure.session";
 
@@ -7,6 +8,7 @@ export interface Session {
   email: string;
   name: string;
   role: Role;
+  status?: "Active" | "Pending" | "Declined" | "Invited";
 }
 
 const listeners = new Set<() => void>();
@@ -17,7 +19,19 @@ function load(): Session | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Session) : null;
+    if (!raw) return null;
+    const s = JSON.parse(raw) as Session;
+    
+    // Sync status with dynamic users store
+    const users = getUsers();
+    const found = users.find((u) => u.email.toLowerCase() === s.email.toLowerCase());
+    if (found) {
+      s.status = found.status;
+    } else {
+      // Default mock users from list if not found
+      s.status = s.status || "Active";
+    }
+    return s;
   } catch {
     return null;
   }
@@ -27,6 +41,14 @@ function ensureInit() {
   if (initialized || typeof window === "undefined") return;
   current = load();
   initialized = true;
+}
+
+// Subscribe to users updates to sync session status
+if (typeof window !== "undefined") {
+  subscribeToUsers(() => {
+    current = load();
+    listeners.forEach((l) => l());
+  });
 }
 
 export function getSession(): Session | null {
@@ -59,3 +81,4 @@ export function useSession(): Session | null {
   }, []);
   return s;
 }
+

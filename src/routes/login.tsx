@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { setSession } from "@/lib/auth-store";
+import { getUsers } from "@/lib/users-store";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 import { toast } from "sonner";
 
@@ -22,8 +23,24 @@ function LoginPage() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSession({ email, name: "Alex Morgan", role });
-    toast.success(`Welcome back, signing in as ${ROLE_LABELS[role]}`);
+    const users = getUsers();
+    const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    
+    if (found) {
+      // Support matching roles (in mock data it might be capitalized, normalize it)
+      const mappedRole = (found.role.toLowerCase().replace(" ", "_")) as Role;
+      setSession({
+        email: found.email,
+        name: found.name,
+        role: mappedRole,
+        status: found.status,
+      });
+      toast.success(`Welcome back, signing in as ${found.name} (${ROLE_LABELS[mappedRole]})`);
+    } else {
+      // Fallback for new demo emails
+      setSession({ email, name: "Alex Morgan", role, status: "Active" });
+      toast.success(`Welcome back, signing in as ${ROLE_LABELS[role]}`);
+    }
     nav({ to: "/app/dashboard" });
   };
 
