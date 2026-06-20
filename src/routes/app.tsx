@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { SidebarProvider, SidebarInset } from "@/shared/components/ui/sidebar";
 import { AppSidebar } from "@/shared/components/app/AppSidebar";
@@ -12,16 +12,94 @@ export const Route = createFileRoute("/app")({
   component: AppLayout,
 });
 
+const ALLOWED_ROUTES: Record<string, string[]> = {
+  super_admin: [
+    "/app/dashboard",
+    "/app/users",
+    "/app/subscriptions",
+    "/app/properties",
+    "/app/analytics",
+    "/app/audit-logs",
+    "/app/service-requests",
+    "/app/support",
+    "/app/settings"
+  ],
+  service_admin: [
+    "/app/dashboard",
+    "/app/service-requests",
+    "/app/contractors",
+    "/app/appointments",
+    "/app/estimates",
+    "/app/invoices",
+    "/app/support",
+    "/app/settings"
+  ],
+  landlord: [
+    "/app/dashboard",
+    "/app/properties",
+    "/app/tenants",
+    "/app/leases",
+    "/app/invoices",
+    "/app/service-requests",
+    "/app/analytics",
+    "/app/subscriptions",
+    "/app/settings"
+  ],
+  tenant: [
+    "/app/dashboard",
+    "/app/invoices",
+    "/app/service-requests",
+    "/app/appointments",
+    "/app/leases",
+    "/app/notifications",
+    "/app/settings"
+  ],
+  contractor: [
+    "/app/dashboard",
+    "/app/service-requests",
+    "/app/appointments",
+    "/app/estimates",
+    "/app/invoices",
+    "/app/settings"
+  ],
+  realtor: [
+    "/app/dashboard",
+    "/app/properties",
+    "/app/analytics",
+    "/app/tenants",
+    "/app/settings"
+  ],
+};
+
+function isRouteAllowed(role: string, pathname: string): boolean {
+  if (pathname === "/app/dashboard" || pathname === "/app/settings") {
+    return true;
+  }
+  const allowedList = ALLOWED_ROUTES[role] || [];
+  return allowedList.some((allowedPath) => {
+    if (allowedPath === "/app/dashboard" || allowedPath === "/app/settings") return false;
+    return pathname === allowedPath || pathname.startsWith(allowedPath + "/");
+  });
+}
+
 function AppLayout() {
   const session = useSession();
   const nav = useNavigate();
+  const path = useRouterState({ select: (r) => r.location.pathname });
 
   useEffect(() => {
-    // Auto-create demo session if missing so the prototype is always navigable.
-    if (typeof window !== "undefined" && !session) {
-      setSession({ email: "demo@homesure.app", name: "Adithya", role: "landlord" });
+    if (typeof window !== "undefined") {
+      if (!session) {
+        nav({ to: "/login" });
+      } else if (path === "/app") {
+        nav({ to: "/app/dashboard" });
+      } else if (path !== "/app/dashboard" && !isRouteAllowed(session.role, path)) {
+        nav({ to: "/app/dashboard" });
+      }
     }
-  }, [session, nav]);
+  }, [session, path, nav]);
+
+  if (!session) return null;
 
   // Intercept access for users whose registration is not fully approved
   if (session && (session.status === "Pending" || session.status === "Declined")) {
