@@ -17,6 +17,7 @@ import {
   YAxis,
 } from "recharts";
 import type { ReactNode } from "react";
+import { formatINR } from "@/shared/utils/utils";
 
 const tooltipStyle = {
   contentStyle: {
@@ -82,9 +83,9 @@ export function RevenueArea({
           fontSize={11}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(v) => `$${v / 1000}k`}
+          tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
         />
-        <Tooltip {...tooltipStyle} formatter={(v: number) => `$${v.toLocaleString()}`} />
+        <Tooltip {...tooltipStyle} formatter={(v: number) => formatINR(v)} />
         <Area
           type="monotone"
           dataKey="revenue"
