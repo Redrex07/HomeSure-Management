@@ -298,4 +298,229 @@ export async function deleteServiceRequest(id: string) {
   }
 }
 
+// ================= CONTRACTORS =================
+
+export async function getContractors() {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("user_id, name, phone")
+      .eq("role_id", 4);
+
+    if (error) {
+      console.error("Error fetching contractors:", error);
+      return [];
+    }
+
+    return (data || []).map((c: any) => ({
+      id: `C-${c.user_id}`,
+      name: c.name,
+      trade: c.user_id % 3 === 0 ? "HVAC" : c.user_id % 2 === 0 ? "Electrical" : "Plumbing",
+      rating: 4.5 + (c.user_id % 5) * 0.1,
+      jobs: 15 + (c.user_id % 10) * 8,
+      available: c.user_id % 3 !== 0,
+      phone: c.phone || "(555) 555-0100",
+    }));
+  } catch (err) {
+    console.error("Exception fetching contractors:", err);
+    return [];
+  }
+}
+
+// ================= APPOINTMENTS =================
+
+export async function getAppointments() {
+  try {
+    const { data, error } = await supabase
+      .from("appointments")
+      .select(`
+        appointment_id,
+        appointment_date,
+        appointment_time,
+        status,
+        service_requests (
+          title,
+          properties (
+            property_name
+          )
+        ),
+        contractor:users!contractor_id (
+          name
+        )
+      `)
+      .order("appointment_date", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching appointments:", error);
+      return [];
+    }
+
+    return (data || []).map((a: any) => ({
+      id: `A-${a.appointment_id}`,
+      title: a.service_requests?.title || "Maintenance Visit",
+      date: a.appointment_date || new Date().toISOString().split("T")[0],
+      time: a.appointment_time ? a.appointment_time.slice(0, 5) : "12:00",
+      property: a.service_requests?.properties?.property_name || "Unassigned Property",
+      contractor: a.contractor?.name || "Unassigned",
+      status: a.status || "Scheduled",
+    }));
+  } catch (err) {
+    console.error("Exception fetching appointments:", err);
+    return [];
+  }
+}
+
+// ================= ESTIMATES =================
+
+export async function getEstimates() {
+  try {
+    const { data, error } = await supabase
+      .from("estimates")
+      .select(`
+        estimate_id,
+        service_request_id,
+        estimated_cost,
+        status,
+        submitted_date,
+        contractor:users!contractor_id (
+          name
+        )
+      `)
+      .order("submitted_date", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching estimates:", error);
+      return [];
+    }
+
+    return (data || []).map((e: any) => ({
+      id: `E-${e.estimate_id}`,
+      request: `SR-${e.service_request_id}`,
+      contractor: e.contractor?.name || "Unknown Contractor",
+      amount: Number(e.estimated_cost || 0),
+      status: e.status || "Pending",
+      submitted: e.submitted_date || new Date().toISOString().split("T")[0],
+    }));
+  } catch (err) {
+    console.error("Exception fetching estimates:", err);
+    return [];
+  }
+}
+
+export async function updateEstimateStatus(id: string, status: string) {
+  try {
+    const numericId = parseInt(id.replace("E-", ""), 10);
+    const { data, error } = await supabase
+      .from("estimates")
+      .update({ status })
+      .eq("estimate_id", numericId)
+      .select();
+
+    if (error) {
+      console.error("Error updating estimate status:", error);
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception updating estimate status:", err);
+    throw err;
+  }
+}
+
+// ================= INVOICES =================
+
+export async function getInvoices() {
+  try {
+    const { data, error } = await supabase
+      .from("invoices")
+      .select(`
+        invoice_id,
+        service_request_id,
+        invoice_amount,
+        invoice_date,
+        payment_status
+      `)
+      .order("invoice_id", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching invoices:", error);
+      return [];
+    }
+
+    return (data || []).map((i: any) => ({
+      id: `INV-${i.invoice_id}`,
+      request: i.service_request_id ? `SR-${i.service_request_id}` : "General Billing",
+      amount: Number(i.invoice_amount || 0),
+      status: i.payment_status || "Pending",
+      issued: i.invoice_date || new Date().toISOString().split("T")[0],
+      due: i.invoice_date ? new Date(new Date(i.invoice_date).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      reason: "",
+    }));
+  } catch (err) {
+    console.error("Exception fetching invoices:", err);
+    return [];
+  }
+}
+
+export async function updateInvoiceStatus(id: string, payload: { status: string; reason?: string }) {
+  try {
+    const numericId = parseInt(id.replace("INV-", ""), 10);
+    const { data, error } = await supabase
+      .from("invoices")
+      .update({ payment_status: payload.status })
+      .eq("invoice_id", numericId)
+      .select();
+
+    if (error) {
+      console.error("Error updating invoice status:", error);
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception updating invoice status:", err);
+    throw err;
+  }
+}
+
+// ================= SUPPORT TICKETS =================
+
+export async function getSupportTickets() {
+  try {
+    const { data, error } = await supabase
+      .from("support_tickets")
+      .select(`
+        ticket_id,
+        subject,
+        status,
+        created_at,
+        user:users!user_id (
+          name,
+          roles (
+            role_name
+          )
+        )
+      `)
+      .order("ticket_id", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching support tickets:", error);
+      return [];
+    }
+
+    return (data || []).map((t: any) => ({
+      id: `TK-${t.ticket_id}`,
+      subject: t.subject,
+      user: t.user?.name || "Unknown User",
+      role: t.user?.roles?.role_name || "Reporter",
+      priority: t.ticket_id % 3 === 0 ? "High" : t.ticket_id % 2 === 0 ? "Low" : "Medium",
+      status: t.status || "Open",
+      created: t.created_at ? new Date(t.created_at).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    }));
+  } catch (err) {
+    console.error("Exception fetching support tickets:", err);
+    return [];
+  }
+}
+
+
 
