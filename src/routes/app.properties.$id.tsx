@@ -17,7 +17,7 @@ export const Route = createFileRoute("/app/properties/$id")({
 function PropertyDetail() {
   const { id } = Route.useParams();
   const p = properties.find((x) => x.id === id) ?? properties[0];
-  const reqs = serviceRequests.filter((r) => r.property === p.name);
+  const reqs = serviceRequests.filter((r) => r.propertyId ? r.propertyId === p.id : r.property === p.name);
 
   return (
     <>
