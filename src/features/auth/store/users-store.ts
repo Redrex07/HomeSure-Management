@@ -65,7 +65,7 @@ export function registerUser(name: string, email: string, role: Role): User {
     name,
     email,
     role,
-    status: role === "super_admin" ? "Active" : "Pending",
+    status: "Pending",
     joined: new Date().toISOString().split("T")[0],
   };
   const updated = [newUser, ...currentUsers];
