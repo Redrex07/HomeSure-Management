@@ -26,6 +26,13 @@ import { useInvoices, updateInvoice } from "@/shared/utils/invoices-store";
 import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
+import { useSession } from "@/features/auth/store/auth-store";
+
+const formatUsd = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
 
 export const Route = createFileRoute("/app/invoices")({
   head: () => ({ meta: [{ title: "Invoices — HomeSure" }] }),
@@ -33,6 +40,11 @@ export const Route = createFileRoute("/app/invoices")({
 });
 
 function InvoicesPage() {
+  const session = useSession();
+  const isContractor = session?.role === "contractor";
+  const formatCurrency = (amount: number) =>
+    isContractor ? formatUsd.format(amount) : formatINR(amount);
+
   const invoices = useInvoices();
   const paid = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
   const pending = invoices.filter((i) => i.status === "Pending").reduce((s, i) => s + i.amount, 0);
@@ -140,8 +152,8 @@ function InvoicesPage() {
                         <span style="color: #64748b; font-size: 13px;">Labor and materials for ${invoice.request}</span>
                     </td>
                     <td class="qty">1</td>
-                    <td class="price">${formatINR(invoice.amount)}</td>
-                    <td class="total">${formatINR(invoice.amount)}</td>
+                    <td class="price">${formatCurrency(invoice.amount)}</td>
+                    <td class="total">${formatCurrency(invoice.amount)}</td>
                 </tr>
             </tbody>
         </table>
@@ -149,15 +161,15 @@ function InvoicesPage() {
         <div class="summary">
             <div class="summary-row">
                 <span>Subtotal</span>
-                <span>${formatINR(invoice.amount)}</span>
+                <span>${formatCurrency(invoice.amount)}</span>
             </div>
             <div class="summary-row">
                 <span>Tax (0%)</span>
-                <span>₹0</span>
+                <span>${formatCurrency(0)}</span>
             </div>
             <div class="summary-row summary-total">
                 <span>Total Due</span>
-                <span>${formatINR(invoice.amount)}</span>
+                <span>${formatCurrency(invoice.amount)}</span>
             </div>
         </div>
 
@@ -203,19 +215,19 @@ function InvoicesPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="Paid (mo)"
-          value={formatINR(paid)}
+          value={formatCurrency(paid)}
           icon={DollarSign}
           tone="success"
         />
         <StatCard
           label="Pending"
-          value={formatINR(pending)}
+          value={formatCurrency(pending)}
           icon={Clock}
           tone="warning"
         />
         <StatCard
           label="Overdue"
-          value={formatINR(overdue)}
+          value={formatCurrency(overdue)}
           icon={AlertTriangle}
           tone="destructive"
         />
@@ -242,7 +254,7 @@ function InvoicesPage() {
             key: "amount",
             header: "Amount",
             sortable: true,
-            render: (i) => <span className="font-medium">{formatINR(i.amount)}</span>,
+            render: (i) => <span className="font-medium">{formatCurrency(i.amount)}</span>,
           },
           { 
             key: "status", 
