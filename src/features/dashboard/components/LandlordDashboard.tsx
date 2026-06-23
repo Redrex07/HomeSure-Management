@@ -51,7 +51,8 @@ import {
 } from "@/shared/utils/mock-data";
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
-import { getLandlordProperties, getLandlordTenants } from "@/core/db/supabase-queries";
+import { useProperties } from "@/shared/utils/properties-store";
+import { useTenants } from "@/shared/utils/tenants-store";
 import { useInvoices } from "@/shared/utils/invoices-store";
 import { formatINR } from "@/shared/utils/utils";
 
@@ -75,20 +76,10 @@ export function LandlordDashboard() {
   const session = useSession();
   const landlordId = "2"; // Same fixed landlordId for now
 
-  const [dbProperties, setDbProperties] = useState<any[]>([]);
-  const [dbTenants, setDbTenants] = useState<any[]>([]);
+  const dbProperties = useProperties();
+  const dbTenants = useTenants();
   
   const invoices = useInvoices();
-
-  useEffect(() => {
-    async function loadData() {
-      const p = await getLandlordProperties(landlordId);
-      const t = await getLandlordTenants(landlordId);
-      setDbProperties(p);
-      setDbTenants(t);
-    }
-    loadData();
-  }, []);
 
   const occupied = dbProperties.filter((p) => p.availability_status === "Occupied").length;
   const occupancy = dbProperties.length > 0 ? Math.round((occupied / dbProperties.length) * 100) : 0;
