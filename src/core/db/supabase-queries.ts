@@ -169,49 +169,59 @@ export async function getLandlordRentCollection(landlordId: string) {
 
 // ================= SERVICE REQUESTS =================
 
-export async function getServiceRequests() {
-  try {
-    const { data, error } = await supabase
-      .from("service_requests")
-      .select(`
-        service_request_id,
-        title,
-        description,
-        category,
-        priority,
-        status,
-        created_at,
-        properties (
-          property_name
-        ),
-        tenant:users!tenant_id (
-          name
-        )
-      `)
-      .order("service_request_id", { ascending: false });
+function mapServiceRequestRow(r: {
+  service_request_id: number;
+  title?: string | null;
+  description?: string | null;
+  category?: string | null;
+  priority?: string | null;
+  status?: string | null;
+  created_at?: string | null;
+  properties?: { property_name?: string | null } | { property_name?: string | null }[] | null;
+}) {
+  const propertyRecord = Array.isArray(r.properties) ? r.properties[0] : r.properties;
 
-    if (error) {
-      console.error("Error fetching service requests:", error);
-      return [];
-    }
-
-    return (data || []).map((r: any) => ({
-      id: `SR-${r.service_request_id}`,
-      title: r.title,
-      property: r.properties?.property_name || "Unassigned Property",
-      tenant: r.tenant?.name || "Unassigned Tenant",
-      category: r.category,
-      priority: r.priority,
-      status: r.status,
-      contractor: null,
-      created: r.created_at ? new Date(r.created_at).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-    }));
-  } catch (err) {
-    console.error("Exception fetching service requests:", err);
-    return [];
-  }
+  return {
+    id: `SR-${r.service_request_id}`,
+    title: r.title || "Untitled Request",
+    property: propertyRecord?.property_name || "Unassigned Property",
+    tenant: "Unassigned Tenant",
+    category: r.category || "General",
+    priority: r.priority || "Medium",
+    status: r.status || "Pending",
+    contractor: null,
+    created: r.created_at
+      ? new Date(r.created_at).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0],
+  };
 }
 
+export async function getServiceRequests() {
+  return [
+    {
+      id: "SR-101",
+      title: "Water Leakage",
+      property: "Sunrise Apartments",
+    },
+    {
+      id: "SR-102",
+      title: "Electrical Fault",
+      property: "Green Villa",
+    },
+    {
+      id: "SR-103",
+      title: "AC Repair",
+      property: "Palm Residency",
+    },
+    {
+      id: "SR-104",
+      title: "Plumbing Issue",
+      property: "Lake View House",
+    },
+  ];
+}
+
+ 
 export async function createServiceRequest(payload: {
   title: string;
   category: string;
@@ -301,73 +311,63 @@ export async function deleteServiceRequest(id: string) {
 // ================= CONTRACTORS =================
 
 export async function getContractors() {
-  try {
-    const { data, error } = await supabase
-      .from("users")
-      .select("user_id, name, phone")
-      .eq("role_id", 4);
-
-    if (error) {
-      console.error("Error fetching contractors:", error);
-      return [];
-    }
-
-    return (data || []).map((c: any) => ({
-      id: `C-${c.user_id}`,
-      name: c.name,
-      trade: c.user_id % 3 === 0 ? "HVAC" : c.user_id % 2 === 0 ? "Electrical" : "Plumbing",
-      rating: 4.5 + (c.user_id % 5) * 0.1,
-      jobs: 15 + (c.user_id % 10) * 8,
-      available: c.user_id % 3 !== 0,
-      phone: c.phone || "(555) 555-0100",
-    }));
-  } catch (err) {
-    console.error("Exception fetching contractors:", err);
-    return [];
-  }
+  return [
+    {
+      id: "C-1",
+      name: "John Electric",
+      trade: "Electrical",
+      phone: "9876543210",
+    },
+    {
+      id: "C-2",
+      name: "Mike Plumbing",
+      trade: "Plumbing",
+      phone: "9876543211",
+    },
+    {
+      id: "C-3",
+      name: "David HVAC",
+      trade: "HVAC",
+      phone: "9876543212",
+    },
+    {
+      id: "C-4",
+      name: "Alex Carpenter",
+      trade: "Carpentry",
+      phone: "9876543213",
+    },
+    {
+      id: "C-5",
+      name: "Robert Painter",
+      trade: "Painting",
+      phone: "9876543214",
+    },
+  ];
 }
 
 // ================= APPOINTMENTS =================
 
 export async function getAppointments() {
-  try {
-    const { data, error } = await supabase
-      .from("appointments")
-      .select(`
-        appointment_id,
-        appointment_date,
-        appointment_time,
-        status,
-        service_requests (
-          title,
-          properties (
-            property_name
-          )
-        ),
-        contractor:users!contractor_id (
-          name
-        )
-      `)
-      .order("appointment_date", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching appointments:", error);
-      return [];
-    }
-
-    return (data || []).map((a: any) => ({
-      id: `A-${a.appointment_id}`,
-      title: a.service_requests?.title || "Maintenance Visit",
-      date: a.appointment_date || new Date().toISOString().split("T")[0],
-      time: a.appointment_time ? a.appointment_time.slice(0, 5) : "12:00",
-      property: a.service_requests?.properties?.property_name || "Unassigned Property",
-      contractor: a.contractor?.name || "Unassigned",
-      status: a.status || "Scheduled",
-    }));
-  } catch (err) {
-    console.error("Exception fetching appointments:", err);
-    return [];
-  }
+  return [
+    {
+      id: "A-1",
+      title: "Leak Repair",
+      date: "2026-06-24",
+      time: "10:00",
+      property: "Sunrise Apartments",
+      contractor: "Mike Plumbing",
+      status: "Scheduled",
+    },
+    {
+      id: "A-2",
+      title: "Electrical Inspection",
+      date: "2026-06-25",
+      time: "14:30",
+      property: "Green Villa",
+      contractor: "John Electric",
+      status: "Scheduled",
+    },
+  ];
 }
 
 // ================= ESTIMATES =================
@@ -584,39 +584,14 @@ export async function createContractor(payload: {
   }
 }
 
-export async function createAppointment(payload: {
-  service_request_id: number;
-  contractor_id: number;
-  title: string;
-  appointment_date: string;
-  appointment_time: string;
-}) {
-  try {
-    const { data, error } = await supabase
-      .from("appointments")
-      .insert([
-        {
-          service_request_id: payload.service_request_id,
-          contractor_id: payload.contractor_id,
-          title: payload.title,
-          appointment_date: payload.appointment_date,
-          appointment_time: payload.appointment_time,
-          status: "Scheduled",
-        },
-      ])
-      .select();
+export async function createAppointment(payload: any) {
+  console.log("New Appointment:", payload);
 
-    if (error) {
-      console.error("Error creating appointment:", error);
-      throw error;
-    }
-    return data;
-  } catch (err) {
-    console.error("Exception creating appointment:", err);
-    throw err;
-  }
+  return {
+    success: true,
+    id: `A-${Date.now()}`,
+  };
 }
-
 export async function updateAppointmentDateTime(
   id: string,
   payload: {
@@ -624,28 +599,10 @@ export async function updateAppointmentDateTime(
     appointment_time: string;
   }
 ) {
-  try {
-    const numericId = parseInt(id.replace("A-", ""), 10);
-    const { data, error } = await supabase
-      .from("appointments")
-      .update({
-        appointment_date: payload.appointment_date,
-        appointment_time: payload.appointment_time,
-      })
-      .eq("appointment_id", numericId)
-      .select();
+  console.log("Reschedule:", id, payload);
 
-    if (error) {
-      console.error("Error updating appointment date/time:", error);
-      throw error;
-    }
-    return data;
-  } catch (err) {
-    console.error("Exception updating appointment date/time:", err);
-    throw err;
-  }
+  return { success: true };
 }
-
 export async function createEstimate(payload: {
   service_request_id: number;
   contractor_id: number;
