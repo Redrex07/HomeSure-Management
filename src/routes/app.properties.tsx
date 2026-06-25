@@ -4,9 +4,14 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image } from "lucide-react";
-import { useState, useEffect } from "react";
-import { supabase } from "@/core/db/supabase";
-import { getLandlordProperties } from "@/core/db/supabase-queries";
+import { useState } from "react";
+import {
+  useProperties,
+  addProperty,
+  updateProperty,
+  deleteProperty,
+  Property as SupabaseProperty
+} from "@/shared/utils/properties-store";
 import {
   Dialog,
   DialogContent,
@@ -25,26 +30,11 @@ export const Route = createFileRoute("/app/properties")({
   component: PropertiesPage,
 });
 
-interface SupabaseProperty {
-  property_id: number;
-  landlord_id: number;
-  property_name: string;
-  property_type: string;
-  address: string;
-  rent_amount: number;
-  availability_status: string;
-  image_url?: string; // JSON array string e.g. '["url1","url2"]' or single URL
-  [key: string]: unknown;
-}
-
 function PropertiesPage() {
-  const landlordId = 2;
+  const landlordProps = useProperties();
 
-  const [landlordProps, setLandlordProps] = useState<SupabaseProperty[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
     useState<SupabaseProperty | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -67,25 +57,6 @@ function PropertiesPage() {
     availability_status: "Available",
   });
 
-  const loadProperties = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const data = await getLandlordProperties(String(landlordId));
-      setLandlordProps(data || []);
-    } catch (err) {
-      setError(`Error: ${String(err)}`);
-      setLandlordProps([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadProperties();
-  }, []);
-
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -94,23 +65,14 @@ function PropertiesPage() {
       return;
     }
 
-    const { error } = await supabase.from("properties").insert([
-      {
-        landlord_id: landlordId,
-        property_name: form.property_name,
-        property_type: form.property_type,
-        address: form.address,
-        rent_amount: Number(form.rent_amount),
-        availability_status: form.availability_status,
-        image_url:
-          uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : null,
-      },
-    ]);
-
-    if (error) {
-      toast.error("Error adding property: " + error.message);
-      return;
-    }
+    addProperty({
+      property_name: form.property_name,
+      property_type: form.property_type,
+      address: form.address,
+      rent_amount: Number(form.rent_amount),
+      availability_status: form.availability_status,
+      image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
+    });
 
     toast.success("Property added successfully!");
 
@@ -122,9 +84,7 @@ function PropertiesPage() {
       availability_status: "Available",
     });
     setUploadedImages([]);
-
     setIsAdding(false);
-    loadProperties();
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,46 +105,16 @@ function PropertiesPage() {
       );
     }
 
-    try {
-      setIsUploading(true);
-      const newUrls: string[] = [];
-
-      for (const file of filesToUpload) {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("property-images")
-          .upload(fileName, file);
-
-        if (uploadError) {
-          toast.error(`Failed to upload ${file.name}: ${uploadError.message}`);
-          continue;
-        }
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("property-images").getPublicUrl(fileName);
-
-        newUrls.push(publicUrl);
-      }
-
-      if (newUrls.length > 0) {
-        setUploadedImages((prev) => [...prev, ...newUrls]);
-        toast.success(
-          `${newUrls.length} image${newUrls.length > 1 ? "s" : ""} uploaded successfully!`,
-        );
-      }
-    } catch (error) {
-      toast.error(
-        "Error uploading images: " +
-          (error instanceof Error ? error.message : String(error)),
+    setIsUploading(true);
+    setTimeout(() => {
+      const newUrls = filesToUpload.map(f => URL.createObjectURL(f));
+      setUploadedImages((prev) => [...prev, ...newUrls]);
+      toast.success(
+        `${newUrls.length} image${newUrls.length > 1 ? "s" : ""} uploaded successfully!`,
       );
-    } finally {
       setIsUploading(false);
-      // Reset file input
       e.target.value = "";
-    }
+    }, 500);
   };
 
   const removeUploadedImage = (index: number) => {
@@ -236,15 +166,8 @@ function PropertiesPage() {
 
     if (!confirmDelete) return;
 
-    const { error } = await supabase.from("properties").delete().eq("property_id", propertyId);
-
-    if (error) {
-      toast.error("Error deleting property: " + error.message);
-      return;
-    }
-
+    deleteProperty(propertyId);
     toast.success("Property deleted successfully!");
-    loadProperties();
   };
 
   const openEditDialog = (p: SupabaseProperty) => {
@@ -270,37 +193,14 @@ function PropertiesPage() {
     }
 
     const filesToUpload = Array.from(files).slice(0, slotsLeft);
-    try {
-      setIsEditUploading(true);
-      const newUrls: string[] = [];
-      for (const file of filesToUpload) {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from("property-images")
-          .upload(fileName, file);
-        if (uploadError) {
-          toast.error(`Failed to upload ${file.name}: ${uploadError.message}`);
-          continue;
-        }
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("property-images").getPublicUrl(fileName);
-        newUrls.push(publicUrl);
-      }
-      if (newUrls.length > 0) {
-        setEditImages((prev) => [...prev, ...newUrls]);
-        toast.success(`${newUrls.length} image(s) uploaded!`);
-      }
-    } catch (error) {
-      toast.error(
-        "Error uploading: " +
-          (error instanceof Error ? error.message : String(error)),
-      );
-    } finally {
+    setIsEditUploading(true);
+    setTimeout(() => {
+      const newUrls = filesToUpload.map(f => URL.createObjectURL(f));
+      setEditImages((prev) => [...prev, ...newUrls]);
+      toast.success(`${newUrls.length} image(s) uploaded!`);
       setIsEditUploading(false);
       e.target.value = "";
-    }
+    }, 500);
   };
 
   const handleUpdateProperty = async (e: React.FormEvent) => {
@@ -317,26 +217,17 @@ function PropertiesPage() {
       return;
     }
 
-    const { error } = await supabase
-      .from("properties")
-      .update({
-        property_name: editForm.property_name,
-        property_type: editForm.property_type,
-        address: editForm.address,
-        rent_amount: Number(editForm.rent_amount),
-        availability_status: editForm.availability_status,
-        image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
-      })
-      .eq("property_id", editingProperty.property_id);
-
-    if (error) {
-      toast.error("Error updating property: " + error.message);
-      return;
-    }
+    updateProperty(editingProperty.property_id, {
+      property_name: editForm.property_name,
+      property_type: editForm.property_type,
+      address: editForm.address,
+      rent_amount: Number(editForm.rent_amount),
+      availability_status: editForm.availability_status,
+      image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+    });
 
     toast.success("Property updated successfully!");
     setEditingProperty(null);
-    loadProperties();
   };
 
   return (
@@ -580,17 +471,9 @@ function PropertiesPage() {
         </DialogContent>
       </Dialog>
 
-      {isLoading ? (
-        <div className="p-8 text-center text-gray-600">Loading properties from Supabase...</div>
-      ) : error ? (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-8">
-          <p className="text-yellow-800">
-            <strong>⚠️ {error}</strong>
-          </p>
-        </div>
-      ) : landlordProps.length === 0 ? (
+      {landlordProps.length === 0 ? (
         <div className="p-8 text-center text-gray-500">
-          <p>No properties found in Supabase.</p>
+          <p>No properties found.</p>
         </div>
       ) : (
         <DataCardGrid
