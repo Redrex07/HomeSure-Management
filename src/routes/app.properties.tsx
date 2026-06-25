@@ -148,8 +148,9 @@ function PropertiesPage() {
       setUploadedImages([]);
       setIsAdding(false);
       loadProperties(); // Refresh the list
-    } catch (err) {
-      toast.error("Failed to add property.");
+    } catch (err: any) {
+      console.error("Property creation error:", err);
+      toast.error(`Failed to add property: ${err.message || err}`);
     }
   };
 
