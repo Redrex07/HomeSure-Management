@@ -3,7 +3,7 @@ import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image } from "lucide-react";
+import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import {
   useProperties,
@@ -51,6 +51,7 @@ function PropertiesPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
     useState<SupabaseProperty | null>(null);
+  const [galleryPage, setGalleryPage] = useState(0);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [editingProperty, setEditingProperty] = useState<SupabaseProperty | null>(null);
   const [editForm, setEditForm] = useState({
@@ -409,44 +410,28 @@ function PropertiesPage() {
                 </div>
               );
             }
-            if (imgs.length === 1) {
-              return (
-                <div className="rounded-xl overflow-hidden bg-muted/30">
-                  <img
-                    src={imgs[0]}
-                    alt={selectedPropertyForImage?.property_name}
-                    className="w-full max-h-[65vh] object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://placehold.co/600x400?text=Image+Not+Found";
-                    }}
-                  />
-                </div>
-              );
-            }
-            // 2, 3, or 4 images — gallery grid layout
+            
+            const itemsPerPage = 2;
+            const totalPages = Math.ceil(imgs.length / itemsPerPage);
+            const currentImages = imgs.slice(galleryPage * itemsPerPage, (galleryPage + 1) * itemsPerPage);
+
             return (
-              <div
-                className="grid gap-2 rounded-xl overflow-hidden"
-                style={{
-                  gridTemplateColumns: "1fr 1fr",
-                  gridTemplateRows: imgs.length >= 3 ? "1fr 1fr" : "1fr",
-                  height: "450px",
-                }}
-              >
-                {imgs.slice(0, 4).map((imgUrl, idx) => {
-                  const isMainOfThree = imgs.length === 3 && idx === 0;
-                  return (
+              <div className="flex flex-col gap-2">
+                <div
+                  className="grid gap-2 rounded-xl overflow-hidden"
+                  style={{
+                    gridTemplateColumns: currentImages.length === 2 ? "1fr 1fr" : "1fr",
+                    height: "450px",
+                  }}
+                >
+                  {currentImages.map((imgUrl, idx) => (
                     <div
                       key={idx}
                       className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center"
-                      style={{
-                        gridRow: isMainOfThree ? "1 / 3" : undefined,
-                      }}
                     >
                       <img
                         src={imgUrl}
-                        alt={`Picture ${idx + 1}`}
+                        alt={`Picture ${galleryPage * itemsPerPage + idx + 1}`}
                         className="w-full h-full object-contain"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
@@ -454,8 +439,32 @@ function PropertiesPage() {
                         }}
                       />
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 mt-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setGalleryPage((p) => Math.max(0, p - 1))}
+                      disabled={galleryPage === 0}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {galleryPage + 1} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setGalleryPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={galleryPage === totalPages - 1}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -545,6 +554,7 @@ function PropertiesPage() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedPropertyForImage(p);
+                    setGalleryPage(0);
                   }}
                   className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                 >
