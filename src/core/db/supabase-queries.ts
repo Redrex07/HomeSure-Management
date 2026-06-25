@@ -650,3 +650,53 @@ export async function getUsers() {
     return [];
   }
 }
+
+export interface PlatformUser {
+  id: string;
+  userId: number;
+  authUserId: string | null;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  joined: string;
+}
+
+export async function getPlatformUsers(): Promise<PlatformUser[]> {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("user_id, auth_user_id, name, email, role_id, status, created_at")
+      .order("user_id", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching platform users:", error);
+      return [];
+    }
+
+    const roleMap: Record<number, string> = {
+      1: "super_admin",
+      2: "landlord",
+      3: "tenant",
+      4: "contractor",
+      5: "realtor",
+      6: "service_admin",
+    };
+
+    return (data || []).map((u) => ({
+      id: `U-${u.user_id}`,
+      userId: u.user_id,
+      authUserId: u.auth_user_id ?? null,
+      name: u.name,
+      email: u.email,
+      role: roleMap[u.role_id] || "landlord",
+      status: u.status || "Active",
+      joined: u.created_at
+        ? new Date(u.created_at).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+    }));
+  } catch (err) {
+    console.error("Exception fetching platform users:", err);
+    return [];
+  }
+}
