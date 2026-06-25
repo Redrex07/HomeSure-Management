@@ -573,9 +573,9 @@ function PropertiesPage() {
                     setSelectedPropertyForImage(p);
                     setGalleryPage(0);
                   }}
-                  className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-slate-900 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 px-3 py-1 text-[11px] font-bold text-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#0f172a] active:translate-y-0.5 active:shadow-none"
                 >
-                  <Image className="h-3 w-3" />
+                  <Image className="h-3.5 w-3.5 text-slate-900" />
                   View Pictures
                 </button>
               ),
