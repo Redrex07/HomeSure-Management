@@ -40,7 +40,7 @@ export const Route = createFileRoute("/app/tenants")({
 });
 
 function TenantsPage() {
-  const { user } = useSession();
+  const user = useSession();
   const [landlordTenants, setLandlordTenants] = useState<Tenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

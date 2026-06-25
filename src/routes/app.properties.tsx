@@ -53,7 +53,7 @@ export const Route = createFileRoute("/app/properties")({
 const ROOM_LABELS = ["Hall View", "Front View", "Bed View", "Kitchen View"] as const;
 
 function PropertiesPage() {
-  const { user } = useSession();
+  const user = useSession();
   const [landlordProps, setLandlordProps] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
