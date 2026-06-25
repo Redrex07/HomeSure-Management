@@ -12,6 +12,8 @@ export interface Tenant {
 
 const STORAGE_KEY = "homesure_tenants";
 
+const isBrowser = typeof window !== "undefined";
+
 // Convert mock data to match the expected format
 const getInitialTenants = (): Tenant[] =>
   [...initialTenants].map((t, index) => ({
@@ -23,38 +25,56 @@ const getInitialTenants = (): Tenant[] =>
     email: t.email,
   }));
 
-// Load from localStorage, falling back to mock data
+// Load from localStorage (client only), falling back to mock data
 const loadTenants = (): Tenant[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+  if (isBrowser) {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
+    } catch {
+      // localStorage unavailable or corrupted
     }
-  } catch {
-    // localStorage unavailable or corrupted — fall back to mock data
   }
-  const initial = getInitialTenants();
-  saveTenants(initial);
-  return initial;
+  return getInitialTenants();
 };
 
-// Save to localStorage
+// Save to localStorage (client only)
 const saveTenants = (data: Tenant[]) => {
+  if (!isBrowser) return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {
-    // localStorage full or unavailable — silent fail
+    // localStorage full or unavailable
   }
 };
 
+// In-memory store
 let tenants: Tenant[] = loadTenants();
 
-export const getTenants = () => tenants;
+// Ensure client-side rehydration happens
+let clientHydrated = false;
+const ensureClientHydration = () => {
+  if (isBrowser && !clientHydrated) {
+    clientHydrated = true;
+    tenants = loadTenants();
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      saveTenants(tenants);
+    }
+  }
+};
+
+export const getTenants = () => {
+  ensureClientHydration();
+  return tenants;
+};
 
 export const addTenant = (newTenant: Omit<Tenant, "onboarding_id">) => {
+  ensureClientHydration();
   const onboarding_id = String(Math.max(...tenants.map(t => parseInt(t.onboarding_id)), 5000) + 1);
   const tenant: Tenant = {
     ...newTenant,
@@ -67,6 +87,7 @@ export const addTenant = (newTenant: Omit<Tenant, "onboarding_id">) => {
 };
 
 export const updateTenant = (id: string, updates: Partial<Tenant>) => {
+  ensureClientHydration();
   tenants = tenants.map((t) => (t.onboarding_id === id ? { ...t, ...updates } : t));
   saveTenants(tenants);
   window.dispatchEvent(new Event("tenants-updated"));
@@ -74,6 +95,7 @@ export const updateTenant = (id: string, updates: Partial<Tenant>) => {
 };
 
 export const deleteTenant = (id: string) => {
+  ensureClientHydration();
   tenants = tenants.filter((t) => t.onboarding_id !== id);
   saveTenants(tenants);
   window.dispatchEvent(new Event("tenants-updated"));
@@ -81,13 +103,16 @@ export const deleteTenant = (id: string) => {
 };
 
 export const useTenants = () => {
-  const [data, setData] = useState(tenants);
-  
+  const [data, setData] = useState(() => getTenants());
+
   useEffect(() => {
+    ensureClientHydration();
+    setData([...getTenants()]);
+
     const listener = () => setData([...getTenants()]);
     window.addEventListener("tenants-updated", listener);
     return () => window.removeEventListener("tenants-updated", listener);
   }, []);
-  
+
   return data;
 };
