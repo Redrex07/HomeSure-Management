@@ -250,13 +250,54 @@ function PropertiesPage() {
 
     const filesToUpload = Array.from(files).slice(0, slotsLeft);
     setIsEditUploading(true);
-    setTimeout(() => {
-      const newUrls = filesToUpload.map(f => URL.createObjectURL(f));
-      setEditImages((prev) => [...prev, ...newUrls]);
-      toast.success(`${newUrls.length} image(s) uploaded!`);
+
+    const compressImage = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new window.Image();
+          img.src = event.target?.result as string;
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx?.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.6));
+          };
+          img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+      });
+    };
+
+    try {
+      const base64Images = await Promise.all(filesToUpload.map(compressImage));
+      setEditImages((prev) => [...prev, ...base64Images]);
+      toast.success(`${base64Images.length} image(s) uploaded!`);
+    } catch (err) {
+      toast.error("Failed to process images.");
+    } finally {
       setIsEditUploading(false);
       e.target.value = "";
-    }, 500);
+    }
   };
 
   const handleUpdateProperty = async (e: React.FormEvent) => {

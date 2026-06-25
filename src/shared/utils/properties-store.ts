@@ -32,8 +32,27 @@ const loadProperties = (): Property[] => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      const parsed = JSON.parse(stored);
+      let parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
+        // Clean up any old blob URLs that might be saved in localStorage
+        parsed = parsed.map(p => {
+          if (p.image_url) {
+            try {
+              let urls = JSON.parse(p.image_url);
+              if (Array.isArray(urls)) {
+                urls = urls.filter(u => !u.startsWith("blob:"));
+                p.image_url = urls.length > 0 ? JSON.stringify(urls) : undefined;
+              } else if (typeof urls === "string" && urls.startsWith("blob:")) {
+                p.image_url = undefined;
+              }
+            } catch {
+              if (p.image_url.startsWith("blob:")) {
+                p.image_url = undefined;
+              }
+            }
+          }
+          return p;
+        });
         return parsed;
       }
     }
