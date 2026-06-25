@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { PageHeader } from "@/shared/components/common/PageHeader";
@@ -61,10 +61,30 @@ function AppointmentsPage() {
     queryFn: getAppointments,
   });
 
-  const { data: serviceRequests = [] } = useQuery({
+  const {
+    data: serviceRequests = [],
+    isLoading: isLoadingServiceRequests,
+    isError: isServiceRequestsError,
+    error: serviceRequestsError,
+  } = useQuery({
     queryKey: ["service-requests"],
     queryFn: getServiceRequests,
   });
+
+  useEffect(() => {
+    if (isServiceRequestsError && serviceRequestsError) {
+      console.error("Failed to load service requests for appointments:", serviceRequestsError);
+      toast.error(
+        "Failed to load service requests: " +
+          (serviceRequestsError instanceof Error
+            ? serviceRequestsError.message
+            : String(serviceRequestsError)),
+      );
+    }
+  }, [isServiceRequestsError, serviceRequestsError]);
+
+  const formatServiceRequestLabel = (sr: { id: string; title: string; property?: string }) =>
+    `${sr.id} - ${sr.title}${sr.property ? ` - ${sr.property}` : ""}`;
 
   const { data: contractors = [] } = useQuery({
     queryKey: ["contractors"],
@@ -165,16 +185,53 @@ function AppointmentsPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Service Request</Label>
-                  <Select value={createRequestId} onValueChange={setCreateRequestId}>
+                  <Select
+                    value={createRequestId}
+                    onValueChange={setCreateRequestId}
+                    disabled={
+                      isLoadingServiceRequests ||
+                      isServiceRequestsError ||
+                      serviceRequests.length === 0
+                    }
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select service request" />
+                      <SelectValue
+                        placeholder={
+                          isLoadingServiceRequests
+                            ? "Loading service requests..."
+                            : isServiceRequestsError
+                              ? "Unable to load service requests"
+                              : serviceRequests.length === 0
+                                ? "No service requests available"
+                                : "Select service request"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      {serviceRequests.map((sr) => (
-                        <SelectItem key={sr.id} value={sr.id}>
-                          {sr.id}: {sr.title}
+                      {isLoadingServiceRequests && (
+                        <SelectItem value="__loading__" disabled>
+                          Loading service requests...
                         </SelectItem>
-                      ))}
+                      )}
+                      {!isLoadingServiceRequests && isServiceRequestsError && (
+                        <SelectItem value="__error__" disabled>
+                          Failed to load service requests
+                        </SelectItem>
+                      )}
+                      {!isLoadingServiceRequests &&
+                        !isServiceRequestsError &&
+                        serviceRequests.length === 0 && (
+                          <SelectItem value="__empty__" disabled>
+                            No service requests available
+                          </SelectItem>
+                        )}
+                      {!isLoadingServiceRequests &&
+                        !isServiceRequestsError &&
+                        serviceRequests.map((sr) => (
+                          <SelectItem key={sr.id} value={sr.id}>
+                            {formatServiceRequestLabel(sr)}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>

@@ -9,12 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AppUsersRouteImport } from './routes/app.users'
 import { Route as AppTenantsRouteImport } from './routes/app.tenants'
 import { Route as AppSupportRouteImport } from './routes/app.support'
@@ -33,6 +35,11 @@ import { Route as AppAppointmentsRouteImport } from './routes/app.appointments'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppPropertiesIdRouteImport } from './routes/app.properties.$id'
 
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -61,6 +68,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppUsersRoute = AppUsersRouteImport.update({
@@ -156,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/appointments': typeof AppAppointmentsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
@@ -172,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/app/support': typeof AppSupportRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
 }
 export interface FileRoutesByTo {
@@ -181,6 +195,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/appointments': typeof AppAppointmentsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
@@ -197,6 +212,7 @@ export interface FileRoutesByTo {
   '/app/support': typeof AppSupportRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
 }
 export interface FileRoutesById {
@@ -207,6 +223,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/appointments': typeof AppAppointmentsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
@@ -223,6 +240,7 @@ export interface FileRoutesById {
   '/app/support': typeof AppSupportRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
 }
 export interface FileRouteTypes {
@@ -234,6 +252,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
+    | '/verify-email'
     | '/app/analytics'
     | '/app/appointments'
     | '/app/audit-logs'
@@ -250,6 +269,7 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/app/tenants'
     | '/app/users'
+    | '/auth/confirm'
     | '/app/properties/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -259,6 +279,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
+    | '/verify-email'
     | '/app/analytics'
     | '/app/appointments'
     | '/app/audit-logs'
@@ -275,6 +296,7 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/app/tenants'
     | '/app/users'
+    | '/auth/confirm'
     | '/app/properties/$id'
   id:
     | '__root__'
@@ -284,6 +306,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
+    | '/verify-email'
     | '/app/analytics'
     | '/app/appointments'
     | '/app/audit-logs'
@@ -300,6 +323,7 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/app/tenants'
     | '/app/users'
+    | '/auth/confirm'
     | '/app/properties/$id'
   fileRoutesById: FileRoutesById
 }
@@ -310,10 +334,19 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -354,6 +387,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/users': {
@@ -537,6 +577,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
