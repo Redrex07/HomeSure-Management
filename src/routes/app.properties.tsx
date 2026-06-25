@@ -265,7 +265,7 @@ function PropertiesPage() {
 
       {/* Add Property Dialog */}
       <Dialog open={isAdding} onOpenChange={setIsAdding}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Property</DialogTitle>
             <DialogDescription className="sr-only">Fill out this form to add a new property.</DialogDescription>
@@ -594,7 +594,7 @@ function PropertiesPage() {
         open={!!editingProperty}
         onOpenChange={(open) => !open && setEditingProperty(null)}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Property</DialogTitle>
             <DialogDescription className="sr-only">
