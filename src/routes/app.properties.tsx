@@ -13,6 +13,13 @@ import {
   Property as SupabaseProperty
 } from "@/shared/utils/properties-store";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -32,6 +39,13 @@ export const Route = createFileRoute("/app/properties")({
 
 function PropertiesPage() {
   const landlordProps = useProperties();
+  
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
+
+  const filteredProps = landlordProps.filter((p) => {
+    if (propertyTypeFilter === "All") return true;
+    return p.property_type.toLowerCase().includes(propertyTypeFilter.toLowerCase());
+  });
 
   const [isAdding, setIsAdding] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -477,7 +491,26 @@ function PropertiesPage() {
         </div>
       ) : (
         <DataCardGrid
-          rows={landlordProps}
+          rows={filteredProps}
+          toolbar={
+            <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Property Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Types</SelectItem>
+                <SelectItem value="Apartment">Apartment</SelectItem>
+                <SelectItem value="Villa">Villa</SelectItem>
+                <SelectItem value="House">House</SelectItem>
+                <SelectItem value="1 BHK">1 BHK</SelectItem>
+                <SelectItem value="2 BHK">2 BHK</SelectItem>
+                <SelectItem value="3 BHK">3 BHK</SelectItem>
+                <SelectItem value="Loft">Loft</SelectItem>
+                <SelectItem value="Condo">Condo</SelectItem>
+                <SelectItem value="Townhouse">Townhouse</SelectItem>
+              </SelectContent>
+            </Select>
+          }
           filterKeys={["property_name", "address", "property_id"]}
           fields={[
             {
