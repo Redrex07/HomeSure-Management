@@ -5,6 +5,7 @@ import { getUsers, subscribeToUsers } from "./users-store";
 const KEY = "homesure.session";
 
 export interface Session {
+  id?: string;
   email: string;
   name: string;
   role: Role;
@@ -21,6 +22,7 @@ function load(): Session | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const s = JSON.parse(raw) as Session;
+    if (!s.id) s.id = "2"; // Default fallback ID
     
     // Sync status with dynamic users store
     const users = getUsers();

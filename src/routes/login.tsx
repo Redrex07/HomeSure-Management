@@ -88,10 +88,11 @@ function LoginPage() {
       }
 
       setSession({
-        email: authUser.email || email,
+        id: authUser.id,
         name: userData.name,
-        role,
-        status,
+        email: email,
+        role: role,
+        status: status,
       });
 
       toast.success(`Welcome back, signing in as ${userData.name}`);
