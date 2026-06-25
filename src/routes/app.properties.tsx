@@ -37,6 +37,9 @@ export const Route = createFileRoute("/app/properties")({
   component: PropertiesPage,
 });
 
+/** Fixed room labels mapped by upload order (index 0–3) */
+const ROOM_LABELS = ["Hall View", "Front View", "Bed View", "Kitchen View"] as const;
+
 function PropertiesPage() {
   const landlordProps = useProperties();
   
@@ -326,24 +329,28 @@ function PropertiesPage() {
 
               {/* Thumbnail preview of uploaded images */}
               {uploadedImages.length > 0 && (
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-3 flex-wrap">
                   {uploadedImages.map((url, idx) => (
-                    <div
-                      key={idx}
-                      className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
-                    >
-                      <img
-                        src={url}
-                        alt={`Upload ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeUploadedImage(idx)}
-                        className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    <div key={idx} className="flex flex-col items-center gap-1">
+                      <div
+                        className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
+                        <img
+                          src={url}
+                          alt={ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeUploadedImage(idx)}
+                          className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        {ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -365,7 +372,7 @@ function PropertiesPage() {
                     <span className="text-sm text-muted-foreground">
                       {isUploading
                         ? "Uploading..."
-                        : `Click to upload (${4 - uploadedImages.length} remaining)`}
+                        : `Upload next: ${ROOM_LABELS[uploadedImages.length] ?? "Image"} (${4 - uploadedImages.length} remaining)`}
                     </span>
                   </div>
                 </div>
@@ -424,22 +431,32 @@ function PropertiesPage() {
                     height: "450px",
                   }}
                 >
-                  {currentImages.map((imgUrl, idx) => (
-                    <div
-                      key={idx}
-                      className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center"
-                    >
-                      <img
-                        src={imgUrl}
-                        alt={`Picture ${galleryPage * itemsPerPage + idx + 1}`}
-                        className="w-full h-full object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "https://placehold.co/600x400?text=Image+Not+Found";
-                        }}
-                      />
-                    </div>
-                  ))}
+                  {currentImages.map((imgUrl, idx) => {
+                    const globalIdx = galleryPage * itemsPerPage + idx;
+                    const roomLabel = ROOM_LABELS[globalIdx] ?? `Image ${globalIdx + 1}`;
+                    return (
+                      <div
+                        key={idx}
+                        className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center"
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={roomLabel}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "https://placehold.co/600x400?text=Image+Not+Found";
+                          }}
+                        />
+                        {/* Room label overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-3 py-2">
+                          <span className="text-white text-sm font-semibold drop-shadow-md">
+                            {roomLabel}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {totalPages > 1 && (
@@ -664,28 +681,32 @@ function PropertiesPage() {
             <div className="grid gap-2">
               <Label>Pictures (Up to 4)</Label>
               {editImages.length > 0 && (
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-3 flex-wrap">
                   {editImages.map((url, idx) => (
-                    <div
-                      key={idx}
-                      className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
-                    >
-                      <img
-                        src={url}
-                        alt={`Image ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditImages((prev) =>
-                            prev.filter((_, i) => i !== idx),
-                          )
-                        }
-                        className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    <div key={idx} className="flex flex-col items-center gap-1">
+                      <div
+                        className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
+                        <img
+                          src={url}
+                          alt={ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditImages((prev) =>
+                              prev.filter((_, i) => i !== idx),
+                            )
+                          }
+                          className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        {ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -705,7 +726,7 @@ function PropertiesPage() {
                     <span className="text-sm text-muted-foreground">
                       {isEditUploading
                         ? "Uploading..."
-                        : `Click to upload (${4 - editImages.length} remaining)`}
+                        : `Upload next: ${ROOM_LABELS[editImages.length] ?? "Image"} (${4 - editImages.length} remaining)`}
                     </span>
                   </div>
                 </div>
