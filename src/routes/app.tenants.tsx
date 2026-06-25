@@ -4,15 +4,25 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Plus, Trash2, Pencil } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sendTenantInviteEmail } from "@/core/api/email.functions";
 import {
-  useTenants,
-  addTenant,
+  getLandlordTenants,
+  createTenant,
   updateTenant,
   deleteTenant,
-  Tenant as SupabaseTenant,
-} from "@/shared/utils/tenants-store";
+} from "@/core/db/supabase-queries";
+import { useSession } from "@/features/auth/store/auth-store";
+
+// Define Tenant type inline
+type Tenant = {
+  onboarding_id: string;
+  tenant_id: number | string;
+  email: string | null;
+  property_id: number | string;
+  onboarding_status: string;
+  onboarding_date: string;
+};
 import {
   Dialog,
   DialogContent,
@@ -30,7 +40,21 @@ export const Route = createFileRoute("/app/tenants")({
 });
 
 function TenantsPage() {
-  const landlordTenants = useTenants();
+  const { user } = useSession();
+  const [landlordTenants, setLandlordTenants] = useState<Tenant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadTenants = async () => {
+    if (!user?.id) return;
+    setIsLoading(true);
+    const data = await getLandlordTenants(user.id);
+    setLandlordTenants(data as Tenant[]);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadTenants();
+  }, [user?.id]);
   const [showInviteForm, setShowInviteForm] = useState(false);
 
   const [form, setForm] = useState({
@@ -41,7 +65,7 @@ function TenantsPage() {
     onboarding_date: new Date().toISOString().split("T")[0],
   });
 
-  const [editingTenant, setEditingTenant] = useState<SupabaseTenant | null>(null);
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [editForm, setEditForm] = useState({
     tenant_id: "",
     email: "",
@@ -58,61 +82,71 @@ function TenantsPage() {
       return;
     }
 
-    addTenant({
-      tenant_id: form.tenant_id,
-      email: form.email,
-      property_id: form.property_id,
-      onboarding_status: form.onboarding_status,
-      onboarding_date: form.onboarding_date,
-    });
-
-    if (form.email) {
-      const loadingId = toast.loading("Sending invite email...");
-      const emailResult = await sendTenantInviteEmail({
-        data: {
-          email: form.email,
-          propertyId: form.property_id,
-          status: form.onboarding_status,
-        },
+    try {
+      await createTenant({
+        tenant_id: Number(form.tenant_id),
+        email: form.email,
+        property_id: Number(form.property_id),
+        onboarding_status: form.onboarding_status,
+        onboarding_date: form.onboarding_date,
       });
 
-      toast.dismiss(loadingId);
-
-      if (emailResult?.success && emailResult.previewUrl) {
-        toast.success("Tenant invited and email sent successfully!", {
-          duration: 10000,
-          action: {
-            label: "View Email",
-            onClick: () => window.open(emailResult.previewUrl as string, "_blank"),
+      if (form.email) {
+        const loadingId = toast.loading("Sending invite email...");
+        const emailResult = await sendTenantInviteEmail({
+          data: {
+            email: form.email,
+            propertyId: form.property_id,
+            status: form.onboarding_status,
           },
         });
+
+        toast.dismiss(loadingId);
+
+        if (emailResult?.success && emailResult.previewUrl) {
+          toast.success("Tenant invited and email sent successfully!", {
+            duration: 10000,
+            action: {
+              label: "View Email",
+              onClick: () => window.open(emailResult.previewUrl as string, "_blank"),
+            },
+          });
+        } else {
+          toast.error("Tenant invited, but failed to send email.");
+        }
       } else {
-        toast.error("Tenant invited, but failed to send email.");
+        toast.success("Tenant invited successfully!");
       }
-    } else {
-      toast.success("Tenant invited successfully!");
+
+      setForm({
+        tenant_id: "",
+        email: "",
+        property_id: "",
+        onboarding_status: "Active",
+        onboarding_date: new Date().toISOString().split("T")[0],
+      });
+
+      setShowInviteForm(false);
+      loadTenants();
+    } catch (err) {
+      toast.error("Failed to add tenant.");
     }
-
-    setForm({
-      tenant_id: "",
-      email: "",
-      property_id: "",
-      onboarding_status: "Active",
-      onboarding_date: new Date().toISOString().split("T")[0],
-    });
-
-    setShowInviteForm(false);
   };
 
   const handleDeleteTenant = async (onboardingId: string) => {
     const confirmDelete = confirm("Are you sure you want to delete this tenant?");
     if (!confirmDelete) return;
 
-    deleteTenant(onboardingId);
-    toast.success("Tenant deleted successfully!");
+    try {
+      await deleteTenant(onboardingId);
+      toast.success("Tenant deleted successfully!");
+      loadTenants();
+    } catch (err) {
+      toast.error("Failed to delete tenant.");
+    }
   };
 
-  const openEditDialog = (t: SupabaseTenant) => {
+  const openEditDialog = (t: Tenant) => {
     setEditingTenant(t);
     setEditForm({
       tenant_id: String(t.tenant_id),
@@ -132,16 +166,21 @@ function TenantsPage() {
       return;
     }
 
-    updateTenant(editingTenant.onboarding_id, {
-      tenant_id: editForm.tenant_id,
-      email: editForm.email,
-      property_id: editForm.property_id,
-      onboarding_status: editForm.onboarding_status,
-      onboarding_date: editForm.onboarding_date,
-    });
+    try {
+      await updateTenant(editingTenant.onboarding_id, {
+        tenant_id: Number(editForm.tenant_id),
+        email: editForm.email,
+        property_id: Number(editForm.property_id),
+        onboarding_status: editForm.onboarding_status,
+        onboarding_date: editForm.onboarding_date,
+      });
 
-    toast.success("Tenant updated successfully!");
-    setEditingTenant(null);
+      toast.success("Tenant updated successfully!");
+      setEditingTenant(null);
+      loadTenants();
+    } catch (err) {
+      toast.error("Failed to update tenant.");
+    }
   };
 
   return (
@@ -226,7 +265,9 @@ function TenantsPage() {
         </DialogContent>
       </Dialog>
 
-      {landlordTenants.length === 0 ? (
+      {isLoading ? (
+        <div className="p-8 text-center text-muted-foreground">Loading tenants...</div>
+      ) : landlordTenants.length === 0 ? (
         <div className="p-8 text-center">No tenants found.</div>
       ) : (
         <DataCardGrid
@@ -273,7 +314,7 @@ function TenantsPage() {
             {
               key: "onboarding_status",
               label: "Status",
-              render: (t: SupabaseTenant) => <StatusBadge value={t.onboarding_status} />,
+              render: (t: Tenant) => <StatusBadge value={t.onboarding_status} />,
             },
             {
               key: "onboarding_date_value",

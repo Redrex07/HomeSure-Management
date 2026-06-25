@@ -4,14 +4,26 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  useProperties,
-  addProperty,
+  getLandlordProperties,
+  createProperty,
   updateProperty,
   deleteProperty,
-  Property as SupabaseProperty
-} from "@/shared/utils/properties-store";
+} from "@/core/db/supabase-queries";
+import { useSession } from "@/features/auth/store/auth-store";
+
+// Define the Property type inline since we removed the store export
+type Property = {
+  property_id: number;
+  property_name: string;
+  property_type: string;
+  address: string;
+  rent_amount: number;
+  availability_status: string;
+  image_url?: string;
+  landlord_id?: string;
+};
 import {
   Select,
   SelectContent,
@@ -41,7 +53,21 @@ export const Route = createFileRoute("/app/properties")({
 const ROOM_LABELS = ["Hall View", "Front View", "Bed View", "Kitchen View"] as const;
 
 function PropertiesPage() {
-  const landlordProps = useProperties();
+  const { user } = useSession();
+  const [landlordProps, setLandlordProps] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadProperties = async () => {
+    if (!user?.id) return;
+    setIsLoading(true);
+    const data = await getLandlordProperties(user.id);
+    setLandlordProps(data as Property[]);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadProperties();
+  }, [user?.id]);
   
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
 
@@ -53,10 +79,10 @@ function PropertiesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
-    useState<SupabaseProperty | null>(null);
+    useState<Property | null>(null);
   const [galleryPage, setGalleryPage] = useState(0);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [editingProperty, setEditingProperty] = useState<SupabaseProperty | null>(null);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [editForm, setEditForm] = useState({
     property_name: "",
     property_type: "",
@@ -83,34 +109,69 @@ function PropertiesPage() {
       return;
     }
 
-    addProperty({
-      property_name: form.property_name,
-      property_type: form.property_type,
-      address: form.address,
-      rent_amount: Number(form.rent_amount),
-      availability_status: form.availability_status,
-      image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
-    });
+    if (!user?.id) {
+      toast.error("You must be logged in to add a property.");
+      return;
+    }
 
-    toast.success("Property added successfully!");
+    try {
+      await createProperty({
+        landlord_id: user.id,
+        property_name: form.property_name,
+        property_type: form.property_type,
+        address: form.address,
+        rent_amount: Number(form.rent_amount),
+        availability_status: form.availability_status,
+        image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : null,
+      });
 
-    setForm({
-      property_name: "",
-      property_type: "",
-      address: "",
-      rent_amount: "",
-      availability_status: "Available",
-    });
-    setUploadedImages([]);
-    setIsAdding(false);
+      toast.success("Property added successfully!");
+      setForm({
+        property_name: "",
+        property_type: "",
+        address: "",
+        rent_amount: "",
+        availability_status: "Available",
+      });
+      setUploadedImages([]);
+      setIsAdding(false);
+      loadProperties(); // Refresh the list
+    } catch (err) {
+      toast.error("Failed to add property.");
+    }
   };
 
-  /** Convert a File to a base64 data URL that persists in localStorage */
-  const fileToBase64 = (file: File): Promise<string> =>
+  /** Compress and convert a File to a small base64 data URL for localStorage */
+  const compressImage = (file: File, maxSize = 800, quality = 0.7): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
       reader.onerror = reject;
+      reader.onload = () => {
+        const img = new window.Image();
+        img.onerror = reject;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let { width, height } = img;
+
+          // Scale down if larger than maxSize
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = Math.round((height / width) * maxSize);
+              width = maxSize;
+            } else {
+              width = Math.round((width / height) * maxSize);
+              height = maxSize;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d")!;
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.src = reader.result as string;
+      };
       reader.readAsDataURL(file);
     });
 
@@ -134,7 +195,7 @@ function PropertiesPage() {
 
     setIsUploading(true);
     try {
-      const newUrls = await Promise.all(filesToUpload.map(fileToBase64));
+      const newUrls = await Promise.all(filesToUpload.map(f => compressImage(f)));
       setUploadedImages((prev) => [...prev, ...newUrls]);
       toast.success(
         `${newUrls.length} image${newUrls.length > 1 ? "s" : ""} uploaded successfully!`,
@@ -195,11 +256,16 @@ function PropertiesPage() {
 
     if (!confirmDelete) return;
 
-    deleteProperty(propertyId);
-    toast.success("Property deleted successfully!");
+    try {
+      await deleteProperty(propertyId);
+      toast.success("Property deleted successfully!");
+      loadProperties();
+    } catch (err) {
+      toast.error("Failed to delete property.");
+    }
   };
 
-  const openEditDialog = (p: SupabaseProperty) => {
+  const openEditDialog = (p: Property) => {
     setEditingProperty(p);
     setEditForm({
       property_name: p.property_name,
@@ -224,7 +290,7 @@ function PropertiesPage() {
     const filesToUpload = Array.from(files).slice(0, slotsLeft);
     setIsEditUploading(true);
     try {
-      const newUrls = await Promise.all(filesToUpload.map(fileToBase64));
+      const newUrls = await Promise.all(filesToUpload.map(f => compressImage(f)));
       setEditImages((prev) => [...prev, ...newUrls]);
       toast.success(`${newUrls.length} image(s) uploaded!`);
     } catch {
@@ -248,17 +314,22 @@ function PropertiesPage() {
       return;
     }
 
-    updateProperty(editingProperty.property_id, {
-      property_name: editForm.property_name,
-      property_type: editForm.property_type,
-      address: editForm.address,
-      rent_amount: Number(editForm.rent_amount),
-      availability_status: editForm.availability_status,
-      image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
-    });
+    try {
+      await updateProperty(editingProperty.property_id, {
+        property_name: editForm.property_name,
+        property_type: editForm.property_type,
+        address: editForm.address,
+        rent_amount: Number(editForm.rent_amount),
+        availability_status: editForm.availability_status,
+        image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
+      });
 
-    toast.success("Property updated successfully!");
-    setEditingProperty(null);
+      toast.success("Property updated successfully!");
+      setEditingProperty(null);
+      loadProperties();
+    } catch (err) {
+      toast.error("Failed to update property.");
+    }
   };
 
   return (
@@ -501,7 +572,11 @@ function PropertiesPage() {
         </DialogContent>
       </Dialog>
 
-      {landlordProps.length === 0 ? (
+      {isLoading ? (
+        <div className="p-8 text-center text-muted-foreground">
+          <p>Loading properties...</p>
+        </div>
+      ) : landlordProps.length === 0 ? (
         <div className="p-8 text-center text-gray-500">
           <p>No properties found.</p>
         </div>

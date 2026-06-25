@@ -51,9 +51,7 @@ import {
 } from "@/shared/utils/mock-data";
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
-import { useProperties } from "@/shared/utils/properties-store";
-import { useTenants } from "@/shared/utils/tenants-store";
-import { useInvoices } from "@/shared/utils/invoices-store";
+import { getLandlordProperties, getLandlordTenants, getLandlordInvoices } from "@/core/db/supabase-queries";
 import { formatINR } from "@/shared/utils/utils";
 
 const fmt = (n: number) => formatINR(n);
@@ -76,10 +74,33 @@ export function LandlordDashboard() {
   const session = useSession();
   const landlordId = "2"; // Same fixed landlordId for now
 
-  const dbProperties = useProperties();
-  const dbTenants = useTenants();
-  
-  const invoices = useInvoices();
+  const [dbProperties, setDbProperties] = useState<any[]>([]);
+  const [dbTenants, setDbTenants] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      if (!session?.id) return;
+      setIsLoading(true);
+      const [props, tenants, invs] = await Promise.all([
+        getLandlordProperties(session.id),
+        getLandlordTenants(session.id),
+        getLandlordInvoices(session.id),
+      ]);
+      setDbProperties(props);
+      setDbTenants(tenants);
+      // Format invoices similar to app.invoices.tsx
+      setInvoices(invs.map((i: any) => ({
+        ...i,
+        id: i.id || `INV-${i.invoice_id}`,
+        amount: i.amount || i.invoice_amount || 0,
+        status: i.status || i.payment_status || "Pending",
+      })));
+      setIsLoading(false);
+    }
+    loadData();
+  }, [session?.id]);
 
   const occupied = dbProperties.filter((p) => p.availability_status === "Occupied").length;
   const occupancy = dbProperties.length > 0 ? Math.round((occupied / dbProperties.length) * 100) : 0;

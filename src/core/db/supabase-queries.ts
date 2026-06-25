@@ -52,7 +52,8 @@ export async function getLandlordProperties(landlordId: string) {
     const { data, error } = await supabase
       .from("properties")
       .select("*")
-      .eq("landlord_id", landlordId);
+      .eq("landlord_id", landlordId)
+      .order("property_id", { ascending: false });
 
     if (error) {
       console.error("Error fetching properties:", error);
@@ -65,15 +66,66 @@ export async function getLandlordProperties(landlordId: string) {
   }
 }
 
+export async function createProperty(payload: any) {
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .insert([payload])
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error creating property:", err);
+    throw err;
+  }
+}
+
+export async function updateProperty(id: number, payload: any) {
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .update(payload)
+      .eq("property_id", id)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error updating property:", err);
+    throw err;
+  }
+}
+
+export async function deleteProperty(id: number) {
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .delete()
+      .eq("property_id", id)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error deleting property:", err);
+    throw err;
+  }
+}
+
 /**
  * STEP 2: Get all tenants for the landlord's properties
  */
 export async function getLandlordTenants(landlordId: string) {
   try {
-    const { data, error } = await supabase.from("tenant_onboarding").select("*");
+    // Ideally this filters by properties owned by landlordId, but for now we fetch all
+    const { data, error } = await supabase
+      .from("tenant_onboarding")
+      .select("*")
+      .order("onboarding_id", { ascending: false });
 
     if (error) {
-      console.error(error);
+      console.error("Error fetching tenants:", error);
       return [];
     }
 
@@ -83,12 +135,63 @@ export async function getLandlordTenants(landlordId: string) {
     return [];
   }
 }
+
+export async function createTenant(payload: any) {
+  try {
+    const { data, error } = await supabase
+      .from("tenant_onboarding")
+      .insert([payload])
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error creating tenant:", err);
+    throw err;
+  }
+}
+
+export async function updateTenant(id: string, payload: any) {
+  try {
+    const { data, error } = await supabase
+      .from("tenant_onboarding")
+      .update(payload)
+      .eq("onboarding_id", id)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error updating tenant:", err);
+    throw err;
+  }
+}
+
+export async function deleteTenant(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from("tenant_onboarding")
+      .delete()
+      .eq("onboarding_id", id)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error deleting tenant:", err);
+    throw err;
+  }
+}
 /**
  * STEP 3: Get invoices/rent data for the landlord
  */
 export async function getLandlordInvoices(landlordId: string) {
   try {
-    const { data, error } = await supabase.from("invoices").select("*").eq("landlord_id", landlordId);
+    const { data, error } = await supabase
+      .from("invoices")
+      .select("*")
+      // .eq("landlord_id", landlordId) // Uncomment if landlord_id exists on invoices
+      .order("invoice_id", { ascending: false });
 
     if (error) {
       console.error("Error fetching invoices:", error);
@@ -98,6 +201,55 @@ export async function getLandlordInvoices(landlordId: string) {
   } catch (err) {
     console.error("Exception fetching invoices:", err);
     return [];
+  }
+}
+
+export async function createInvoice(payload: any) {
+  try {
+    const { data, error } = await supabase
+      .from("invoices")
+      .insert([payload])
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error creating invoice:", err);
+    throw err;
+  }
+}
+
+export async function deleteInvoice(id: string) {
+  try {
+    const numericId = parseInt(id.replace("INV-", ""), 10);
+    const { data, error } = await supabase
+      .from("invoices")
+      .delete()
+      .eq("invoice_id", numericId)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error deleting invoice:", err);
+    throw err;
+  }
+}
+
+export async function updateInvoice(id: string, payload: any) {
+  try {
+    const numericId = parseInt(String(id).replace("INV-", ""), 10);
+    const { data, error } = await supabase
+      .from("invoices")
+      .update(payload)
+      .eq("invoice_id", numericId)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error updating invoice:", err);
+    throw err;
   }
 }
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -22,7 +22,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatCard } from "@/shared/components/common/StatCard";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
-import { useInvoices, updateInvoice } from "@/shared/utils/invoices-store";
+import { getLandlordInvoices, updateInvoice } from "@/core/db/supabase-queries";
 import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
@@ -45,22 +45,48 @@ function InvoicesPage() {
   const formatCurrency = (amount: number) =>
     isContractor ? formatUsd.format(amount) : formatINR(amount);
 
-  const invoices = useInvoices();
-  const paid = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
-  const pending = invoices.filter((i) => i.status === "Pending").reduce((s, i) => s + i.amount, 0);
-  const overdue = invoices.filter((i) => i.status === "Overdue").reduce((s, i) => s + i.amount, 0);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadInvoices = async () => {
+    if (!session?.id) return;
+    setIsLoading(true);
+    const data = await getLandlordInvoices(session.id);
+    // Add synthetic ID field if it's missing (since the UI expects an `id` string like "INV-1")
+    const formatted = data.map((i: any) => ({
+      ...i,
+      id: i.id || `INV-${i.invoice_id}`,
+      amount: i.amount || i.invoice_amount || 0,
+      status: i.status || i.payment_status || "Pending",
+    }));
+    setInvoices(formatted);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadInvoices();
+  }, [session?.id]);
+
+  const paid = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+  const pending = invoices.filter((i) => i.status === "Pending").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+  const overdue = invoices.filter((i) => i.status === "Overdue").reduce((s, i) => s + (Number(i.amount) || 0), 0);
 
   const [editingInvoice, setEditingInvoice] = useState<any | null>(null);
 
-  const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const newStatus = formData.get("status") as string;
     const newReason = formData.get("reason") as string;
     
-    updateInvoice(editingInvoice.id, { status: newStatus, reason: newReason });
-    toast.success("Invoice updated successfully!");
-    setEditingInvoice(null);
+    try {
+      await updateInvoice(editingInvoice.id, { payment_status: newStatus, status: newStatus, reason: newReason });
+      toast.success("Invoice updated successfully!");
+      setEditingInvoice(null);
+      loadInvoices();
+    } catch (err) {
+      toast.error("Failed to update invoice.");
+    }
   };
 
   const getInvoiceHTML = (invoice: any) => {
@@ -232,8 +258,13 @@ function InvoicesPage() {
           tone="destructive"
         />
       </div>
-      <DataTable
-        rows={invoices}
+      {isLoading ? (
+        <div className="p-8 text-center text-muted-foreground">Loading invoices...</div>
+      ) : invoices.length === 0 ? (
+        <div className="p-8 text-center">No invoices found.</div>
+      ) : (
+        <DataTable
+          rows={invoices}
         filterKeys={["id", "request"]}
         columns={[
           {
@@ -307,6 +338,7 @@ function InvoicesPage() {
           },
         ]}
       />
+      )}
 
 
       <Dialog open={!!editingInvoice} onOpenChange={(open) => !open && setEditingInvoice(null)}>
