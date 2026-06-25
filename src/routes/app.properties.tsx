@@ -424,61 +424,38 @@ function PropertiesPage() {
                 </div>
               );
             }
-            // 2 or 3 images — gallery grid layout
+            // 2, 3, or 4 images — gallery grid layout
             return (
               <div
                 className="grid gap-2 rounded-xl overflow-hidden"
                 style={{
                   gridTemplateColumns: "1fr 1fr",
-                  gridTemplateRows:
-                    imgs.length === 3 ? "1fr 1fr" : "1fr",
+                  gridTemplateRows: imgs.length >= 3 ? "1fr 1fr" : "1fr",
                   height: "450px",
                 }}
               >
-                {/* Main large image — spans left column */}
-                <div
-                  className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center"
-                  style={{
-                    gridRow:
-                      imgs.length === 3 ? "1 / 3" : "1",
-                  }}
-                >
-                  <img
-                    src={imgs[0]}
-                    alt="Main"
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://placehold.co/600x400?text=Image+Not+Found";
-                    }}
-                  />
-                </div>
-                {/* Second image — top right */}
-                <div className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center">
-                  <img
-                    src={imgs[1]}
-                    alt="Second"
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://placehold.co/600x400?text=Image+Not+Found";
-                    }}
-                  />
-                </div>
-                {/* Third image — bottom right (if exists) */}
-                {imgs.length === 3 && (
-                  <div className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center">
-                    <img
-                      src={imgs[2]}
-                      alt="Third"
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://placehold.co/600x400?text=Image+Not+Found";
+                {imgs.slice(0, 4).map((imgUrl, idx) => {
+                  const isMainOfThree = imgs.length === 3 && idx === 0;
+                  return (
+                    <div
+                      key={idx}
+                      className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center"
+                      style={{
+                        gridRow: isMainOfThree ? "1 / 3" : undefined,
                       }}
-                    />
-                  </div>
-                )}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`Picture ${idx + 1}`}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://placehold.co/600x400?text=Image+Not+Found";
+                        }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             );
           })()}
