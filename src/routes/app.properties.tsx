@@ -4,27 +4,14 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  getLandlordProperties,
-  createProperty,
+  useProperties,
+  addProperty,
   updateProperty,
   deleteProperty,
-} from "@/core/db/supabase-queries";
-import { supabase } from "@/core/db/supabase";
-import { useSession } from "@/features/auth/store/auth-store";
-
-// Define the Property type inline since we removed the store export
-type Property = {
-  property_id: number;
-  property_name: string;
-  property_type: string;
-  address: string;
-  rent_amount: number;
-  availability_status: string;
-  image_url?: string;
-  landlord_id?: string;
-};
+  Property as SupabaseProperty
+} from "@/shared/utils/properties-store";
 import {
   Select,
   SelectContent,
@@ -54,26 +41,7 @@ export const Route = createFileRoute("/app/properties")({
 const ROOM_LABELS = ["Hall View", "Front View", "Bed View", "Kitchen View"] as const;
 
 function PropertiesPage() {
-  const user = useSession();
-  const [landlordProps, setLandlordProps] = useState<Property[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const loadProperties = async () => {
-    if (!user?.id) return;
-    setIsLoading(true);
-    let landlord_id = user.id;
-    if (landlord_id === "2") {
-      const { data: { user: sbUser } } = await supabase.auth.getUser();
-      if (sbUser) landlord_id = sbUser.id;
-    }
-    const data = await getLandlordProperties(landlord_id);
-    setLandlordProps(data as Property[]);
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    loadProperties();
-  }, [user?.id]);
+  const landlordProps = useProperties();
   
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
 
@@ -85,10 +53,10 @@ function PropertiesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
-    useState<Property | null>(null);
+    useState<SupabaseProperty | null>(null);
   const [galleryPage, setGalleryPage] = useState(0);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [editingProperty, setEditingProperty] = useState<SupabaseProperty | null>(null);
   const [editForm, setEditForm] = useState({
     property_name: "",
     property_type: "",
@@ -115,78 +83,27 @@ function PropertiesPage() {
       return;
     }
 
-    if (!user?.id) {
-      toast.error("You must be logged in to add a property.");
-      return;
-    }
-
-    try {
-      let landlord_id = user?.id;
-      if (!landlord_id || landlord_id === "2") {
-        const { data: { user: sbUser } } = await supabase.auth.getUser();
-        if (sbUser) landlord_id = sbUser.id;
-      }
-
-      await createProperty({
-        landlord_id: landlord_id,
-        property_name: form.property_name,
-        property_type: form.property_type,
-        address: form.address,
-        rent_amount: Number(form.rent_amount),
-        availability_status: form.availability_status,
-        image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : null,
-      });
-
-      toast.success("Property added successfully!");
-      setForm({
-        property_name: "",
-        property_type: "",
-        address: "",
-        rent_amount: "",
-        availability_status: "Available",
-      });
-      setUploadedImages([]);
-      setIsAdding(false);
-      loadProperties(); // Refresh the list
-    } catch (err: any) {
-      console.error("Property creation error:", err);
-      toast.error(`Failed to add property: ${err.message || err}`);
-    }
-  };
-
-  /** Compress and convert a File to a small base64 data URL for localStorage */
-  const compressImage = (file: File, maxSize = 800, quality = 0.7): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = reject;
-      reader.onload = () => {
-        const img = new window.Image();
-        img.onerror = reject;
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          let { width, height } = img;
-
-          // Scale down if larger than maxSize
-          if (width > maxSize || height > maxSize) {
-            if (width > height) {
-              height = Math.round((height / width) * maxSize);
-              width = maxSize;
-            } else {
-              width = Math.round((width / height) * maxSize);
-              height = maxSize;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d")!;
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL("image/jpeg", quality));
-        };
-        img.src = reader.result as string;
-      };
-      reader.readAsDataURL(file);
+    addProperty({
+      property_name: form.property_name,
+      property_type: form.property_type,
+      address: form.address,
+      rent_amount: Number(form.rent_amount),
+      availability_status: form.availability_status,
+      image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
     });
+
+    toast.success("Property added successfully!");
+
+    setForm({
+      property_name: "",
+      property_type: "",
+      address: "",
+      rent_amount: "",
+      availability_status: "Available",
+    });
+    setUploadedImages([]);
+    setIsAdding(false);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -207,17 +124,15 @@ function PropertiesPage() {
     }
 
     setIsUploading(true);
-    try {
-      const newUrls = await Promise.all(filesToUpload.map(f => compressImage(f)));
+    setTimeout(() => {
+      const newUrls = filesToUpload.map(f => URL.createObjectURL(f));
       setUploadedImages((prev) => [...prev, ...newUrls]);
       toast.success(
         `${newUrls.length} image${newUrls.length > 1 ? "s" : ""} uploaded successfully!`,
       );
-    } catch {
-      toast.error("Failed to process images.");
-    }
-    setIsUploading(false);
-    e.target.value = "";
+      setIsUploading(false);
+      e.target.value = "";
+    }, 500);
   };
 
   const removeUploadedImage = (index: number) => {
@@ -269,16 +184,11 @@ function PropertiesPage() {
 
     if (!confirmDelete) return;
 
-    try {
-      await deleteProperty(propertyId);
-      toast.success("Property deleted successfully!");
-      loadProperties();
-    } catch (err) {
-      toast.error("Failed to delete property.");
-    }
+    deleteProperty(propertyId);
+    toast.success("Property deleted successfully!");
   };
 
-  const openEditDialog = (p: Property) => {
+  const openEditDialog = (p: SupabaseProperty) => {
     setEditingProperty(p);
     setEditForm({
       property_name: p.property_name,
@@ -302,15 +212,13 @@ function PropertiesPage() {
 
     const filesToUpload = Array.from(files).slice(0, slotsLeft);
     setIsEditUploading(true);
-    try {
-      const newUrls = await Promise.all(filesToUpload.map(f => compressImage(f)));
+    setTimeout(() => {
+      const newUrls = filesToUpload.map(f => URL.createObjectURL(f));
       setEditImages((prev) => [...prev, ...newUrls]);
       toast.success(`${newUrls.length} image(s) uploaded!`);
-    } catch {
-      toast.error("Failed to process images.");
-    }
-    setIsEditUploading(false);
-    e.target.value = "";
+      setIsEditUploading(false);
+      e.target.value = "";
+    }, 500);
   };
 
   const handleUpdateProperty = async (e: React.FormEvent) => {
@@ -327,22 +235,17 @@ function PropertiesPage() {
       return;
     }
 
-    try {
-      await updateProperty(editingProperty.property_id, {
-        property_name: editForm.property_name,
-        property_type: editForm.property_type,
-        address: editForm.address,
-        rent_amount: Number(editForm.rent_amount),
-        availability_status: editForm.availability_status,
-        image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
-      });
+    updateProperty(editingProperty.property_id, {
+      property_name: editForm.property_name,
+      property_type: editForm.property_type,
+      address: editForm.address,
+      rent_amount: Number(editForm.rent_amount),
+      availability_status: editForm.availability_status,
+      image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+    });
 
-      toast.success("Property updated successfully!");
-      setEditingProperty(null);
-      loadProperties();
-    } catch (err) {
-      toast.error("Failed to update property.");
-    }
+    toast.success("Property updated successfully!");
+    setEditingProperty(null);
   };
 
   return (
@@ -585,11 +488,7 @@ function PropertiesPage() {
         </DialogContent>
       </Dialog>
 
-      {isLoading ? (
-        <div className="p-8 text-center text-muted-foreground">
-          <p>Loading properties...</p>
-        </div>
-      ) : landlordProps.length === 0 ? (
+      {landlordProps.length === 0 ? (
         <div className="p-8 text-center text-gray-500">
           <p>No properties found.</p>
         </div>
@@ -674,12 +573,10 @@ function PropertiesPage() {
                     setSelectedPropertyForImage(p);
                     setGalleryPage(0);
                   }}
-                  className="group/pic relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-violet-500/60 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-amber-500/15 px-3 py-1 text-[11px] font-semibold text-violet-700 shadow-sm transition-all duration-300 hover:border-violet-500 hover:from-violet-500/25 hover:via-fuchsia-500/20 hover:to-amber-500/25 hover:shadow-md hover:shadow-violet-500/20 dark:border-violet-400/50 dark:text-violet-300 dark:hover:border-violet-400 dark:hover:shadow-violet-400/20"
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                 >
-                  {/* Shimmer sweep effect */}
-                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/pic:translate-x-full dark:via-white/10" />
-                  <Image className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover/pic:scale-110" />
-                  <span className="relative">View Pictures</span>
+                  <Image className="h-3 w-3" />
+                  View Pictures
                 </button>
               ),
             },

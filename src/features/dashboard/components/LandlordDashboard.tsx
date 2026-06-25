@@ -51,7 +51,8 @@ import {
 } from "@/shared/utils/mock-data";
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
-import { getLandlordProperties, getLandlordTenants } from "@/core/db/supabase-queries";
+import { useProperties } from "@/shared/utils/properties-store";
+import { useTenants } from "@/shared/utils/tenants-store";
 import { useInvoices } from "@/shared/utils/invoices-store";
 import { formatINR } from "@/shared/utils/utils";
 
@@ -75,25 +76,10 @@ export function LandlordDashboard() {
   const session = useSession();
   const landlordId = "2"; // Same fixed landlordId for now
 
-  const [dbProperties, setDbProperties] = useState<any[]>([]);
-  const [dbTenants, setDbTenants] = useState<any[]>([]);
+  const dbProperties = useProperties();
+  const dbTenants = useTenants();
+  
   const invoices = useInvoices();
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadData() {
-      if (!session?.id) return;
-      setIsLoading(true);
-      const [props, tenants] = await Promise.all([
-        getLandlordProperties(session.id),
-        getLandlordTenants(session.id),
-      ]);
-      setDbProperties(props);
-      setDbTenants(tenants);
-      setIsLoading(false);
-    }
-    loadData();
-  }, [session?.id]);
 
   const occupied = dbProperties.filter((p) => p.availability_status === "Occupied").length;
   const occupancy = dbProperties.length > 0 ? Math.round((occupied / dbProperties.length) * 100) : 0;
@@ -102,14 +88,6 @@ export function LandlordDashboard() {
 
   const collected = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
   const outstanding = invoices.filter((i) => i.status !== "Paid").reduce((s, i) => s + i.amount, 0);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground animate-pulse">Loading dashboard data...</div>
-      </div>
-    );
-  }
 
   return (
     <>
