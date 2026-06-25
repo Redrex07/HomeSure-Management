@@ -105,9 +105,9 @@ function PropertiesPage() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const slotsLeft = 3 - uploadedImages.length;
+    const slotsLeft = 4 - uploadedImages.length;
     if (slotsLeft <= 0) {
-      toast.error("Maximum 3 images allowed per property.");
+      toast.error("Maximum 4 images allowed per property.");
       return;
     }
 
@@ -200,9 +200,9 @@ function PropertiesPage() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const slotsLeft = 3 - editImages.length;
+    const slotsLeft = 4 - editImages.length;
     if (slotsLeft <= 0) {
-      toast.error("Maximum 3 images allowed.");
+      toast.error("Maximum 4 images allowed.");
       return;
     }
 
@@ -321,7 +321,7 @@ function PropertiesPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label>Pictures (Up to 3)</Label>
+              <Label>Pictures (Up to 4)</Label>
 
               {/* Thumbnail preview of uploaded images */}
               {uploadedImages.length > 0 && (
@@ -349,7 +349,7 @@ function PropertiesPage() {
               )}
 
               {/* Upload button */}
-              {uploadedImages.length < 3 && (
+              {uploadedImages.length < 4 && (
                 <div className="relative">
                   <Input
                     type="file"
@@ -364,7 +364,7 @@ function PropertiesPage() {
                     <span className="text-sm text-muted-foreground">
                       {isUploading
                         ? "Uploading..."
-                        : `Click to upload (${3 - uploadedImages.length} remaining)`}
+                        : `Click to upload (${4 - uploadedImages.length} remaining)`}
                     </span>
                   </div>
                 </div>
@@ -675,7 +675,7 @@ function PropertiesPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label>Pictures (Up to 3)</Label>
+              <Label>Pictures (Up to 4)</Label>
               {editImages.length > 0 && (
                 <div className="flex gap-2 flex-wrap">
                   {editImages.map((url, idx) => (
@@ -703,7 +703,7 @@ function PropertiesPage() {
                   ))}
                 </div>
               )}
-              {editImages.length < 3 && (
+              {editImages.length < 4 && (
                 <div className="relative">
                   <Input
                     type="file"
@@ -718,7 +718,7 @@ function PropertiesPage() {
                     <span className="text-sm text-muted-foreground">
                       {isEditUploading
                         ? "Uploading..."
-                        : `Click to upload (${3 - editImages.length} remaining)`}
+                        : `Click to upload (${4 - editImages.length} remaining)`}
                     </span>
                   </div>
                 </div>
