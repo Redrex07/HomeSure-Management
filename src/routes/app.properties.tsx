@@ -105,6 +105,15 @@ function PropertiesPage() {
     setIsAdding(false);
   };
 
+  /** Convert a File to a base64 data URL that persists in localStorage */
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -124,15 +133,17 @@ function PropertiesPage() {
     }
 
     setIsUploading(true);
-    setTimeout(() => {
-      const newUrls = filesToUpload.map(f => URL.createObjectURL(f));
+    try {
+      const newUrls = await Promise.all(filesToUpload.map(fileToBase64));
       setUploadedImages((prev) => [...prev, ...newUrls]);
       toast.success(
         `${newUrls.length} image${newUrls.length > 1 ? "s" : ""} uploaded successfully!`,
       );
-      setIsUploading(false);
-      e.target.value = "";
-    }, 500);
+    } catch {
+      toast.error("Failed to process images.");
+    }
+    setIsUploading(false);
+    e.target.value = "";
   };
 
   const removeUploadedImage = (index: number) => {
@@ -212,13 +223,15 @@ function PropertiesPage() {
 
     const filesToUpload = Array.from(files).slice(0, slotsLeft);
     setIsEditUploading(true);
-    setTimeout(() => {
-      const newUrls = filesToUpload.map(f => URL.createObjectURL(f));
+    try {
+      const newUrls = await Promise.all(filesToUpload.map(fileToBase64));
       setEditImages((prev) => [...prev, ...newUrls]);
       toast.success(`${newUrls.length} image(s) uploaded!`);
-      setIsEditUploading(false);
-      e.target.value = "";
-    }, 500);
+    } catch {
+      toast.error("Failed to process images.");
+    }
+    setIsEditUploading(false);
+    e.target.value = "";
   };
 
   const handleUpdateProperty = async (e: React.FormEvent) => {
