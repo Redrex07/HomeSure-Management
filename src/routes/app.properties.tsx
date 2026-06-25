@@ -573,10 +573,12 @@ function PropertiesPage() {
                     setSelectedPropertyForImage(p);
                     setGalleryPage(0);
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-slate-900 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 px-3 py-1 text-[11px] font-bold text-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#0f172a] active:translate-y-0.5 active:shadow-none"
+                  className="group/pic relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-violet-500/60 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-amber-500/15 px-3 py-1 text-[11px] font-semibold text-violet-700 shadow-sm transition-all duration-300 hover:border-violet-500 hover:from-violet-500/25 hover:via-fuchsia-500/20 hover:to-amber-500/25 hover:shadow-md hover:shadow-violet-500/20 dark:border-violet-400/50 dark:text-violet-300 dark:hover:border-violet-400 dark:hover:shadow-violet-400/20"
                 >
-                  <Image className="h-3.5 w-3.5 text-slate-900" />
-                  View Pictures
+                  {/* Shimmer sweep effect */}
+                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/pic:translate-x-full dark:via-white/10" />
+                  <Image className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover/pic:scale-110" />
+                  <span className="relative">View Pictures</span>
                 </button>
               ),
             },
