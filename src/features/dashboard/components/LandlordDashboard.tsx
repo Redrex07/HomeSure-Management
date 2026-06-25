@@ -110,6 +110,14 @@ export function LandlordDashboard() {
   const collected = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
   const outstanding = invoices.filter((i) => i.status !== "Paid").reduce((s, i) => s + i.amount, 0);
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground animate-pulse">Loading dashboard data...</div>
+      </div>
+    );
+  }
+
   return (
     <>
       <PageHeader
