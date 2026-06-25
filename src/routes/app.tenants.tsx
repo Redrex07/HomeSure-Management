@@ -11,7 +11,9 @@ import {
   createTenant,
   updateTenant,
   deleteTenant,
+  addTenant,
 } from "@/core/db/supabase-queries";
+import { supabase } from "@/core/db/supabase";
 import { useSession } from "@/features/auth/store/auth-store";
 
 // Define Tenant type inline
@@ -47,7 +49,12 @@ function TenantsPage() {
   const loadTenants = async () => {
     if (!user?.id) return;
     setIsLoading(true);
-    const data = await getLandlordTenants(user.id);
+    let landlord_id = user.id;
+    if (landlord_id === "2") {
+      const { data: { user: sbUser } } = await supabase.auth.getUser();
+      if (sbUser) landlord_id = sbUser.id;
+    }
+    const data = await getLandlordTenants(landlord_id);
     setLandlordTenants(data as Tenant[]);
     setIsLoading(false);
   };
@@ -83,7 +90,14 @@ function TenantsPage() {
     }
 
     try {
+      let landlord_id = user?.id;
+      if (!landlord_id || landlord_id === "2") {
+        const { data: { user: sbUser } } = await supabase.auth.getUser();
+        if (sbUser) landlord_id = sbUser.id;
+      }
+      
       await createTenant({
+        landlord_id: landlord_id,
         tenant_id: Number(form.tenant_id),
         email: form.email,
         property_id: Number(form.property_id),

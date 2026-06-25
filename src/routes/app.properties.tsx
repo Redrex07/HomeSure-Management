@@ -11,6 +11,7 @@ import {
   updateProperty,
   deleteProperty,
 } from "@/core/db/supabase-queries";
+import { supabase } from "@/core/db/supabase";
 import { useSession } from "@/features/auth/store/auth-store";
 
 // Define the Property type inline since we removed the store export
@@ -60,7 +61,12 @@ function PropertiesPage() {
   const loadProperties = async () => {
     if (!user?.id) return;
     setIsLoading(true);
-    const data = await getLandlordProperties(user.id);
+    let landlord_id = user.id;
+    if (landlord_id === "2") {
+      const { data: { user: sbUser } } = await supabase.auth.getUser();
+      if (sbUser) landlord_id = sbUser.id;
+    }
+    const data = await getLandlordProperties(landlord_id);
     setLandlordProps(data as Property[]);
     setIsLoading(false);
   };
@@ -115,8 +121,14 @@ function PropertiesPage() {
     }
 
     try {
+      let landlord_id = user?.id;
+      if (!landlord_id || landlord_id === "2") {
+        const { data: { user: sbUser } } = await supabase.auth.getUser();
+        if (sbUser) landlord_id = sbUser.id;
+      }
+
       await createProperty({
-        landlord_id: user.id,
+        landlord_id: landlord_id,
         property_name: form.property_name,
         property_type: form.property_type,
         address: form.address,
