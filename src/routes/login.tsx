@@ -5,7 +5,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { setSession } from "@/features/auth/store/auth-store";
-import { type Role } from "@/features/auth/utils/roles";
+import { ROLE_BY_ID } from "@/features/auth/utils/roles";
 import { supabase } from "@/core/db/supabase";
 import { toast } from "sonner";
 
@@ -48,9 +48,14 @@ function LoginPage() {
         return;
       }
 
-      // Query users table for profile details using auth_user_id.
-      // WARNING: One auth account may be linked to multiple business roles.
-      // To prevent query failure, we avoid .single() and use .limit(1).
+      if (!authUser.email_confirmed_at) {
+        await supabase.auth.signOut();
+        toast.error("Please confirm your email before signing in.");
+        nav({ to: "/verify-email", search: { email } });
+        setIsLoading(false);
+        return;
+      }
+
       const { data: userProfiles, error: userError } = await supabase
         .from("users")
         .select("name, role_id, status")
@@ -64,34 +69,36 @@ function LoginPage() {
       }
 
       const userData = userProfiles[0];
+      const role = ROLE_BY_ID[userData.role_id];
 
-      const roleMap: Record<number, Role> = {
-        1: "super_admin",
-        2: "landlord",
-        3: "tenant",
-        4: "contractor",
-        5: "realtor",
-        6: "service_admin",
-      };
-
-      const role = roleMap[userData.role_id];
       if (!role) {
         toast.error("Invalid role configuration.");
         setIsLoading(false);
         return;
       }
 
+      // Activate profile if email is confirmed but status is still Pending
+      let status = userData.status as "Active" | "Pending" | "Declined" | "Invited";
+      if (status === "Pending" && authUser.email_confirmed_at) {
+        await supabase
+          .from("users")
+          .update({ status: "Active" })
+          .eq("auth_user_id", authUser.id);
+        status = "Active";
+      }
+
       setSession({
         email: authUser.email || email,
         name: userData.name,
         role,
-        status: userData.status as "Active" | "Pending" | "Declined" | "Invited",
+        status,
       });
 
       toast.success(`Welcome back, signing in as ${userData.name}`);
       nav({ to: "/app/dashboard" });
-    } catch (err: any) {
-      toast.error(err.message || "An unexpected error occurred.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
