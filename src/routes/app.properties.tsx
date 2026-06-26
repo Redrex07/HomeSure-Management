@@ -3,7 +3,7 @@ import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image } from "lucide-react";
+import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import {
   useProperties,
@@ -12,6 +12,13 @@ import {
   deleteProperty,
   Property as SupabaseProperty
 } from "@/shared/utils/properties-store";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -30,13 +37,24 @@ export const Route = createFileRoute("/app/properties")({
   component: PropertiesPage,
 });
 
+/** Fixed room labels mapped by upload order (index 0–3) */
+const ROOM_LABELS = ["Hall View", "Front View", "Bed View", "Kitchen View"] as const;
+
 function PropertiesPage() {
   const landlordProps = useProperties();
+  
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
+
+  const filteredProps = landlordProps.filter((p) => {
+    if (propertyTypeFilter === "All") return true;
+    return p.property_type.toLowerCase().includes(propertyTypeFilter.toLowerCase());
+  });
 
   const [isAdding, setIsAdding] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
     useState<SupabaseProperty | null>(null);
+  const [galleryPage, setGalleryPage] = useState(0);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [editingProperty, setEditingProperty] = useState<SupabaseProperty | null>(null);
   const [editForm, setEditForm] = useState({
@@ -91,13 +109,12 @@ function PropertiesPage() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const slotsLeft = 3 - uploadedImages.length;
+    const slotsLeft = 4 - uploadedImages.length;
     if (slotsLeft <= 0) {
-      toast.error("Maximum 3 images allowed per property.");
+      toast.error("Maximum 4 images allowed per property.");
       return;
     }
 
-    // Take only as many files as slots remaining
     const filesToUpload = Array.from(files).slice(0, slotsLeft);
     if (files.length > slotsLeft) {
       toast.warning(
@@ -106,15 +123,54 @@ function PropertiesPage() {
     }
 
     setIsUploading(true);
-    setTimeout(() => {
-      const newUrls = filesToUpload.map(f => URL.createObjectURL(f));
-      setUploadedImages((prev) => [...prev, ...newUrls]);
-      toast.success(
-        `${newUrls.length} image${newUrls.length > 1 ? "s" : ""} uploaded successfully!`,
-      );
+    
+    const compressImage = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new window.Image();
+          img.src = event.target?.result as string;
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx?.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.6)); // Compresses to ~50-100kb
+          };
+          img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+      });
+    };
+
+    try {
+      const base64Images = await Promise.all(filesToUpload.map(compressImage));
+      setUploadedImages((prev) => [...prev, ...base64Images]);
+      toast.success(`${base64Images.length} image${base64Images.length > 1 ? "s" : ""} uploaded successfully!`);
+    } catch (err) {
+      toast.error("Failed to process images.");
+    } finally {
       setIsUploading(false);
       e.target.value = "";
-    }, 500);
+    }
   };
 
   const removeUploadedImage = (index: number) => {
@@ -186,21 +242,62 @@ function PropertiesPage() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const slotsLeft = 3 - editImages.length;
+    const slotsLeft = 4 - editImages.length;
     if (slotsLeft <= 0) {
-      toast.error("Maximum 3 images allowed.");
+      toast.error("Maximum 4 images allowed.");
       return;
     }
 
     const filesToUpload = Array.from(files).slice(0, slotsLeft);
     setIsEditUploading(true);
-    setTimeout(() => {
-      const newUrls = filesToUpload.map(f => URL.createObjectURL(f));
-      setEditImages((prev) => [...prev, ...newUrls]);
-      toast.success(`${newUrls.length} image(s) uploaded!`);
+
+    const compressImage = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new window.Image();
+          img.src = event.target?.result as string;
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx?.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.6));
+          };
+          img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+      });
+    };
+
+    try {
+      const base64Images = await Promise.all(filesToUpload.map(compressImage));
+      setEditImages((prev) => [...prev, ...base64Images]);
+      toast.success(`${base64Images.length} image(s) uploaded!`);
+    } catch (err) {
+      toast.error("Failed to process images.");
+    } finally {
       setIsEditUploading(false);
       e.target.value = "";
-    }, 500);
+    }
   };
 
   const handleUpdateProperty = async (e: React.FormEvent) => {
@@ -250,7 +347,7 @@ function PropertiesPage() {
 
       {/* Add Property Dialog */}
       <Dialog open={isAdding} onOpenChange={setIsAdding}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Property</DialogTitle>
             <DialogDescription className="sr-only">Fill out this form to add a new property.</DialogDescription>
@@ -307,35 +404,39 @@ function PropertiesPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label>Pictures (Up to 3)</Label>
+              <Label>Pictures (Up to 4)</Label>
 
               {/* Thumbnail preview of uploaded images */}
               {uploadedImages.length > 0 && (
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-3 flex-wrap">
                   {uploadedImages.map((url, idx) => (
-                    <div
-                      key={idx}
-                      className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
-                    >
-                      <img
-                        src={url}
-                        alt={`Upload ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeUploadedImage(idx)}
-                        className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    <div key={idx} className="flex flex-col items-center gap-1">
+                      <div
+                        className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
+                        <img
+                          src={url}
+                          alt={ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeUploadedImage(idx)}
+                          className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        {ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                      </span>
                     </div>
                   ))}
                 </div>
               )}
 
               {/* Upload button */}
-              {uploadedImages.length < 3 && (
+              {uploadedImages.length < 4 && (
                 <div className="relative">
                   <Input
                     type="file"
@@ -350,7 +451,7 @@ function PropertiesPage() {
                     <span className="text-sm text-muted-foreground">
                       {isUploading
                         ? "Uploading..."
-                        : `Click to upload (${3 - uploadedImages.length} remaining)`}
+                        : `Upload next: ${ROOM_LABELS[uploadedImages.length] ?? "Image"} (${4 - uploadedImages.length} remaining)`}
                     </span>
                   </div>
                 </div>
@@ -395,74 +496,69 @@ function PropertiesPage() {
                 </div>
               );
             }
-            if (imgs.length === 1) {
-              return (
-                <div className="rounded-xl overflow-hidden bg-muted/30">
-                  <img
-                    src={imgs[0]}
-                    alt={selectedPropertyForImage?.property_name}
-                    className="w-full max-h-[65vh] object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://placehold.co/600x400?text=Image+Not+Found";
-                    }}
-                  />
-                </div>
-              );
-            }
-            // 2 or 3 images — gallery grid layout
+            
+            const itemsPerPage = 2;
+            const totalPages = Math.ceil(imgs.length / itemsPerPage);
+            const currentImages = imgs.slice(galleryPage * itemsPerPage, (galleryPage + 1) * itemsPerPage);
+
             return (
-              <div
-                className="grid gap-2 rounded-xl overflow-hidden"
-                style={{
-                  gridTemplateColumns: "1fr 1fr",
-                  gridTemplateRows:
-                    imgs.length === 3 ? "1fr 1fr" : "1fr",
-                  height: "450px",
-                }}
-              >
-                {/* Main large image — spans left column */}
+              <div className="flex flex-col gap-2">
                 <div
-                  className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center"
+                  className="grid gap-2 rounded-xl overflow-hidden"
                   style={{
-                    gridRow:
-                      imgs.length === 3 ? "1 / 3" : "1",
+                    gridTemplateColumns: currentImages.length === 2 ? "1fr 1fr" : "1fr",
+                    height: "450px",
                   }}
                 >
-                  <img
-                    src={imgs[0]}
-                    alt="Main"
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://placehold.co/600x400?text=Image+Not+Found";
-                    }}
-                  />
+                  {currentImages.map((imgUrl, idx) => {
+                    const globalIdx = galleryPage * itemsPerPage + idx;
+                    const roomLabel = ROOM_LABELS[globalIdx] ?? `Image ${globalIdx + 1}`;
+                    return (
+                      <div
+                        key={idx}
+                        className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center"
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={roomLabel}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "https://placehold.co/600x400?text=Image+Not+Found";
+                          }}
+                        />
+                        {/* Room label overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-3 py-2">
+                          <span className="text-white text-sm font-semibold drop-shadow-md">
+                            {roomLabel}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                {/* Second image — top right */}
-                <div className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center">
-                  <img
-                    src={imgs[1]}
-                    alt="Second"
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://placehold.co/600x400?text=Image+Not+Found";
-                    }}
-                  />
-                </div>
-                {/* Third image — bottom right (if exists) */}
-                {imgs.length === 3 && (
-                  <div className="relative overflow-hidden rounded-lg bg-muted/40 flex items-center justify-center">
-                    <img
-                      src={imgs[2]}
-                      alt="Third"
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://placehold.co/600x400?text=Image+Not+Found";
-                      }}
-                    />
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 mt-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setGalleryPage((p) => Math.max(0, p - 1))}
+                      disabled={galleryPage === 0}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {galleryPage + 1} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setGalleryPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={galleryPage === totalPages - 1}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
                 )}
               </div>
@@ -477,7 +573,26 @@ function PropertiesPage() {
         </div>
       ) : (
         <DataCardGrid
-          rows={landlordProps}
+          rows={filteredProps}
+          toolbar={
+            <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Property Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Types</SelectItem>
+                <SelectItem value="Apartment">Apartment</SelectItem>
+                <SelectItem value="Villa">Villa</SelectItem>
+                <SelectItem value="House">House</SelectItem>
+                <SelectItem value="1 BHK">1 BHK</SelectItem>
+                <SelectItem value="2 BHK">2 BHK</SelectItem>
+                <SelectItem value="3 BHK">3 BHK</SelectItem>
+                <SelectItem value="Loft">Loft</SelectItem>
+                <SelectItem value="Condo">Condo</SelectItem>
+                <SelectItem value="Townhouse">Townhouse</SelectItem>
+              </SelectContent>
+            </Select>
+          }
           filterKeys={["property_name", "address", "property_id"]}
           fields={[
             {
@@ -535,11 +650,14 @@ function PropertiesPage() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedPropertyForImage(p);
+                    setGalleryPage(0);
                   }}
-                  className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                  className="group/pic relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-violet-500/60 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-amber-500/15 px-3 py-1 text-[11px] font-semibold text-violet-700 shadow-sm transition-all duration-300 hover:border-violet-500 hover:from-violet-500/25 hover:via-fuchsia-500/20 hover:to-amber-500/25 hover:shadow-md hover:shadow-violet-500/20 dark:border-violet-400/50 dark:text-violet-300 dark:hover:border-violet-400 dark:hover:shadow-violet-400/20"
                 >
-                  <Image className="h-3 w-3" />
-                  View Pictures
+                  {/* Shimmer sweep effect */}
+                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/pic:translate-x-full dark:via-white/10" />
+                  <Image className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover/pic:scale-110" />
+                  <span className="relative">View Pictures</span>
                 </button>
               ),
             },
@@ -574,7 +692,7 @@ function PropertiesPage() {
         open={!!editingProperty}
         onOpenChange={(open) => !open && setEditingProperty(null)}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Property</DialogTitle>
             <DialogDescription className="sr-only">
@@ -642,35 +760,39 @@ function PropertiesPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label>Pictures (Up to 3)</Label>
+              <Label>Pictures (Up to 4)</Label>
               {editImages.length > 0 && (
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-3 flex-wrap">
                   {editImages.map((url, idx) => (
-                    <div
-                      key={idx}
-                      className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
-                    >
-                      <img
-                        src={url}
-                        alt={`Image ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditImages((prev) =>
-                            prev.filter((_, i) => i !== idx),
-                          )
-                        }
-                        className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    <div key={idx} className="flex flex-col items-center gap-1">
+                      <div
+                        className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
+                        <img
+                          src={url}
+                          alt={ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditImages((prev) =>
+                              prev.filter((_, i) => i !== idx),
+                            )
+                          }
+                          className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        {ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                      </span>
                     </div>
                   ))}
                 </div>
               )}
-              {editImages.length < 3 && (
+              {editImages.length < 4 && (
                 <div className="relative">
                   <Input
                     type="file"
@@ -685,7 +807,7 @@ function PropertiesPage() {
                     <span className="text-sm text-muted-foreground">
                       {isEditUploading
                         ? "Uploading..."
-                        : `Click to upload (${3 - editImages.length} remaining)`}
+                        : `Upload next: ${ROOM_LABELS[editImages.length] ?? "Image"} (${4 - editImages.length} remaining)`}
                     </span>
                   </div>
                 </div>

@@ -11,9 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { setSession } from "@/features/auth/store/auth-store";
-import { registerUser } from "@/features/auth/store/users-store";
-import { ROLE_LABELS, type Role } from "@/features/auth/utils/roles";
+import { ROLE_LABELS, ROLE_IDS, type Role } from "@/features/auth/utils/roles";
+import { supabase } from "@/core/db/supabase";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/signup")({
@@ -32,18 +31,62 @@ function SignupPage() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [role, setRole] = useState<Role>("landlord");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newUser = registerUser(name || "Adithya", email, role);
-    setSession({ email, name: name || "Adithya", role, status: newUser.status });
-    
-    if (newUser.status === "Pending") {
-      toast.info("Registration submitted. Awaiting Super Admin approval.");
-    } else {
-      toast.success("Account created — welcome to HomeSure!");
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: pw,
+        options: {
+          data: { name, role },
+        },
+      });
+
+      if (error) {
+        toast.error(error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      const authUser = data.user;
+      if (!authUser) {
+        toast.error("Account creation failed. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      const { error: profileError } = await supabase.from("users").insert([
+        {
+          auth_user_id: authUser.id,
+          name,
+          email,
+          role_id: ROLE_IDS[role],
+          status: "Pending",
+        },
+      ]);
+
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        toast.error("Account created but profile setup failed. Please contact support.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Sign out any session — user must confirm email before signing in
+      await supabase.auth.signOut();
+
+      toast.success("Account created! Please check your email to confirm your account.");
+      nav({ to: "/verify-email", search: { email } });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
     }
-    nav({ to: "/app/dashboard" });
   };
 
   return (
@@ -107,8 +150,8 @@ function SignupPage() {
             </SelectContent>
           </Select>
         </div>
-        <Button type="submit" className="w-full">
-          Create account
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Creating account..." : "Create account"}
         </Button>
         <p className="text-center text-xs text-muted-foreground">
           By signing up you agree to our Terms and Privacy Policy.

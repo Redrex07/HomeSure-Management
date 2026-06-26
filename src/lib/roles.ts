@@ -23,21 +23,3 @@ export const ROLE_DESCRIPTIONS: Record<Role, string> = {
   contractor: "Jobs, estimates & invoices",
   realtor: "Listings, readiness & onboarding",
 };
-
-export const ROLE_IDS: Record<Role, number> = {
-  super_admin: 1,
-  landlord: 2,
-  tenant: 3,
-  contractor: 4,
-  realtor: 5,
-  service_admin: 6,
-};
-
-export const ROLE_BY_ID: Record<number, Role> = {
-  1: "super_admin",
-  2: "landlord",
-  3: "tenant",
-  4: "contractor",
-  5: "realtor",
-  6: "service_admin",
-};

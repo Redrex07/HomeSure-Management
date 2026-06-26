@@ -73,22 +73,6 @@ export function registerUser(name: string, email: string, role: Role): User {
   return newUser;
 }
 
-export function approveUser(id: string) {
-  ensureInit();
-  const updated = currentUsers.map((u) =>
-    u.id === id ? { ...u, status: "Active" as const } : u
-  );
-  saveUsers(updated);
-}
-
-export function declineUser(id: string) {
-  ensureInit();
-  const updated = currentUsers.map((u) =>
-    u.id === id ? { ...u, status: "Declined" as const } : u
-  );
-  saveUsers(updated);
-}
-
 export function useUsers(): User[] {
   const [u, setU] = useState<User[]>(() => getUsers());
   useEffect(() => {
