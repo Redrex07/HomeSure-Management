@@ -32,6 +32,7 @@ export const realtors = [
   { id: "R-403", realtorId: "R-403", realtorName: "Noah Bennett", email: "noah.b@homesure.app", phone: "(503) 555-3103", agencyName: "Summit Listing Group" },
 ];
 
+
 export const serviceRequests = [
   { id: "SR-9001", serviceRequestId: "SR-9001", propertyId: "P-1042", tenantId: "T-2201", contractorId: "C-301", title: "Leaking kitchen faucet", property: "Maplewood Apartments #3B", tenant: "Sarah Chen", category: "Plumbing", priority: "Medium", status: "Assigned", contractor: "BlueLine Plumbing", created: "2026-05-28", eta: "2026-06-02" },
   { id: "SR-9002", serviceRequestId: "SR-9002", propertyId: "P-1045", tenantId: "T-2203", contractorId: "C-303", title: "AC not cooling", property: "Sunset Villas #7", tenant: "Elena Park", category: "HVAC", priority: "High", status: "In Progress", contractor: "Cool Air HVAC", created: "2026-05-30", eta: "2026-06-01" },
@@ -161,4 +162,51 @@ export const leaseDocs = [
   { id: "DOC-2", name: "Move-in Inspection", size: "1.1 MB", updated: "2024-03-03" },
   { id: "DOC-3", name: "Pet Addendum", size: "98 KB", updated: "2024-03-05" },
   { id: "DOC-4", name: "Renter's Insurance", size: "220 KB", updated: "2024-04-12" },
+];
+
+export const aiListings = [
+  {
+    id: "AI-1",
+    propertyId: "P-1042",
+    title: "Luxury 3BHK Apartment",
+    description:
+      "Spacious 3BHK apartment with modular kitchen, covered parking, balcony and 24x7 security.",
+    keywords: ["3BHK", "Luxury", "Parking", "Family"],
+  },
+];
+
+export const followUps = [
+  {
+    id: "FU-1",
+    customer: "Rahul Sharma",
+    property: "Maplewood Apartments #3B",
+    date: "Tomorrow",
+    type: "Call",
+    status: "Pending",
+  },
+  {
+    id: "FU-2",
+    customer: "Priya Das",
+    property: "Palm Residency",
+    date: "Today",
+    type: "Site Visit",
+    status: "Completed",
+  },
+];
+
+export const realtorNotifications = [
+  {
+    id: "N-1",
+    title: "Property Inspection Completed",
+    message: "Maplewood Apartments is ready for review.",
+    time: "5 mins ago",
+    unread: true,
+  },
+  {
+    id: "N-2",
+    title: "New Lead Assigned",
+    message: "A new customer is interested in Palm Residency.",
+    time: "1 hour ago",
+    unread: false,
+  },
 ];

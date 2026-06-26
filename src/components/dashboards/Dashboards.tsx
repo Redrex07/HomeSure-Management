@@ -12,12 +12,41 @@ import {
   TrendingUp, FileSpreadsheet, Sparkles, Home,
 } from "lucide-react";
 import {
-  properties, tenants, serviceRequests, contractors, appointments, estimates,
-  invoices, tickets, users, subscriptions, auditLogs, revenueSeries, requestsSeries,
-  categoryBreakdown, listings, leaseDocs, propertyReadiness, tenantOnboarding,
+  properties,
+  tenants,
+  serviceRequests,
+  contractors,
+  appointments,
+  estimates,
+  invoices,
+  tickets,
+  users,
+  subscriptions,
+  auditLogs,
+  revenueSeries,
+  requestsSeries,
+  categoryBreakdown,
+  listings,
+  leaseDocs,
+  propertyReadiness,
+  tenantOnboarding,
+  aiListings,
+  followUps,
+  realtorNotifications,
 } from "@/lib/mock-data";
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/lib/auth-store";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/shared/components/ui/select";
+
+import { Label } from "@/shared/components/ui/label";
+
+import { Badge } from "@/shared/components/ui/badge";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -490,6 +519,7 @@ export function RealtorDashboard() {
           </CardContent>
         </Card>
       </div>
+      
     </>
   );
 }

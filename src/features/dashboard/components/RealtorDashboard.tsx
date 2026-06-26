@@ -1,3 +1,13 @@
+import { Badge } from "@/shared/components/ui/badge";
+import { Label } from "@/shared/components/ui/label";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
@@ -50,6 +60,9 @@ import {
   categoryBreakdown,
   listings,
   leaseDocs,
+  aiListings,
+  followUps,
+  realtorNotifications,
 } from "@/shared/utils/mock-data";
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
@@ -183,6 +196,132 @@ export function RealtorDashboard() {
           </CardContent>
         </Card>
       </div>
-    </>
-  );
+      {/* ================= AI LISTING GENERATOR ================= */}
+
+  <Card className="mt-4 border-border/70 shadow-card">
+    <CardHeader>
+      <CardTitle className="text-sm font-semibold">
+        AI Listing Generator
+      </CardTitle>
+    </CardHeader>
+
+    <CardContent className="space-y-4">
+
+      <div className="space-y-2">
+        <Label>Select Property</Label>
+
+        <Select>
+          <SelectTrigger>
+            <SelectValue placeholder="Choose a property" />
+          </SelectTrigger>
+
+          <SelectContent>
+            {properties.map((property) => (
+              <SelectItem
+                key={property.id}
+                value={property.id}
+              >
+                {property.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button className="w-full">
+        Generate AI Listing
+      </Button>
+
+      {aiListings.map((listing) => (
+        <div
+          key={listing.id}
+          className="rounded-lg border border-border bg-muted/40 p-4 space-y-3"
+        >
+          <div>
+            <p className="text-xs text-muted-foreground">
+              Generated Title
+            </p>
+
+            <p className="font-semibold">
+              {listing.title}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground">
+              Description
+            </p>
+
+            <p className="text-sm">
+              {listing.description}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground">
+              SEO Keywords
+            </p>
+
+            <div className="mt-2 flex flex-wrap gap-2">
+              {listing.keywords.map((keyword) => (
+                <Badge key={keyword} variant="secondary">
+                  {keyword}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            className="w-full"
+          >
+            Save Listing
+          </Button>
+        </div>
+      ))}
+
+    </CardContent>
+  </Card>
+  <Card className="mt-4 border-border/70 shadow-card">
+  <CardHeader>
+    <CardTitle className="text-sm font-semibold">
+      Follow-up Reminders
+    </CardTitle>
+  </CardHeader>
+
+  <CardContent className="space-y-3">
+
+    {followUps.map((followUp: (typeof followUps)[number]) => (
+
+      <div
+        key={followUp.id}
+        className="flex items-center justify-between rounded-lg border border-border p-4"
+      >
+
+        <div>
+          <h4 className="font-medium">
+            {followUp.customer}
+          </h4>
+
+          <p className="text-sm text-muted-foreground">
+            {followUp.property}
+          </p>
+
+          <p className="text-xs text-muted-foreground mt-1">
+            {followUp.type} • {followUp.date}
+          </p>
+        </div>
+
+        <StatusBadge value={followUp.status} />
+
+      </div>
+
+    ))}
+
+  </CardContent>
+</Card>
+
+</>
+
+);
 }
