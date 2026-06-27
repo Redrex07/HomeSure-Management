@@ -685,3 +685,50 @@ export const leaseDocs = [
   { id: "DOC-3", name: "Pet Addendum", size: "98 KB", updated: "2024-03-05" },
   { id: "DOC-4", name: "Renter's Insurance", size: "220 KB", updated: "2024-04-12" },
 ];
+
+export const aiListings = [
+  {
+    id: "AI-1",
+    propertyId: "P-1044",
+    title: "Luxury Harbor View Loft",
+    description:
+      "Spacious loft with premium interiors, modular kitchen, balcony, covered parking and 24×7 security.",
+    keywords: ["Luxury", "Loft", "Parking", "Sea View"],
+  },
+];
+
+export const followUps = [
+  {
+    id: "FU-1",
+    customer: "Rahul Sharma",
+    property: "Harbor View Loft 12",
+    date: "Tomorrow",
+    type: "Call",
+    status: "Pending",
+  },
+  {
+    id: "FU-2",
+    customer: "Priya Das",
+    property: "Cedar Heights #11",
+    date: "Today",
+    type: "Site Visit",
+    status: "Completed",
+  },
+];
+
+export const realtorNotifications = [
+  {
+    id: "N-1",
+    title: "Property Inspection Completed",
+    message: "Harbor View Loft is ready for listing.",
+    time: "5 mins ago",
+    unread: true,
+  },
+  {
+    id: "N-2",
+    title: "New Buyer Lead",
+    message: "A new buyer is interested in Cedar Heights #11.",
+    time: "1 hour ago",
+    unread: false,
+  },
+];
