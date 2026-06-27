@@ -12,6 +12,7 @@ import {
   deleteProperty,
   Property as SupabaseProperty
 } from "@/shared/utils/properties-store";
+import { supabase } from "@/core/db/supabase";
 import {
   Select,
   SelectContent,
@@ -124,49 +125,33 @@ function PropertiesPage() {
 
     setIsUploading(true);
     
-    const compressImage = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-          const img = new window.Image();
-          img.src = event.target?.result as string;
-          img.onload = () => {
-            const canvas = document.createElement("canvas");
-            const MAX_WIDTH = 800;
-            const MAX_HEIGHT = 800;
-            let width = img.width;
-            let height = img.height;
+    const uploadToSupabase = async (file: File): Promise<string> => {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "")}`;
+      const { data, error } = await supabase.storage
+        .from('property-images')
+        .upload(`properties/${fileName}`, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-            if (width > height) {
-              if (width > MAX_WIDTH) {
-                height *= MAX_WIDTH / width;
-                width = MAX_WIDTH;
-              }
-            } else {
-              if (height > MAX_HEIGHT) {
-                width *= MAX_HEIGHT / height;
-                height = MAX_HEIGHT;
-              }
-            }
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            ctx?.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL("image/jpeg", 0.6)); // Compresses to ~50-100kb
-          };
-          img.onerror = (error) => reject(error);
-        };
-        reader.onerror = (error) => reject(error);
-      });
+      if (error) {
+        throw error;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('property-images')
+        .getPublicUrl(`properties/${fileName}`);
+
+      return publicUrlData.publicUrl;
     };
 
     try {
-      const base64Images = await Promise.all(filesToUpload.map(compressImage));
-      setUploadedImages((prev) => [...prev, ...base64Images]);
-      toast.success(`${base64Images.length} image${base64Images.length > 1 ? "s" : ""} uploaded successfully!`);
+      const publicUrls = await Promise.all(filesToUpload.map(uploadToSupabase));
+      setUploadedImages((prev) => [...prev, ...publicUrls]);
+      toast.success(`${publicUrls.length} image${publicUrls.length > 1 ? "s" : ""} uploaded successfully!`);
     } catch (err) {
-      toast.error("Failed to process images.");
+      console.error(err);
+      toast.error("Failed to process images. Is your Supabase bucket configured?");
     } finally {
       setIsUploading(false);
       e.target.value = "";
@@ -251,48 +236,30 @@ function PropertiesPage() {
     const filesToUpload = Array.from(files).slice(0, slotsLeft);
     setIsEditUploading(true);
 
-    const compressImage = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-          const img = new window.Image();
-          img.src = event.target?.result as string;
-          img.onload = () => {
-            const canvas = document.createElement("canvas");
-            const MAX_WIDTH = 800;
-            const MAX_HEIGHT = 800;
-            let width = img.width;
-            let height = img.height;
+    const uploadToSupabase = async (file: File): Promise<string> => {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "")}`;
+      const { data, error } = await supabase.storage
+        .from('property-images')
+        .upload(`properties/${fileName}`, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-            if (width > height) {
-              if (width > MAX_WIDTH) {
-                height *= MAX_WIDTH / width;
-                width = MAX_WIDTH;
-              }
-            } else {
-              if (height > MAX_HEIGHT) {
-                width *= MAX_HEIGHT / height;
-                height = MAX_HEIGHT;
-              }
-            }
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            ctx?.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL("image/jpeg", 0.6));
-          };
-          img.onerror = (error) => reject(error);
-        };
-        reader.onerror = (error) => reject(error);
-      });
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('property-images')
+        .getPublicUrl(`properties/${fileName}`);
+
+      return publicUrlData.publicUrl;
     };
 
     try {
-      const base64Images = await Promise.all(filesToUpload.map(compressImage));
-      setEditImages((prev) => [...prev, ...base64Images]);
-      toast.success(`${base64Images.length} image(s) uploaded!`);
+      const publicUrls = await Promise.all(filesToUpload.map(uploadToSupabase));
+      setEditImages((prev) => [...prev, ...publicUrls]);
+      toast.success(`${publicUrls.length} image(s) uploaded!`);
     } catch (err) {
+      console.error(err);
       toast.error("Failed to process images.");
     } finally {
       setIsEditUploading(false);
