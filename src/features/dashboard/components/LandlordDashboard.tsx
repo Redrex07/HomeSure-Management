@@ -91,7 +91,7 @@ export function LandlordDashboard() {
     getInvoices().then(d => setSupabaseInvoices(d as any[]));
   }, [session?.id]);
 
-  const dbProperties = [...supabaseProperties, ...localProperties];
+  const dbProperties = [...supabaseProperties];
   const dbTenants = localTenants;
   const invoices = [...supabaseInvoices, ...localInvoices];
 

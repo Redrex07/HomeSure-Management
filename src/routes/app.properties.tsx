@@ -65,8 +65,7 @@ function PropertiesPage() {
   }, [session?.id]);
 
   const landlordProps: UnifiedProperty[] = [
-    ...supabaseProps,
-    ...localProps.map(p => ({ ...p, isLocal: true }))
+    ...supabaseProps
   ];
   
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
