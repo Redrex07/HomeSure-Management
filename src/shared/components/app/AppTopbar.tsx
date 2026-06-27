@@ -1,4 +1,4 @@
-import { Bell, Search, LogOut, UserCircle2, Settings, Check } from "lucide-react";
+import { Bell, Search, LogOut, UserCircle2, Settings, Check, Palette } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/shared/components/ui/sidebar";
 import { Input } from "@/shared/components/ui/input";
@@ -49,6 +49,31 @@ export function AppTopbar() {
         </kbd>
       </div>
       <div className="ml-auto flex items-center gap-1.5">
+        {session?.role === "Landlord" && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Palette className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Theme Color</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-ocean", "theme-forest", "theme-sunset") }}>
+                Default (Purple)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-forest", "theme-sunset"); document.documentElement.classList.add("theme-ocean") }}>
+                Ocean (Blue)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-ocean", "theme-sunset"); document.documentElement.classList.add("theme-forest") }}>
+                Forest (Green)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-ocean", "theme-forest"); document.documentElement.classList.add("theme-sunset") }}>
+                Sunset (Orange)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative h-9 w-9">
