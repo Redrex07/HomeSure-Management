@@ -190,7 +190,7 @@ export async function getLandlordInvoices(landlordId: string) {
     const { data, error } = await supabase
       .from("invoices")
       .select("*")
-      .eq("landlord_id", landlordId)
+      // .eq("landlord_id", landlordId) // Uncomment if landlord_id exists on invoices
       .order("invoice_id", { ascending: false });
 
     if (error) {

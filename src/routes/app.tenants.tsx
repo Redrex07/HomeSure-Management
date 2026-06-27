@@ -4,16 +4,15 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Plus, Trash2, Pencil } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { sendTenantInviteEmail } from "@/core/api/email.functions";
 import {
-  getLandlordTenants,
-  createTenant,
+  useTenants,
+  addTenant,
   updateTenant,
   deleteTenant,
-} from "@/core/db/supabase-queries";
-import { useSession } from "@/features/auth/store/auth-store";
-import type { Tenant as SupabaseTenant } from "@/shared/utils/tenants-store";
+  Tenant as SupabaseTenant,
+} from "@/shared/utils/tenants-store";
 import {
   Dialog,
   DialogContent,
@@ -31,19 +30,7 @@ export const Route = createFileRoute("/app/tenants")({
 });
 
 function TenantsPage() {
-  const user = useSession();
-  const [landlordTenants, setLandlordTenants] = useState<SupabaseTenant[]>([]);
-
-  const fetchTenants = async () => {
-    if (user?.id) {
-      const data = await getLandlordTenants(user.id);
-      setLandlordTenants(data as SupabaseTenant[]);
-    }
-  };
-
-  useEffect(() => {
-    fetchTenants();
-  }, [user?.id]);
+  const landlordTenants = useTenants();
   const [showInviteForm, setShowInviteForm] = useState(false);
 
   const [form, setForm] = useState({
@@ -71,25 +58,13 @@ function TenantsPage() {
       return;
     }
 
-    if (!user?.id) {
-      toast.error("You must be logged in.");
-      return;
-    }
-
-    try {
-      await createTenant({
-        landlord_id: user.id,
-        tenant_id: form.tenant_id,
-        email: form.email,
-        property_id: form.property_id,
-        onboarding_status: form.onboarding_status,
-        onboarding_date: form.onboarding_date,
-      });
-      fetchTenants();
-    } catch (e) {
-      toast.error("Failed to add tenant");
-      return;
-    }
+    addTenant({
+      tenant_id: form.tenant_id,
+      email: form.email,
+      property_id: form.property_id,
+      onboarding_status: form.onboarding_status,
+      onboarding_date: form.onboarding_date,
+    });
 
     if (form.email) {
       const loadingId = toast.loading("Sending invite email...");
@@ -133,13 +108,8 @@ function TenantsPage() {
     const confirmDelete = confirm("Are you sure you want to delete this tenant?");
     if (!confirmDelete) return;
 
-    try {
-      await deleteTenant(onboardingId);
-      toast.success("Tenant deleted successfully!");
-      fetchTenants();
-    } catch (error) {
-      toast.error("Failed to delete tenant");
-    }
+    deleteTenant(onboardingId);
+    toast.success("Tenant deleted successfully!");
   };
 
   const openEditDialog = (t: SupabaseTenant) => {
@@ -162,20 +132,16 @@ function TenantsPage() {
       return;
     }
 
-    try {
-      await updateTenant(editingTenant.onboarding_id, {
-        tenant_id: editForm.tenant_id,
-        email: editForm.email,
-        property_id: editForm.property_id,
-        onboarding_status: editForm.onboarding_status,
-        onboarding_date: editForm.onboarding_date,
-      });
-      toast.success("Tenant updated successfully!");
-      setEditingTenant(null);
-      fetchTenants();
-    } catch (error) {
-      toast.error("Failed to update tenant");
-    }
+    updateTenant(editingTenant.onboarding_id, {
+      tenant_id: editForm.tenant_id,
+      email: editForm.email,
+      property_id: editForm.property_id,
+      onboarding_status: editForm.onboarding_status,
+      onboarding_date: editForm.onboarding_date,
+    });
+
+    toast.success("Tenant updated successfully!");
+    setEditingTenant(null);
   };
 
   return (
