@@ -49,27 +49,27 @@ export function AppTopbar() {
         </kbd>
       </div>
       <div className="ml-auto flex items-center gap-1.5">
-        {session?.role === "landlord" && (
+        {session?.role?.toLowerCase() === "landlord" && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-9 w-9">
                 <Palette className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuLabel>Theme Color</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-ocean", "theme-forest", "theme-sunset") }}>
-                Default (Purple)
+              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-neon-purple", "theme-custom"); document.documentElement.classList.add("theme-cyber-blue") }} className="gap-2 cursor-pointer">
+                <span className="flex h-4 w-4 shrink-0 rounded-full bg-[#52b6ff] shadow-[0_0_8px_rgba(82,182,255,0.6)]" /> Cyber Blue
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-forest", "theme-sunset"); document.documentElement.classList.add("theme-ocean") }}>
-                Ocean (Blue)
+              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-cyber-blue", "theme-custom"); document.documentElement.classList.add("theme-neon-purple") }} className="gap-2 cursor-pointer">
+                <span className="flex h-4 w-4 shrink-0 rounded-full bg-[#b370ff]" /> Neon Purple
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-ocean", "theme-sunset"); document.documentElement.classList.add("theme-forest") }}>
-                Forest (Green)
+              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-cyber-blue", "theme-neon-purple", "theme-custom") }} className="gap-2 cursor-pointer">
+                <span className="flex h-4 w-4 shrink-0 rounded-full bg-[#4070ff]" /> Light
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-ocean", "theme-forest"); document.documentElement.classList.add("theme-sunset") }}>
-                Sunset (Orange)
+              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-cyber-blue", "theme-neon-purple"); document.documentElement.classList.add("theme-custom") }} className="gap-2 cursor-pointer">
+                <span className="flex h-4 w-4 shrink-0 rounded-full bg-[#ff9040]" /> Custom
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

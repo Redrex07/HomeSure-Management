@@ -148,6 +148,9 @@
   --sidebar-accent: oklch(0.24 0.04 260);
   --sidebar-accent-foreground: oklch(0.95 0.02 260);
   --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.70 0.16 260);
+}
+
 .theme-cyber-blue {
   --primary: oklch(0.70 0.14 220); /* Cyan / Light Blue */
   --primary-soft: oklch(0.95 0.04 220);
