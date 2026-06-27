@@ -94,9 +94,9 @@ export function LandlordDashboard() {
     getInvoices().then(d => setSupabaseInvoices(d as any[]));
   }, [session?.id]);
 
-  const dbProperties = [...localProperties, ...supabaseProperties];
-  const dbTenants = [...localTenants, ...supabaseTenants];
-  const invoices = [...localInvoices, ...supabaseInvoices];
+  const dbProperties = [...supabaseProperties, ...localProperties];
+  const dbTenants = [...supabaseTenants, ...localTenants];
+  const invoices = [...supabaseInvoices, ...localInvoices];
 
   const occupied = dbProperties.filter((p) => p.availability_status === "Occupied").length;
   const occupancy = dbProperties.length > 0 ? Math.round((occupied / dbProperties.length) * 100) : 0;

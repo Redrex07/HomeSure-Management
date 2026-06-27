@@ -66,8 +66,8 @@ function PropertiesPage() {
   }, [session?.id]);
 
   const landlordProps: UnifiedProperty[] = [
-    ...localProps.map(p => ({ ...p, isLocal: true })),
-    ...supabaseProps
+    ...supabaseProps,
+    ...localProps.map(p => ({ ...p, isLocal: true }))
   ];
   
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
@@ -600,6 +600,7 @@ function PropertiesPage() {
       ) : (
         <DataCardGrid
           rows={filteredProps}
+          pageSize={100}
           toolbar={
             <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
               <SelectTrigger className="w-[140px] h-9">
