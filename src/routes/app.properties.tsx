@@ -69,10 +69,26 @@ function PropertiesPage() {
   ];
   
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
+  const [priceFilter, setPriceFilter] = useState("All");
 
   const filteredProps = landlordProps.filter((p) => {
-    if (propertyTypeFilter === "All") return true;
-    return p.property_type.toLowerCase().includes(propertyTypeFilter.toLowerCase());
+    let matchesType = true;
+    let matchesPrice = true;
+
+    if (propertyTypeFilter !== "All") {
+      matchesType = p.property_type.toLowerCase().includes(propertyTypeFilter.toLowerCase());
+    }
+
+    if (priceFilter !== "All") {
+      const price = p.rent_amount;
+      if (priceFilter === "Under ₹10,000") matchesPrice = price < 10000;
+      else if (priceFilter === "₹10,000 - ₹20,000") matchesPrice = price >= 10000 && price <= 20000;
+      else if (priceFilter === "₹20,000 - ₹50,000") matchesPrice = price > 20000 && price <= 50000;
+      else if (priceFilter === "₹50,000 - ₹1,00,000") matchesPrice = price > 50000 && price <= 100000;
+      else if (priceFilter === "Over ₹1,00,000") matchesPrice = price > 100000;
+    }
+
+    return matchesType && matchesPrice;
   });
 
   const [isAdding, setIsAdding] = useState(false);
@@ -603,23 +619,38 @@ function PropertiesPage() {
           rows={filteredProps}
           pageSize={100}
           toolbar={
-            <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
-              <SelectTrigger className="w-[140px] h-9">
-                <SelectValue placeholder="Property Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Types</SelectItem>
-                <SelectItem value="Apartment">Apartment</SelectItem>
-                <SelectItem value="Villa">Villa</SelectItem>
-                <SelectItem value="House">House</SelectItem>
-                <SelectItem value="1 BHK">1 BHK</SelectItem>
-                <SelectItem value="2 BHK">2 BHK</SelectItem>
-                <SelectItem value="3 BHK">3 BHK</SelectItem>
-                <SelectItem value="Loft">Loft</SelectItem>
-                <SelectItem value="Condo">Condo</SelectItem>
-                <SelectItem value="Townhouse">Townhouse</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
+                <SelectTrigger className="w-[140px] h-9">
+                  <SelectValue placeholder="Property Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Types</SelectItem>
+                  <SelectItem value="Apartment">Apartment</SelectItem>
+                  <SelectItem value="Villa">Villa</SelectItem>
+                  <SelectItem value="House">House</SelectItem>
+                  <SelectItem value="1 BHK">1 BHK</SelectItem>
+                  <SelectItem value="2 BHK">2 BHK</SelectItem>
+                  <SelectItem value="3 BHK">3 BHK</SelectItem>
+                  <SelectItem value="Loft">Loft</SelectItem>
+                  <SelectItem value="Condo">Condo</SelectItem>
+                  <SelectItem value="Townhouse">Townhouse</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={priceFilter} onValueChange={setPriceFilter}>
+                <SelectTrigger className="w-[170px] h-9">
+                  <SelectValue placeholder="Price Range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Prices</SelectItem>
+                  <SelectItem value="Under ₹10,000">Under ₹10,000</SelectItem>
+                  <SelectItem value="₹10,000 - ₹20,000">₹10,000 - ₹20,000</SelectItem>
+                  <SelectItem value="₹20,000 - ₹50,000">₹20,000 - ₹50,000</SelectItem>
+                  <SelectItem value="₹50,000 - ₹1,00,000">₹50,000 - ₹1,00,000</SelectItem>
+                  <SelectItem value="Over ₹1,00,000">Over ₹1,00,000</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           }
           filterKeys={["property_name", "address", "property_id"]}
           fields={[
