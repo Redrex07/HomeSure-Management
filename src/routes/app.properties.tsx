@@ -4,14 +4,16 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "@/features/auth/store/auth-store";
 import {
-  useProperties,
-  addProperty,
+  getLandlordProperties,
+  createProperty,
   updateProperty,
-  deleteProperty,
-  Property as SupabaseProperty
-} from "@/shared/utils/properties-store";
+  deleteProperty
+} from "@/core/db/supabase-queries";
+import type { Property as SupabaseProperty } from "@/shared/utils/properties-store";
+import { useProperties } from "@/shared/utils/properties-store";
 import { supabase } from "@/core/db/supabase";
 import {
   Select,
@@ -42,14 +44,64 @@ export const Route = createFileRoute("/app/properties")({
 const ROOM_LABELS = ["Hall View", "Front View", "Bed View", "Kitchen View"] as const;
 
 function PropertiesPage() {
-  const landlordProps = useProperties();
+  const localProps = useProperties();
+  const { session } = useSession();
   
+  const [landlordProps, setLandlordProps] = useState<SupabaseProperty[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const fetchProperties = async () => {
+    if (session?.id) {
+      const data = await getLandlordProperties(session.id);
+      setLandlordProps(data as SupabaseProperty[]);
+    }
+  };
+
+  useEffect(() => {
+    fetchProperties();
+  }, [session?.id]);
+
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
 
   const filteredProps = landlordProps.filter((p) => {
     if (propertyTypeFilter === "All") return true;
     return p.property_type.toLowerCase().includes(propertyTypeFilter.toLowerCase());
   });
+
+  const handleSyncToCloud = async () => {
+    if (!session?.id) return;
+    setIsSyncing(true);
+    try {
+      let syncedCount = 0;
+      for (const p of localProps) {
+        // Check if it already exists by property_name and address (simplified check)
+        const exists = landlordProps.find(sp => sp.property_name === p.property_name && sp.address === p.address);
+        if (!exists) {
+           await createProperty({
+             landlord_id: session.id,
+             property_name: p.property_name,
+             property_type: p.property_type,
+             address: p.address,
+             rent_amount: Number(p.rent_amount),
+             availability_status: p.availability_status,
+             image_url: p.image_url
+           });
+           syncedCount++;
+        }
+      }
+      if (syncedCount > 0) {
+        toast.success(`Successfully synced ${syncedCount} properties to the cloud!`);
+        await fetchProperties();
+      } else {
+        toast.info("All local properties are already synced!");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to sync some properties.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const [isAdding, setIsAdding] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -84,16 +136,22 @@ function PropertiesPage() {
       return;
     }
 
-    addProperty({
-      property_name: form.property_name,
-      property_type: form.property_type,
-      address: form.address,
-      rent_amount: Number(form.rent_amount),
-      availability_status: form.availability_status,
-      image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
-    });
-
-    toast.success("Property added successfully!");
+    try {
+      await createProperty({
+        landlord_id: session?.id || "2",
+        property_name: form.property_name,
+        property_type: form.property_type,
+        address: form.address,
+        rent_amount: Number(form.rent_amount),
+        availability_status: form.availability_status,
+        image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
+      });
+      toast.success("Property added successfully!");
+      fetchProperties();
+    } catch (error) {
+      toast.error("Failed to add property");
+      return;
+    }
 
     setForm({
       property_name: "",
@@ -207,8 +265,13 @@ function PropertiesPage() {
 
     if (!confirmDelete) return;
 
-    deleteProperty(propertyId);
-    toast.success("Property deleted successfully!");
+    try {
+      await deleteProperty(propertyId);
+      toast.success("Property deleted successfully!");
+      fetchProperties();
+    } catch (error) {
+      toast.error("Failed to delete property");
+    }
   };
 
   const openEditDialog = (p: SupabaseProperty) => {
@@ -281,34 +344,38 @@ function PropertiesPage() {
       return;
     }
 
-    updateProperty(editingProperty.property_id, {
-      property_name: editForm.property_name,
-      property_type: editForm.property_type,
-      address: editForm.address,
-      rent_amount: Number(editForm.rent_amount),
-      availability_status: editForm.availability_status,
-      image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
-    });
+    try {
+      await updateProperty(editingProperty.property_id, {
+        property_name: editForm.property_name,
+        property_type: editForm.property_type,
+        address: editForm.address,
+        rent_amount: Number(editForm.rent_amount),
+        availability_status: editForm.availability_status,
+        image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+      });
 
-    toast.success("Property updated successfully!");
-    setEditingProperty(null);
+      toast.success("Property updated successfully!");
+      setEditingProperty(null);
+      fetchProperties();
+    } catch (error) {
+      toast.error("Failed to update property");
+    }
   };
 
   return (
     <>
       <PageHeader
         title="Properties"
-        description="All properties in your portfolio."
+        description="Manage your real estate portfolio."
         actions={
-          <>
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" /> Export
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleSyncToCloud} disabled={isSyncing}>
+              {isSyncing ? "Syncing..." : "Sync to Cloud"}
             </Button>
-
-            <Button size="sm" onClick={() => setIsAdding(true)}>
+            <Button onClick={() => setIsAdding(true)}>
               <Plus className="mr-2 h-4 w-4" /> Add property
             </Button>
-          </>
+          </div>
         }
       />
 
