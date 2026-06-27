@@ -4,14 +4,20 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "@/features/auth/store/auth-store";
 import {
   useProperties,
-  addProperty,
-  updateProperty,
-  deleteProperty,
-  Property as SupabaseProperty
+  updateProperty as updateLocalProperty,
+  deleteProperty as deleteLocalProperty,
+  Property as LocalProperty
 } from "@/shared/utils/properties-store";
+import {
+  getLandlordProperties,
+  createProperty,
+  updateProperty as updateSupabaseProperty,
+  deleteProperty as deleteSupabaseProperty
+} from "@/core/db/supabase-queries";
 import { supabase } from "@/core/db/supabase";
 import {
   Select,
@@ -41,8 +47,28 @@ export const Route = createFileRoute("/app/properties")({
 /** Fixed room labels mapped by upload order (index 0–3) */
 const ROOM_LABELS = ["Hall View", "Front View", "Bed View", "Kitchen View"] as const;
 
+export type UnifiedProperty = LocalProperty & { isLocal?: boolean };
+
 function PropertiesPage() {
-  const landlordProps = useProperties();
+  const localProps = useProperties();
+  const { session } = useSession();
+  const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
+
+  const fetchSupabaseProperties = async () => {
+    if (session?.id) {
+      const data = await getLandlordProperties(session.id);
+      setSupabaseProps(data as UnifiedProperty[]);
+    }
+  };
+
+  useEffect(() => {
+    fetchSupabaseProperties();
+  }, [session?.id]);
+
+  const landlordProps: UnifiedProperty[] = [
+    ...localProps.map(p => ({ ...p, isLocal: true })),
+    ...supabaseProps
+  ];
   
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
 
@@ -54,10 +80,10 @@ function PropertiesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
-    useState<SupabaseProperty | null>(null);
+    useState<UnifiedProperty | null>(null);
   const [galleryPage, setGalleryPage] = useState(0);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [editingProperty, setEditingProperty] = useState<SupabaseProperty | null>(null);
+  const [editingProperty, setEditingProperty] = useState<UnifiedProperty | null>(null);
   const [editForm, setEditForm] = useState({
     property_name: "",
     property_type: "",
@@ -84,16 +110,22 @@ function PropertiesPage() {
       return;
     }
 
-    addProperty({
-      property_name: form.property_name,
-      property_type: form.property_type,
-      address: form.address,
-      rent_amount: Number(form.rent_amount),
-      availability_status: form.availability_status,
-      image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
-    });
-
-    toast.success("Property added successfully!");
+    try {
+      await createProperty({
+        landlord_id: session?.id || "2",
+        property_name: form.property_name,
+        property_type: form.property_type,
+        address: form.address,
+        rent_amount: Number(form.rent_amount),
+        availability_status: form.availability_status,
+        image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
+      });
+      toast.success("Property added successfully!");
+      fetchSupabaseProperties();
+    } catch (error) {
+      toast.error("Failed to add property");
+      return;
+    }
 
     setForm({
       property_name: "",
@@ -202,16 +234,26 @@ function PropertiesPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleDeleteProperty = async (propertyId: number) => {
+  const handleDeleteProperty = async (p: UnifiedProperty) => {
     const confirmDelete = confirm("Are you sure you want to delete this property?");
 
     if (!confirmDelete) return;
 
-    deleteProperty(propertyId);
-    toast.success("Property deleted successfully!");
+    if (p.isLocal) {
+      deleteLocalProperty(p.property_id);
+      toast.success("Local property deleted successfully!");
+    } else {
+      try {
+        await deleteSupabaseProperty(p.property_id);
+        toast.success("Cloud property deleted successfully!");
+        fetchSupabaseProperties();
+      } catch (error) {
+        toast.error("Failed to delete property");
+      }
+    }
   };
 
-  const openEditDialog = (p: SupabaseProperty) => {
+  const openEditDialog = (p: UnifiedProperty) => {
     setEditingProperty(p);
     setEditForm({
       property_name: p.property_name,
@@ -281,17 +323,34 @@ function PropertiesPage() {
       return;
     }
 
-    updateProperty(editingProperty.property_id, {
-      property_name: editForm.property_name,
-      property_type: editForm.property_type,
-      address: editForm.address,
-      rent_amount: Number(editForm.rent_amount),
-      availability_status: editForm.availability_status,
-      image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
-    });
-
-    toast.success("Property updated successfully!");
-    setEditingProperty(null);
+    if (editingProperty.isLocal) {
+      updateLocalProperty(editingProperty.property_id, {
+        property_name: editForm.property_name,
+        property_type: editForm.property_type,
+        address: editForm.address,
+        rent_amount: Number(editForm.rent_amount),
+        availability_status: editForm.availability_status,
+        image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+      });
+      toast.success("Local property updated successfully!");
+      setEditingProperty(null);
+    } else {
+      try {
+        await updateSupabaseProperty(editingProperty.property_id, {
+          property_name: editForm.property_name,
+          property_type: editForm.property_type,
+          address: editForm.address,
+          rent_amount: Number(editForm.rent_amount),
+          availability_status: editForm.availability_status,
+          image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+        });
+        toast.success("Cloud property updated successfully!");
+        setEditingProperty(null);
+        fetchSupabaseProperties();
+      } catch (error) {
+        toast.error("Failed to update property");
+      }
+    }
   };
 
   return (
@@ -644,7 +703,7 @@ function PropertiesPage() {
                 variant="ghost"
                 size="sm"
                 className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => handleDeleteProperty(p.property_id)}
+                onClick={() => handleDeleteProperty(p)}
                 title="Delete"
               >
                 <Trash2 className="h-3.5 w-3.5" />

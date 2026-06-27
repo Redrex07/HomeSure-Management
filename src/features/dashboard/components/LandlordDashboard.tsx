@@ -54,6 +54,8 @@ import { useSession } from "@/features/auth/store/auth-store";
 import { useProperties } from "@/shared/utils/properties-store";
 import { useTenants } from "@/shared/utils/tenants-store";
 import { useInvoices } from "@/shared/utils/invoices-store";
+import { getLandlordProperties, getLandlordTenants, getInvoices } from "@/core/db/supabase-queries";
+import { useState, useEffect } from "react";
 import { formatINR } from "@/shared/utils/utils";
 
 const fmt = (n: number) => formatINR(n);
@@ -76,10 +78,25 @@ export function LandlordDashboard() {
   const session = useSession();
   const landlordId = "2"; // Same fixed landlordId for now
 
-  const dbProperties = useProperties();
-  const dbTenants = useTenants();
-  
-  const invoices = useInvoices();
+  const localProperties = useProperties();
+  const localTenants = useTenants();
+  const localInvoices = useInvoices();
+
+  const [supabaseProperties, setSupabaseProperties] = useState<any[]>([]);
+  const [supabaseTenants, setSupabaseTenants] = useState<any[]>([]);
+  const [supabaseInvoices, setSupabaseInvoices] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (session?.id) {
+      getLandlordProperties(session.id).then(d => setSupabaseProperties(d as any[]));
+      getLandlordTenants(session.id).then(d => setSupabaseTenants(d as any[]));
+    }
+    getInvoices().then(d => setSupabaseInvoices(d as any[]));
+  }, [session?.id]);
+
+  const dbProperties = [...localProperties, ...supabaseProperties];
+  const dbTenants = [...localTenants, ...supabaseTenants];
+  const invoices = [...localInvoices, ...supabaseInvoices];
 
   const occupied = dbProperties.filter((p) => p.availability_status === "Occupied").length;
   const occupancy = dbProperties.length > 0 ? Math.round((occupied / dbProperties.length) * 100) : 0;

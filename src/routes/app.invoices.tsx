@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "@/features/auth/store/auth-store";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -22,12 +23,11 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatCard } from "@/shared/components/common/StatCard";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
-import { useInvoices, updateInvoice } from "@/shared/utils/invoices-store";
+import { useInvoices, updateInvoice as updateLocalInvoice } from "@/shared/utils/invoices-store";
+import { getInvoices, updateInvoiceStatus as updateSupabaseInvoice } from "@/core/db/supabase-queries";
 import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
-import { useSession } from "@/features/auth/store/auth-store";
-
 const formatUsd = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -39,28 +39,57 @@ export const Route = createFileRoute("/app/invoices")({
   component: InvoicesPage,
 });
 
+export type UnifiedInvoice = any & { isLocal?: boolean };
+
 function InvoicesPage() {
   const session = useSession();
   const isContractor = session?.role === "contractor";
   const formatCurrency = (amount: number) =>
     isContractor ? formatUsd.format(amount) : formatINR(amount);
 
-  const invoices = useInvoices();
+  const localInvoices = useInvoices();
+  const [supabaseInvoices, setSupabaseInvoices] = useState<UnifiedInvoice[]>([]);
+
+  const fetchSupabaseInvoices = async () => {
+    const data = await getInvoices();
+    setSupabaseInvoices(data as UnifiedInvoice[]);
+  };
+
+  useEffect(() => {
+    fetchSupabaseInvoices();
+  }, []);
+
+  const invoices: UnifiedInvoice[] = [
+    ...localInvoices.map(i => ({ ...i, isLocal: true })),
+    ...supabaseInvoices
+  ];
   const paid = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
   const pending = invoices.filter((i) => i.status === "Pending").reduce((s, i) => s + i.amount, 0);
   const overdue = invoices.filter((i) => i.status === "Overdue").reduce((s, i) => s + i.amount, 0);
 
   const [editingInvoice, setEditingInvoice] = useState<any | null>(null);
 
-  const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const newStatus = formData.get("status") as string;
     const newReason = formData.get("reason") as string;
     
-    updateInvoice(editingInvoice.id, { status: newStatus, reason: newReason });
-    toast.success("Invoice updated successfully!");
-    setEditingInvoice(null);
+    if (editingInvoice.isLocal) {
+      updateLocalInvoice(editingInvoice.id, { status: newStatus, reason: newReason });
+      toast.success("Local invoice updated successfully!");
+      setEditingInvoice(null);
+    } else {
+      try {
+        const rawId = editingInvoice.id.replace("INV-", "");
+        await updateSupabaseInvoice(rawId, { status: newStatus, reason: newReason });
+        toast.success("Cloud invoice updated successfully!");
+        setEditingInvoice(null);
+        fetchSupabaseInvoices();
+      } catch (error) {
+        toast.error("Failed to update cloud invoice");
+      }
+    }
   };
 
   const getInvoiceHTML = (invoice: any) => {
