@@ -4,14 +4,15 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  useProperties,
-  addProperty,
+  getLandlordProperties,
+  createProperty,
   updateProperty,
   deleteProperty,
-  Property as SupabaseProperty
-} from "@/shared/utils/properties-store";
+} from "@/core/db/supabase-queries";
+import { useSession } from "@/features/auth/store/auth-store";
+import type { Property as SupabaseProperty } from "@/shared/utils/properties-store";
 import {
   Select,
   SelectContent,
@@ -41,7 +42,19 @@ export const Route = createFileRoute("/app/properties")({
 const ROOM_LABELS = ["Hall View", "Front View", "Bed View", "Kitchen View"] as const;
 
 function PropertiesPage() {
-  const landlordProps = useProperties();
+  const user = useSession();
+  const [landlordProps, setLandlordProps] = useState<SupabaseProperty[]>([]);
+
+  const fetchProperties = async () => {
+    if (user?.id) {
+      const data = await getLandlordProperties(user.id);
+      setLandlordProps(data as SupabaseProperty[]);
+    }
+  };
+
+  useEffect(() => {
+    fetchProperties();
+  }, [user?.id]);
   
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
 
@@ -83,26 +96,37 @@ function PropertiesPage() {
       return;
     }
 
-    addProperty({
-      property_name: form.property_name,
-      property_type: form.property_type,
-      address: form.address,
-      rent_amount: Number(form.rent_amount),
-      availability_status: form.availability_status,
-      image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
-    });
+    if (!user?.id) {
+      toast.error("You must be logged in to add a property.");
+      return;
+    }
 
-    toast.success("Property added successfully!");
+    try {
+      await createProperty({
+        landlord_id: user.id,
+        property_name: form.property_name,
+        property_type: form.property_type,
+        address: form.address,
+        rent_amount: Number(form.rent_amount),
+        availability_status: form.availability_status,
+        image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : null,
+      });
 
-    setForm({
-      property_name: "",
-      property_type: "",
-      address: "",
-      rent_amount: "",
-      availability_status: "Available",
-    });
-    setUploadedImages([]);
-    setIsAdding(false);
+      toast.success("Property added successfully!");
+
+      setForm({
+        property_name: "",
+        property_type: "",
+        address: "",
+        rent_amount: "",
+        availability_status: "Available",
+      });
+      setUploadedImages([]);
+      setIsAdding(false);
+      fetchProperties();
+    } catch (error) {
+      toast.error("Failed to add property");
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -222,8 +246,13 @@ function PropertiesPage() {
 
     if (!confirmDelete) return;
 
-    deleteProperty(propertyId);
-    toast.success("Property deleted successfully!");
+    try {
+      await deleteProperty(propertyId);
+      toast.success("Property deleted successfully!");
+      fetchProperties();
+    } catch (error) {
+      toast.error("Failed to delete property");
+    }
   };
 
   const openEditDialog = (p: SupabaseProperty) => {
@@ -314,17 +343,21 @@ function PropertiesPage() {
       return;
     }
 
-    updateProperty(editingProperty.property_id, {
-      property_name: editForm.property_name,
-      property_type: editForm.property_type,
-      address: editForm.address,
-      rent_amount: Number(editForm.rent_amount),
-      availability_status: editForm.availability_status,
-      image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
-    });
-
-    toast.success("Property updated successfully!");
-    setEditingProperty(null);
+    try {
+      await updateProperty(editingProperty.property_id, {
+        property_name: editForm.property_name,
+        property_type: editForm.property_type,
+        address: editForm.address,
+        rent_amount: Number(editForm.rent_amount),
+        availability_status: editForm.availability_status,
+        image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
+      });
+      toast.success("Property updated!");
+      setEditingProperty(null);
+      fetchProperties();
+    } catch (error) {
+      toast.error("Failed to update property");
+    }
   };
 
   return (

@@ -51,9 +51,9 @@ import {
 } from "@/shared/utils/mock-data";
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
-import { useProperties } from "@/shared/utils/properties-store";
-import { useTenants } from "@/shared/utils/tenants-store";
-import { useInvoices } from "@/shared/utils/invoices-store";
+import { getLandlordProperties, getLandlordTenants, getLandlordInvoices } from "@/core/db/supabase-queries";
+import type { Property as SupabaseProperty } from "@/shared/utils/properties-store";
+import type { Tenant as SupabaseTenant } from "@/shared/utils/tenants-store";
 import { formatINR } from "@/shared/utils/utils";
 
 const fmt = (n: number) => formatINR(n);
@@ -74,12 +74,18 @@ const parseImageUrls = (val: unknown): string[] => {
 /* ---------------- LANDLORD ---------------- */
 export function LandlordDashboard() {
   const session = useSession();
-  const landlordId = "2"; // Same fixed landlordId for now
 
-  const dbProperties = useProperties();
-  const dbTenants = useTenants();
-  
-  const invoices = useInvoices();
+  const [dbProperties, setDbProperties] = useState<SupabaseProperty[]>([]);
+  const [dbTenants, setDbTenants] = useState<SupabaseTenant[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (session?.id) {
+      getLandlordProperties(session.id).then((d) => setDbProperties(d as SupabaseProperty[]));
+      getLandlordTenants(session.id).then((d) => setDbTenants(d as SupabaseTenant[]));
+      getLandlordInvoices(session.id).then(setInvoices);
+    }
+  }, [session?.id]);
 
   const occupied = dbProperties.filter((p) => p.availability_status === "Occupied").length;
   const occupancy = dbProperties.length > 0 ? Math.round((occupied / dbProperties.length) * 100) : 0;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -22,7 +22,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatCard } from "@/shared/components/common/StatCard";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
-import { useInvoices, updateInvoice } from "@/shared/utils/invoices-store";
+import { getLandlordInvoices, updateInvoice } from "@/core/db/supabase-queries";
 import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
@@ -45,22 +45,39 @@ function InvoicesPage() {
   const formatCurrency = (amount: number) =>
     isContractor ? formatUsd.format(amount) : formatINR(amount);
 
-  const invoices = useInvoices();
+  const [invoices, setInvoices] = useState<any[]>([]);
+
+  const fetchInvoices = async () => {
+    if (session?.id) {
+      const data = await getLandlordInvoices(session.id);
+      setInvoices(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [session?.id]);
+
   const paid = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
   const pending = invoices.filter((i) => i.status === "Pending").reduce((s, i) => s + i.amount, 0);
   const overdue = invoices.filter((i) => i.status === "Overdue").reduce((s, i) => s + i.amount, 0);
 
   const [editingInvoice, setEditingInvoice] = useState<any | null>(null);
 
-  const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const newStatus = formData.get("status") as string;
     const newReason = formData.get("reason") as string;
     
-    updateInvoice(editingInvoice.id, { status: newStatus, reason: newReason });
-    toast.success("Invoice updated successfully!");
-    setEditingInvoice(null);
+    try {
+      await updateInvoice(editingInvoice.id || editingInvoice.invoice_id, { status: newStatus, reason: newReason });
+      toast.success("Invoice updated successfully!");
+      setEditingInvoice(null);
+      fetchInvoices();
+    } catch (error) {
+      toast.error("Failed to update invoice");
+    }
   };
 
   const getInvoiceHTML = (invoice: any) => {
