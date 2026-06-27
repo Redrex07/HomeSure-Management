@@ -33,7 +33,6 @@ import { Route as AppContractorsRouteImport } from './routes/app.contractors'
 import { Route as AppAuditLogsRouteImport } from './routes/app.audit-logs'
 import { Route as AppAppointmentsRouteImport } from './routes/app.appointments'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
-import { Route as AppPropertiesIdRouteImport } from './routes/app.properties.$id'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -155,11 +154,6 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AppRoute,
 } as any)
-const AppPropertiesIdRoute = AppPropertiesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppPropertiesRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -178,7 +172,7 @@ export interface FileRoutesByFullPath {
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/properties': typeof AppPropertiesRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -186,7 +180,6 @@ export interface FileRoutesByFullPath {
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
-  '/app/properties/$id': typeof AppPropertiesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -205,7 +198,7 @@ export interface FileRoutesByTo {
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/properties': typeof AppPropertiesRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -213,7 +206,6 @@ export interface FileRoutesByTo {
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
-  '/app/properties/$id': typeof AppPropertiesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -233,7 +225,7 @@ export interface FileRoutesById {
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/properties': typeof AppPropertiesRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -241,7 +233,6 @@ export interface FileRoutesById {
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
-  '/app/properties/$id': typeof AppPropertiesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -270,7 +261,6 @@ export interface FileRouteTypes {
     | '/app/tenants'
     | '/app/users'
     | '/auth/confirm'
-    | '/app/properties/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -297,7 +287,6 @@ export interface FileRouteTypes {
     | '/app/tenants'
     | '/app/users'
     | '/auth/confirm'
-    | '/app/properties/$id'
   id:
     | '__root__'
     | '/'
@@ -324,7 +313,6 @@ export interface FileRouteTypes {
     | '/app/tenants'
     | '/app/users'
     | '/auth/confirm'
-    | '/app/properties/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -508,27 +496,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/properties/$id': {
-      id: '/app/properties/$id'
-      path: '/$id'
-      fullPath: '/app/properties/$id'
-      preLoaderRoute: typeof AppPropertiesIdRouteImport
-      parentRoute: typeof AppPropertiesRoute
-    }
   }
 }
-
-interface AppPropertiesRouteChildren {
-  AppPropertiesIdRoute: typeof AppPropertiesIdRoute
-}
-
-const AppPropertiesRouteChildren: AppPropertiesRouteChildren = {
-  AppPropertiesIdRoute: AppPropertiesIdRoute,
-}
-
-const AppPropertiesRouteWithChildren = AppPropertiesRoute._addFileChildren(
-  AppPropertiesRouteChildren,
-)
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
@@ -540,7 +509,7 @@ interface AppRouteChildren {
   AppInvoicesRoute: typeof AppInvoicesRoute
   AppLeasesRoute: typeof AppLeasesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
-  AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
+  AppPropertiesRoute: typeof AppPropertiesRoute
   AppServiceRequestsRoute: typeof AppServiceRequestsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionsRoute: typeof AppSubscriptionsRoute
@@ -559,7 +528,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInvoicesRoute: AppInvoicesRoute,
   AppLeasesRoute: AppLeasesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
-  AppPropertiesRoute: AppPropertiesRouteWithChildren,
+  AppPropertiesRoute: AppPropertiesRoute,
   AppServiceRequestsRoute: AppServiceRequestsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionsRoute: AppSubscriptionsRoute,
