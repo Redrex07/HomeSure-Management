@@ -35,6 +35,8 @@ export function AppTopbar() {
   const [open, setOpen] = useState(false);
   const unread = notes.filter((n) => !n.read).length;
 
+  const ALL_THEMES = ["theme-cyber-blue", "theme-neon-purple", "theme-custom"];
+
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -43,8 +45,26 @@ export function AppTopbar() {
       }
     };
     document.addEventListener("keydown", down);
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem("homesure-theme");
+    if (savedTheme) {
+      document.documentElement.classList.remove(...ALL_THEMES);
+      if (savedTheme !== "light") {
+        document.documentElement.classList.add(savedTheme);
+      }
+    }
+
     return () => document.removeEventListener("keydown", down);
   }, []);
+
+  const changeTheme = (theme: string) => {
+    document.documentElement.classList.remove(...ALL_THEMES);
+    if (theme !== "light") {
+      document.documentElement.classList.add(theme);
+    }
+    localStorage.setItem("homesure-theme", theme);
+  };
 
   const initials = (session?.name ?? "User")
     .split(" ")
@@ -127,16 +147,16 @@ export function AppTopbar() {
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuLabel>Theme Color</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-neon-purple", "theme-custom"); document.documentElement.classList.add("theme-cyber-blue") }} className="gap-2 cursor-pointer">
+              <DropdownMenuItem onClick={() => changeTheme("theme-cyber-blue")} className="gap-2 cursor-pointer">
                 <span className="flex h-4 w-4 shrink-0 rounded-full bg-[#52b6ff] shadow-[0_0_8px_rgba(82,182,255,0.6)]" /> Cyber Blue
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-cyber-blue", "theme-custom"); document.documentElement.classList.add("theme-neon-purple") }} className="gap-2 cursor-pointer">
+              <DropdownMenuItem onClick={() => changeTheme("theme-neon-purple")} className="gap-2 cursor-pointer">
                 <span className="flex h-4 w-4 shrink-0 rounded-full bg-[#b370ff]" /> Neon Purple
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-cyber-blue", "theme-neon-purple", "theme-custom") }} className="gap-2 cursor-pointer">
+              <DropdownMenuItem onClick={() => changeTheme("light")} className="gap-2 cursor-pointer">
                 <span className="flex h-4 w-4 shrink-0 rounded-full bg-[#4070ff]" /> Light
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { document.documentElement.classList.remove("theme-cyber-blue", "theme-neon-purple"); document.documentElement.classList.add("theme-custom") }} className="gap-2 cursor-pointer">
+              <DropdownMenuItem onClick={() => changeTheme("theme-custom")} className="gap-2 cursor-pointer">
                 <span className="flex h-4 w-4 shrink-0 rounded-full bg-[#ff9040]" /> Custom
               </DropdownMenuItem>
             </DropdownMenuContent>
