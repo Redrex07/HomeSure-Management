@@ -15,15 +15,35 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { useSession, setSession } from "@/features/auth/store/auth-store";
-import { notifications } from "@/shared/utils/mock-data";
-import { useState } from "react";
+import { notifications, properties } from "@/shared/utils/mock-data";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/shared/components/ui/command";
 
 export function AppTopbar() {
   const session = useSession();
   const navigate = useNavigate();
   const [notes, setNotes] = useState(notifications);
+  const [open, setOpen] = useState(false);
   const unread = notes.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   const initials = (session?.name ?? "User")
     .split(" ")
@@ -42,12 +62,49 @@ export function AppTopbar() {
     <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur-md sm:px-4">
       <SidebarTrigger className="-ml-1" />
       <div className="relative ml-2 hidden flex-1 max-w-md md:block">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search properties, tenants, requests…" className="h-9 pl-9" />
-        <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline-block">
-          ⌘K
-        </kbd>
+        <Button
+          variant="outline"
+          onClick={() => setOpen(true)}
+          className="relative h-9 w-full justify-start text-sm text-muted-foreground font-normal bg-background/50 backdrop-blur-md"
+        >
+          <Search className="mr-2 h-4 w-4 shrink-0" />
+          <span className="truncate">Search properties, tenants, requests…</span>
+          <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline-block">
+            ⌘K
+          </kbd>
+        </Button>
       </div>
+
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandInput placeholder="Type a command or search..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup heading="Properties">
+            {properties.slice(0, 3).map((property) => (
+              <CommandItem
+                key={property.id}
+                onSelect={() => {
+                  setOpen(false);
+                  navigate({ to: "/app/properties" });
+                }}
+              >
+                {property.name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandGroup heading="Quick Links">
+            <CommandItem onSelect={() => { setOpen(false); navigate({ to: "/app/dashboard" }); }}>
+              Dashboard
+            </CommandItem>
+            <CommandItem onSelect={() => { setOpen(false); navigate({ to: "/app/properties" }); }}>
+              Properties
+            </CommandItem>
+            <CommandItem onSelect={() => { setOpen(false); navigate({ to: "/app/tenants" }); }}>
+              Tenants
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
       <div className="ml-auto flex items-center gap-1.5">
         {session?.role?.toLowerCase() === "landlord" && (
           <DropdownMenu>
