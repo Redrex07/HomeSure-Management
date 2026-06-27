@@ -49,7 +49,7 @@ import {
   listings,
   leaseDocs,
 } from "@/shared/utils/mock-data";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
 import { useTenants } from "@/shared/utils/tenants-store";
 import { useInvoices } from "@/shared/utils/invoices-store";
@@ -93,11 +93,15 @@ export function LandlordDashboard() {
     setSupabaseInvoices(data as any[]);
   }, []);
 
-  // Initial fetch
+  const location = useLocation();
+
+  // Initial fetch + location change fetch
   useEffect(() => {
-    fetchProperties();
-    fetchInvoices();
-  }, [fetchProperties, fetchInvoices]);
+    if (location.pathname.includes("dashboard")) {
+      fetchProperties();
+      fetchInvoices();
+    }
+  }, [fetchProperties, fetchInvoices, location.pathname]);
 
   // Re-fetch when user navigates back to this page (tab focus) or when properties are updated
   useEffect(() => {
@@ -109,9 +113,17 @@ export function LandlordDashboard() {
     window.addEventListener("focus", handleFocus);
     window.addEventListener("supabase-properties-updated", handleFocus);
 
+    // Failsafe: Poll every 3 seconds while on dashboard
+    const interval = setInterval(() => {
+      if (window.location.pathname.includes("dashboard")) {
+        fetchProperties();
+      }
+    }, 3000);
+
     return () => {
       window.removeEventListener("focus", handleFocus);
       window.removeEventListener("supabase-properties-updated", handleFocus);
+      clearInterval(interval);
     };
   }, [fetchProperties, fetchInvoices]);
 
