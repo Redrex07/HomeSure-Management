@@ -54,7 +54,6 @@ import { useSession } from "@/features/auth/store/auth-store";
 import { useTenants } from "@/shared/utils/tenants-store";
 import { useInvoices } from "@/shared/utils/invoices-store";
 import { getLandlordProperties, getInvoices } from "@/core/db/supabase-queries";
-import { supabase } from "@/core/db/supabase";
 import { formatINR } from "@/shared/utils/utils";
 
 const fmt = (n: number) => formatINR(n);
@@ -100,24 +99,21 @@ export function LandlordDashboard() {
     fetchInvoices();
   }, [fetchProperties, fetchInvoices]);
 
-  // Real-time subscription for properties table
+  // Re-fetch when user navigates back to this page (tab focus) or when properties are updated
   useEffect(() => {
-    const channel = supabase
-      .channel("dashboard-properties-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "properties" },
-        () => {
-          // Re-fetch properties whenever any INSERT/UPDATE/DELETE happens
-          fetchProperties();
-        }
-      )
-      .subscribe();
+    const handleFocus = () => {
+      fetchProperties();
+      fetchInvoices();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("supabase-properties-updated", handleFocus);
 
     return () => {
-      supabase.removeChannel(channel);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("supabase-properties-updated", handleFocus);
     };
-  }, [fetchProperties]);
+  }, [fetchProperties, fetchInvoices]);
 
   const dbProperties = supabaseProperties;
   const dbTenants = localTenants;

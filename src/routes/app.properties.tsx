@@ -120,6 +120,7 @@ function PropertiesPage() {
       });
       toast.success("Property added successfully!");
       fetchSupabaseProperties();
+      window.dispatchEvent(new Event("supabase-properties-updated"));
     } catch (error) {
       toast.error("Failed to add property");
       return;
@@ -245,6 +246,7 @@ function PropertiesPage() {
         await deleteSupabaseProperty(p.property_id);
         toast.success("Cloud property deleted successfully!");
         fetchSupabaseProperties();
+        window.dispatchEvent(new Event("supabase-properties-updated"));
       } catch (error) {
         toast.error("Failed to delete property");
       }
@@ -345,6 +347,7 @@ function PropertiesPage() {
         toast.success("Cloud property updated successfully!");
         setEditingProperty(null);
         fetchSupabaseProperties();
+        window.dispatchEvent(new Event("supabase-properties-updated"));
       } catch (error) {
         toast.error("Failed to update property");
       }
