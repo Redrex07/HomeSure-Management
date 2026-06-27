@@ -49,7 +49,7 @@ export function AppTopbar() {
         </kbd>
       </div>
       <div className="ml-auto flex items-center gap-1.5">
-        {session?.role === "Landlord" && (
+        {session?.role === "landlord" && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-9 w-9">
