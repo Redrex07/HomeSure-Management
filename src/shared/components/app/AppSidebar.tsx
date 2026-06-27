@@ -40,9 +40,9 @@ import { Badge } from "@/shared/components/ui/badge";
 
 type Item = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
 
-const COMMON: Item[] = [{ title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard }];
+export const COMMON: Item[] = [{ title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard }];
 
-const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
+export const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
   super_admin: [
     { label: "Overview", items: COMMON },
     {

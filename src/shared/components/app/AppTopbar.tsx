@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { useSession, setSession } from "@/features/auth/store/auth-store";
 import { notifications, properties } from "@/shared/utils/mock-data";
+import { NAV_BY_ROLE } from "./AppSidebar";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
@@ -92,17 +93,26 @@ export function AppTopbar() {
               </CommandItem>
             ))}
           </CommandGroup>
-          <CommandGroup heading="Quick Links">
-            <CommandItem onSelect={() => { setOpen(false); navigate({ to: "/app/dashboard" }); }}>
-              Dashboard
-            </CommandItem>
-            <CommandItem onSelect={() => { setOpen(false); navigate({ to: "/app/properties" }); }}>
-              Properties
-            </CommandItem>
-            <CommandItem onSelect={() => { setOpen(false); navigate({ to: "/app/tenants" }); }}>
-              Tenants
-            </CommandItem>
-          </CommandGroup>
+          {session?.role && NAV_BY_ROLE[session.role]?.map((group) => (
+            <CommandGroup key={group.label} heading={group.label}>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <CommandItem
+                    key={item.title}
+                    onSelect={() => {
+                      setOpen(false);
+                      navigate({ to: item.url });
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                    {item.title}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          ))}
         </CommandList>
       </CommandDialog>
       <div className="ml-auto flex items-center gap-1.5">
