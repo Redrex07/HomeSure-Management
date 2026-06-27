@@ -3,7 +3,7 @@ import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSession } from "@/features/auth/store/auth-store";
 import {
@@ -98,12 +98,14 @@ function PropertiesPage() {
   const [galleryPage, setGalleryPage] = useState(0);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [editingProperty, setEditingProperty] = useState<UnifiedProperty | null>(null);
+  const [selectedPropertyForAmenities, setSelectedPropertyForAmenities] = useState<UnifiedProperty | null>(null);
   const [editForm, setEditForm] = useState({
     property_name: "",
     property_type: "",
     address: "",
     rent_amount: "",
     availability_status: "Available",
+    amenities: "",
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -114,6 +116,7 @@ function PropertiesPage() {
     address: "",
     rent_amount: "",
     availability_status: "Available",
+    amenities: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
@@ -133,6 +136,7 @@ function PropertiesPage() {
         rent_amount: Number(form.rent_amount),
         availability_status: form.availability_status,
         image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
+        amenities: form.amenities,
       });
       toast.success("Property added successfully!");
       fetchSupabaseProperties();
@@ -148,6 +152,7 @@ function PropertiesPage() {
       address: "",
       rent_amount: "",
       availability_status: "Available",
+      amenities: "",
     });
     setUploadedImages([]);
     setIsAdding(false);
@@ -277,6 +282,7 @@ function PropertiesPage() {
       address: p.address,
       rent_amount: String(p.rent_amount),
       availability_status: p.availability_status,
+      amenities: p.amenities || "",
     });
     setEditImages(parseImageUrls(p.image_url));
   };
@@ -347,6 +353,7 @@ function PropertiesPage() {
         rent_amount: Number(editForm.rent_amount),
         availability_status: editForm.availability_status,
         image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+        amenities: editForm.amenities,
       });
       toast.success("Property updated successfully!");
       setEditingProperty(null);
@@ -359,6 +366,7 @@ function PropertiesPage() {
           rent_amount: Number(editForm.rent_amount),
           availability_status: editForm.availability_status,
           image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+          amenities: editForm.amenities,
         });
         toast.success("Property updated successfully!");
         setEditingProperty(null);
@@ -444,6 +452,15 @@ function PropertiesPage() {
                 <option value="Available">Available</option>
                 <option value="Occupied">Occupied</option>
               </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Amenities</Label>
+              <Input
+                placeholder="E.g., Swimming pool, Gated community, Home theater"
+                value={form.amenities}
+                onChange={(e) => setForm({ ...form, amenities: e.target.value })}
+              />
             </div>
 
             <div className="grid gap-2">
@@ -702,6 +719,23 @@ function PropertiesPage() {
               render: (p) => <StatusBadge value={p.availability_status} />,
             },
             {
+              key: "amenities",
+              label: "Amenities",
+              render: (p) => (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPropertyForAmenities(p);
+                  }}
+                  className="group/amenities relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-emerald-500/60 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-cyan-500/15 px-3 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm transition-all duration-300 hover:border-emerald-500 hover:from-emerald-500/25 hover:via-teal-500/20 hover:to-cyan-500/25 hover:shadow-md hover:shadow-emerald-500/20 dark:border-emerald-400/50 dark:text-emerald-300 dark:hover:border-emerald-400 dark:hover:shadow-emerald-400/20"
+                >
+                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/amenities:translate-x-full dark:via-white/10" />
+                  <ListChecks className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover/amenities:scale-110" />
+                  <span className="relative">Amenities</span>
+                </button>
+              ),
+            },
+            {
               key: "image_url",
               label: "Pictures",
               render: (p) => (
@@ -819,6 +853,17 @@ function PropertiesPage() {
             </div>
 
             <div className="grid gap-2">
+              <Label>Amenities</Label>
+              <Input
+                placeholder="E.g., Swimming pool, Gated community, Home theater"
+                value={editForm.amenities}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, amenities: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid gap-2">
               <Label>Pictures (Up to 4)</Label>
               {editImages.length > 0 && (
                 <div className="flex gap-3 flex-wrap">
@@ -884,6 +929,42 @@ function PropertiesPage() {
               <Button type="submit">Update Property</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Amenities Dialog */}
+      <Dialog
+        open={!!selectedPropertyForAmenities}
+        onOpenChange={(open) => !open && setSelectedPropertyForAmenities(null)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedPropertyForAmenities?.property_name} - Amenities
+            </DialogTitle>
+            <DialogDescription>
+              Available amenities for this property.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedPropertyForAmenities?.amenities ? (
+              <ul className="grid gap-2">
+                {selectedPropertyForAmenities.amenities.split(',').map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 bg-muted/50 p-2 rounded-md text-sm border border-border">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <span>{item.trim()}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center text-muted-foreground p-8 bg-muted/30 rounded-lg">
+                <p>No amenities listed for this property.</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setSelectedPropertyForAmenities(null)}>Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

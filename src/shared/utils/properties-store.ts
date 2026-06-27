@@ -10,6 +10,7 @@ export interface Property {
   rent_amount: number;
   availability_status: string;
   image_url?: string;
+  amenities?: string;
 }
 
 const STORAGE_KEY = "homesure_properties";
@@ -25,6 +26,7 @@ const getInitialProperties = (): Property[] =>
     rent_amount: p.rent,
     availability_status: p.status,
     image_url: JSON.stringify([p.image]),
+    amenities: p.amenities || "",
   }));
 
 // Load from localStorage, falling back to mock data

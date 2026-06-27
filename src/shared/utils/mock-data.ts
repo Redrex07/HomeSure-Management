@@ -12,6 +12,7 @@ export const properties = [
     tenant: "Sarah Chen",
     landlord: "Daniel Ortiz",
     image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600",
+    amenities: "Master suite balcony, Gated community",
   },
   {
     id: "P-1043",
@@ -24,6 +25,7 @@ export const properties = [
     tenant: "Marcus Hill",
     landlord: "Daniel Ortiz",
     image: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=600",
+    amenities: "Outdoor kitchen, Swimming pool",
   },
   {
     id: "P-1044",
