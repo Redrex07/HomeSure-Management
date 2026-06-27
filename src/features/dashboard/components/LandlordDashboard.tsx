@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
@@ -51,11 +51,10 @@ import {
 } from "@/shared/utils/mock-data";
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
-import { useProperties } from "@/shared/utils/properties-store";
 import { useTenants } from "@/shared/utils/tenants-store";
 import { useInvoices } from "@/shared/utils/invoices-store";
 import { getLandlordProperties, getInvoices } from "@/core/db/supabase-queries";
-import { useState, useEffect } from "react";
+import { supabase } from "@/core/db/supabase";
 import { formatINR } from "@/shared/utils/utils";
 
 const fmt = (n: number) => formatINR(n);
@@ -78,20 +77,49 @@ export function LandlordDashboard() {
   const session = useSession();
   const landlordId = "2"; // Same fixed landlordId for now
 
-  const localProperties = useProperties();
   const localTenants = useTenants();
   const localInvoices = useInvoices();
 
   const [supabaseProperties, setSupabaseProperties] = useState<any[]>([]);
   const [supabaseInvoices, setSupabaseInvoices] = useState<any[]>([]);
 
-  useEffect(() => {
+  const fetchProperties = useCallback(async () => {
     const fetchId = session?.id || "2";
-    getLandlordProperties(fetchId).then(d => setSupabaseProperties(d as any[]));
-    getInvoices().then(d => setSupabaseInvoices(d as any[]));
+    const data = await getLandlordProperties(fetchId);
+    setSupabaseProperties(data as any[]);
   }, [session?.id]);
 
-  const dbProperties = [...supabaseProperties];
+  const fetchInvoices = useCallback(async () => {
+    const data = await getInvoices();
+    setSupabaseInvoices(data as any[]);
+  }, []);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchProperties();
+    fetchInvoices();
+  }, [fetchProperties, fetchInvoices]);
+
+  // Real-time subscription for properties table
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-properties-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "properties" },
+        () => {
+          // Re-fetch properties whenever any INSERT/UPDATE/DELETE happens
+          fetchProperties();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchProperties]);
+
+  const dbProperties = supabaseProperties;
   const dbTenants = localTenants;
   const invoices = [...supabaseInvoices, ...localInvoices];
 
