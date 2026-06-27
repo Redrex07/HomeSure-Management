@@ -4,21 +4,15 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Plus, Trash2, Pencil } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useSession } from "@/features/auth/store/auth-store";
+import { useState } from "react";
 import { sendTenantInviteEmail } from "@/core/api/email.functions";
 import {
   useTenants,
-  updateTenant as updateLocalTenant,
-  deleteTenant as deleteLocalTenant,
-  Tenant as LocalTenant,
+  addTenant,
+  updateTenant,
+  deleteTenant,
+  Tenant,
 } from "@/shared/utils/tenants-store";
-import {
-  getLandlordTenants,
-  createTenant,
-  updateTenant as updateSupabaseTenant,
-  deleteTenant as deleteSupabaseTenant
-} from "@/core/db/supabase-queries";
 import {
   Dialog,
   DialogContent,
@@ -35,27 +29,8 @@ export const Route = createFileRoute("/app/tenants")({
   component: TenantsPage,
 });
 
-export type UnifiedTenant = LocalTenant & { isLocal?: boolean };
-
 function TenantsPage() {
-  const localTenants = useTenants();
-  const { session } = useSession();
-  const [supabaseTenants, setSupabaseTenants] = useState<UnifiedTenant[]>([]);
-
-  const fetchSupabaseTenants = async () => {
-    const landlordId = session?.id || "2";
-    const data = await getLandlordTenants(landlordId);
-    setSupabaseTenants(data as UnifiedTenant[]);
-  };
-
-  useEffect(() => {
-    fetchSupabaseTenants();
-  }, [session?.id]);
-
-  const landlordTenants: UnifiedTenant[] = [
-    ...localTenants.map(t => ({ ...t, isLocal: true })),
-    ...supabaseTenants
-  ];
+  const landlordTenants = useTenants();
   const [showInviteForm, setShowInviteForm] = useState(false);
 
   const [form, setForm] = useState({
@@ -66,7 +41,7 @@ function TenantsPage() {
     onboarding_date: new Date().toISOString().split("T")[0],
   });
 
-  const [editingTenant, setEditingTenant] = useState<UnifiedTenant | null>(null);
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [editForm, setEditForm] = useState({
     tenant_id: "",
     email: "",
@@ -75,28 +50,23 @@ function TenantsPage() {
     onboarding_date: "",
   });
 
-  const handleInviteSubmit = async (e: React.FormEvent) => {
+  const handleInviteTenant = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.tenant_id || !form.email || !form.property_id) {
-      toast.error("Please fill all required fields");
+    if (!form.tenant_id || !form.email || !form.property_id || !form.onboarding_date) {
+      toast.error("Please fill all fields");
       return;
     }
 
-    try {
-      await createTenant({
-        landlord_id: session?.id || "2",
-        tenant_id: form.tenant_id,
-        email: form.email,
-        property_id: form.property_id,
-        onboarding_status: "Active",
-      });
-      toast.success("Tenant added successfully!");
-      fetchSupabaseTenants();
-    } catch (error) {
-      toast.error("Failed to add tenant");
-      return;
-    }
+    addTenant({
+      tenant_id: form.tenant_id,
+      email: form.email,
+      property_id: form.property_id,
+      onboarding_status: form.onboarding_status,
+      onboarding_date: form.onboarding_date,
+    });
+
+    toast.success("Tenant added successfully!");
 
     if (form.email) {
       const loadingId = toast.loading("Sending invite email...");
@@ -136,26 +106,15 @@ function TenantsPage() {
     setShowInviteForm(false);
   };
 
-  const handleDeleteTenant = async (t: UnifiedTenant) => {
+  const handleDeleteTenant = async (onboardingId: string) => {
     const confirmDelete = confirm("Are you sure you want to delete this tenant?");
-
     if (!confirmDelete) return;
 
-    if (t.isLocal) {
-      deleteLocalTenant(t.onboarding_id);
-      toast.success("Local tenant deleted successfully!");
-    } else {
-      try {
-        await deleteSupabaseTenant(t.onboarding_id);
-        toast.success("Cloud tenant deleted successfully!");
-        fetchSupabaseTenants();
-      } catch (error) {
-        toast.error("Failed to delete tenant");
-      }
-    }
+    deleteTenant(onboardingId);
+    toast.success("Tenant deleted successfully!");
   };
 
-  const openEditDialog = (t: UnifiedTenant) => {
+  const openEditDialog = (t: Tenant) => {
     setEditingTenant(t);
     setEditForm({
       tenant_id: String(t.tenant_id),
@@ -175,30 +134,16 @@ function TenantsPage() {
       return;
     }
 
-    if (editingTenant.isLocal) {
-      updateLocalTenant(editingTenant.onboarding_id, {
-        tenant_id: editForm.tenant_id,
-        email: editForm.email,
-        property_id: editForm.property_id,
-        onboarding_status: editForm.onboarding_status,
-      });
-      toast.success("Local tenant updated successfully!");
-      setEditingTenant(null);
-    } else {
-      try {
-        await updateSupabaseTenant(editingTenant.onboarding_id, {
-          tenant_id: editForm.tenant_id,
-          email: editForm.email,
-          property_id: editForm.property_id,
-          onboarding_status: editForm.onboarding_status,
-        });
-        toast.success("Cloud tenant updated successfully!");
-        setEditingTenant(null);
-        fetchSupabaseTenants();
-      } catch (error) {
-        toast.error("Failed to update tenant");
-      }
-    }
+    updateTenant(editingTenant.onboarding_id, {
+      tenant_id: editForm.tenant_id,
+      email: editForm.email,
+      property_id: editForm.property_id,
+      onboarding_status: editForm.onboarding_status,
+      onboarding_date: editForm.onboarding_date,
+    });
+
+    toast.success("Tenant updated successfully!");
+    setEditingTenant(null);
   };
 
   return (
@@ -220,7 +165,7 @@ function TenantsPage() {
             <DialogTitle>Invite Tenant</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleInviteSubmit} className="grid gap-4 py-4">
+          <form onSubmit={handleInviteTenant} className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Tenant ID</Label>
               <Input
@@ -330,7 +275,7 @@ function TenantsPage() {
             {
               key: "onboarding_status",
               label: "Status",
-              render: (t: UnifiedTenant) => <StatusBadge value={t.onboarding_status} />,
+              render: (t: Tenant) => <StatusBadge value={t.onboarding_status} />,
             },
             {
               key: "onboarding_date_value",
@@ -360,7 +305,7 @@ function TenantsPage() {
                 className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDeleteTenant(t);
+                  handleDeleteTenant(t.onboarding_id);
                 }}
                 title="Delete"
               >

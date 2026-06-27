@@ -54,7 +54,7 @@ import { useSession } from "@/features/auth/store/auth-store";
 import { useProperties } from "@/shared/utils/properties-store";
 import { useTenants } from "@/shared/utils/tenants-store";
 import { useInvoices } from "@/shared/utils/invoices-store";
-import { getLandlordProperties, getLandlordTenants, getInvoices } from "@/core/db/supabase-queries";
+import { getLandlordProperties, getInvoices } from "@/core/db/supabase-queries";
 import { useState, useEffect } from "react";
 import { formatINR } from "@/shared/utils/utils";
 
@@ -83,18 +83,16 @@ export function LandlordDashboard() {
   const localInvoices = useInvoices();
 
   const [supabaseProperties, setSupabaseProperties] = useState<any[]>([]);
-  const [supabaseTenants, setSupabaseTenants] = useState<any[]>([]);
   const [supabaseInvoices, setSupabaseInvoices] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchId = session?.id || "2";
     getLandlordProperties(fetchId).then(d => setSupabaseProperties(d as any[]));
-    getLandlordTenants(fetchId).then(d => setSupabaseTenants(d as any[]));
     getInvoices().then(d => setSupabaseInvoices(d as any[]));
   }, [session?.id]);
 
   const dbProperties = [...supabaseProperties, ...localProperties];
-  const dbTenants = [...supabaseTenants, ...localTenants];
+  const dbTenants = localTenants;
   const invoices = [...supabaseInvoices, ...localInvoices];
 
   const occupied = dbProperties.filter((p) => p.availability_status === "Occupied").length;
