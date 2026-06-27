@@ -240,11 +240,11 @@ function PropertiesPage() {
 
     if (p.isLocal) {
       deleteLocalProperty(p.property_id);
-      toast.success("Local property deleted successfully!");
+      toast.success("Property deleted successfully!");
     } else {
       try {
         await deleteSupabaseProperty(p.property_id);
-        toast.success("Cloud property deleted successfully!");
+        toast.success("Property deleted successfully!");
         fetchSupabaseProperties();
         window.dispatchEvent(new Event("supabase-properties-updated"));
       } catch (error) {
@@ -332,7 +332,7 @@ function PropertiesPage() {
         availability_status: editForm.availability_status,
         image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
       });
-      toast.success("Local property updated successfully!");
+      toast.success("Property updated successfully!");
       setEditingProperty(null);
     } else {
       try {
@@ -344,7 +344,7 @@ function PropertiesPage() {
           availability_status: editForm.availability_status,
           image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
         });
-        toast.success("Cloud property updated successfully!");
+        toast.success("Property updated successfully!");
         setEditingProperty(null);
         fetchSupabaseProperties();
         window.dispatchEvent(new Event("supabase-properties-updated"));
