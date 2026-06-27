@@ -55,14 +55,14 @@ function PropertiesPage() {
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
 
   const fetchSupabaseProperties = async () => {
-    const landlordId = session?.id || "2";
+    const landlordId = "2"; // Force "2" to match Supabase mock data
     const data = await getLandlordProperties(landlordId);
     setSupabaseProps(data as UnifiedProperty[]);
   };
 
   useEffect(() => {
     fetchSupabaseProperties();
-  }, [session?.id]);
+  }, []);
 
   const landlordProps: UnifiedProperty[] = [
     ...supabaseProps
@@ -110,7 +110,7 @@ function PropertiesPage() {
 
     try {
       await createProperty({
-        landlord_id: session?.id || "2",
+        landlord_id: "2", // Force "2" to match Supabase mock data
         property_name: form.property_name,
         property_type: form.property_type,
         address: form.address,

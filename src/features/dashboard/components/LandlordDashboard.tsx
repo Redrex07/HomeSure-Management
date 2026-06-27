@@ -83,10 +83,10 @@ export function LandlordDashboard() {
   const [supabaseInvoices, setSupabaseInvoices] = useState<any[]>([]);
 
   const fetchProperties = useCallback(async () => {
-    const fetchId = session?.id || "2";
+    const fetchId = "2"; // Force "2" to match the Supabase mock data
     const data = await getLandlordProperties(fetchId);
     setSupabaseProperties(data as any[]);
-  }, [session?.id]);
+  }, []);
 
   const fetchInvoices = useCallback(async () => {
     const data = await getInvoices();
