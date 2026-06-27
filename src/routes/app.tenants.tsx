@@ -43,10 +43,9 @@ function TenantsPage() {
   const [supabaseTenants, setSupabaseTenants] = useState<UnifiedTenant[]>([]);
 
   const fetchSupabaseTenants = async () => {
-    if (session?.id) {
-      const data = await getLandlordTenants(session.id);
-      setSupabaseTenants(data as UnifiedTenant[]);
-    }
+    const landlordId = session?.id || "2";
+    const data = await getLandlordTenants(landlordId);
+    setSupabaseTenants(data as UnifiedTenant[]);
   };
 
   useEffect(() => {

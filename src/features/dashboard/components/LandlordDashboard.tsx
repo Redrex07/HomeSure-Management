@@ -87,10 +87,9 @@ export function LandlordDashboard() {
   const [supabaseInvoices, setSupabaseInvoices] = useState<any[]>([]);
 
   useEffect(() => {
-    if (session?.id) {
-      getLandlordProperties(session.id).then(d => setSupabaseProperties(d as any[]));
-      getLandlordTenants(session.id).then(d => setSupabaseTenants(d as any[]));
-    }
+    const fetchId = session?.id || "2";
+    getLandlordProperties(fetchId).then(d => setSupabaseProperties(d as any[]));
+    getLandlordTenants(fetchId).then(d => setSupabaseTenants(d as any[]));
     getInvoices().then(d => setSupabaseInvoices(d as any[]));
   }, [session?.id]);
 

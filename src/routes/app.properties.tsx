@@ -55,10 +55,9 @@ function PropertiesPage() {
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
 
   const fetchSupabaseProperties = async () => {
-    if (session?.id) {
-      const data = await getLandlordProperties(session.id);
-      setSupabaseProps(data as UnifiedProperty[]);
-    }
+    const landlordId = session?.id || "2";
+    const data = await getLandlordProperties(landlordId);
+    setSupabaseProps(data as UnifiedProperty[]);
   };
 
   useEffect(() => {
