@@ -847,6 +847,7 @@ export async function getUsers() {
 }
 
 export async function getServiceAdminDashboard() {
+  console.log("🔌 getServiceAdminDashboard executing in queries layer...");
   const todayStr = new Date().toISOString().split("T")[0];
 
   try {
@@ -883,10 +884,37 @@ export async function getServiceAdminDashboard() {
       `).eq("appointment_date", todayStr)
     ]);
 
-    if (requestsRes.error) throw requestsRes.error;
-    if (contractorsRes.error) throw contractorsRes.error;
-    if (activeRequestsRes.error) throw activeRequestsRes.error;
-    if (appointmentsRes.error) throw appointmentsRes.error;
+    // Logging Query 1: service_requests (stats)
+    console.log("📊 [SQL Query 1] Table: service_requests (for stats metrics)");
+    console.log("   - Rows returned:", requestsRes.data ? requestsRes.data.length : 0);
+    console.log("   - Error:", requestsRes.error ? JSON.stringify(requestsRes.error) : "None");
+    if (requestsRes.error) {
+      throw new Error(`[SQL Query 1: service_requests stats] Failed: ${requestsRes.error.message}`);
+    }
+
+    // Logging Query 2: users (contractors)
+    console.log("📊 [SQL Query 2] Table: users (for contractors list)");
+    console.log("   - Rows returned:", contractorsRes.data ? contractorsRes.data.length : 0);
+    console.log("   - Error:", contractorsRes.error ? JSON.stringify(contractorsRes.error) : "None");
+    if (contractorsRes.error) {
+      throw new Error(`[SQL Query 2: users contractors] Failed: ${contractorsRes.error.message}`);
+    }
+
+    // Logging Query 3: service_requests (active requests)
+    console.log("📊 [SQL Query 3] Table: service_requests (for active requests list)");
+    console.log("   - Rows returned:", activeRequestsRes.data ? activeRequestsRes.data.length : 0);
+    console.log("   - Error:", activeRequestsRes.error ? JSON.stringify(activeRequestsRes.error) : "None");
+    if (activeRequestsRes.error) {
+      throw new Error(`[SQL Query 3: service_requests active list] Failed: ${activeRequestsRes.error.message}`);
+    }
+
+    // Logging Query 4: appointments
+    console.log("📊 [SQL Query 4] Table: appointments (for today's schedule)");
+    console.log("   - Rows returned:", appointmentsRes.data ? appointmentsRes.data.length : 0);
+    console.log("   - Error:", appointmentsRes.error ? JSON.stringify(appointmentsRes.error) : "None");
+    if (appointmentsRes.error) {
+      throw new Error(`[SQL Query 4: appointments] Failed: ${appointmentsRes.error.message}`);
+    }
 
     const allRequests = requestsRes.data || [];
     const dbContractors = contractorsRes.data || [];
@@ -906,7 +934,6 @@ export async function getServiceAdminDashboard() {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dayName = daysOfWeek[d.getDay()];
-      // Format as YYYY-MM-DD to compare dates
       const dateStr = d.toISOString().split("T")[0];
       
       const createdCount = allRequests.filter(r => {
@@ -959,7 +986,7 @@ export async function getServiceAdminDashboard() {
       status: a.status
     }));
 
-    return {
+    const result = {
       stats: {
         total: totalRequests,
         pending,
@@ -971,6 +998,10 @@ export async function getServiceAdminDashboard() {
       activeRequests: formattedActiveRequests,
       appointments: formattedAppointments
     };
+
+    console.log("📊 [Final Mapped Object]:", JSON.stringify(result, null, 2));
+
+    return result;
   } catch (err) {
     console.error("Error in getServiceAdminDashboard:", err);
     throw err;
