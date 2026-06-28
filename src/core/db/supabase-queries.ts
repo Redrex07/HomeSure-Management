@@ -864,9 +864,6 @@ export async function getServiceAdminDashboard() {
         ),
         tenant:users!tenant_id (
           name
-        ),
-        contractor:users!contractor_id (
-          name
         )
       `).order("service_request_id", { ascending: false }).limit(5),
       supabase.from("appointments").select(`
@@ -948,7 +945,7 @@ export async function getServiceAdminDashboard() {
       status: r.status,
       property: r.properties?.property_name || "—",
       tenant: r.tenant?.name || "—",
-      contractor: r.contractor?.name || null
+      contractor: null
     }));
 
     // Format Appointments
@@ -976,22 +973,7 @@ export async function getServiceAdminDashboard() {
     };
   } catch (err) {
     console.error("Error in getServiceAdminDashboard:", err);
-    // Return empty fallback instead of crashing
-    return {
-      stats: { total: 0, pending: 0, assigned: 0, completed: 0 },
-      requestsSeries: [
-        { day: "Mon", created: 0, completed: 0 },
-        { day: "Tue", created: 0, completed: 0 },
-        { day: "Wed", created: 0, completed: 0 },
-        { day: "Thu", created: 0, completed: 0 },
-        { day: "Fri", created: 0, completed: 0 },
-        { day: "Sat", created: 0, completed: 0 },
-        { day: "Sun", created: 0, completed: 0 }
-      ],
-      contractors: [],
-      activeRequests: [],
-      appointments: []
-    };
+    throw err;
   }
 }
 

@@ -22,15 +22,28 @@ import { getServiceAdminDashboard } from "@/core/db/supabase-queries";
 
 /* ---------------- SERVICE ADMIN ---------------- */
 export function ServiceAdminDashboard() {
-  const { data: dashboardData, isLoading } = useQuery({
+  const { data: dashboardData, isLoading, isError, error } = useQuery({
     queryKey: ["service-admin-dashboard"],
     queryFn: getServiceAdminDashboard,
   });
+
+  console.log("🔍 Rendering ServiceAdminDashboard (features) - Data:", dashboardData);
 
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center border border-border/60 rounded-md bg-background/50">
         <p className="text-sm text-muted-foreground animate-pulse">Loading operations dashboard...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center border border-destructive/30 rounded-md bg-destructive-soft p-6 text-center">
+        <p className="text-sm font-semibold text-destructive mb-2">Failed to load operations dashboard</p>
+        <p className="text-xs text-muted-foreground max-w-md">
+          {error instanceof Error ? error.message : String(error)}
+        </p>
       </div>
     );
   }
