@@ -456,7 +456,7 @@ export async function getContractors() {
   try {
     const { data, error } = await supabase
       .from("users")
-      .select("user_id, name, phone")
+      .select("user_id, name, phone, status")
       .eq("role_id", 4);
 
     if (error) {
@@ -466,12 +466,12 @@ export async function getContractors() {
 
     return (data || []).map((c: any) => ({
       id: `C-${c.user_id}`,
-      name: c.name,
-      trade: c.user_id % 3 === 0 ? "HVAC" : c.user_id % 2 === 0 ? "Electrical" : "Plumbing",
-      rating: 4.5 + (c.user_id % 5) * 0.1,
-      jobs: 15 + (c.user_id % 10) * 8,
-      available: c.user_id % 3 !== 0,
-      phone: c.phone || "(555) 555-0100",
+      name: c.name || "Unknown",
+      trade: "—",
+      rating: "—",
+      jobs: 0,
+      available: c.status === "Active",
+      phone: c.phone || "—",
     }));
   } catch (err) {
     console.error("Exception fetching contractors:", err);
