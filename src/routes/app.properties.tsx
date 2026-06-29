@@ -3,7 +3,7 @@ import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video } from "lucide-react";
+import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSession } from "@/features/auth/store/auth-store";
 import {
@@ -141,7 +141,7 @@ function PropertiesPage() {
     }
 
     try {
-      await createProperty({
+      const payload: any = {
         landlord_id: "2", // Force "2" to match Supabase mock data
         property_name: form.property_name,
         property_type: form.property_type,
@@ -150,13 +150,22 @@ function PropertiesPage() {
         Listing_date: new Date().toISOString(),
         Description: form.Description,
         Category: form.Category,
-        Virtual_Tour: uploadedVideo || undefined,
+      };
+      if (uploadedVideo) {
+        payload.Virtual_Tour = uploadedVideo;
+      }
+      await createProperty(payload);
+      toast("Property added successfully!", {
+        icon: <CheckCircle className="h-5 w-5 text-emerald-500 animate-in zoom-in duration-500" />,
+        description: "Check your properties list to see it.",
+        className: "bg-emerald-50 border-emerald-200 text-emerald-950 px-6 py-4 shadow-lg scale-110",
+        position: "top-center",
       });
-      toast.success("Property added successfully!");
       fetchSupabaseProperties();
       window.dispatchEvent(new Event("supabase-properties-updated"));
-    } catch (error) {
-      toast.error("Failed to add property");
+    } catch (error: any) {
+      console.error(error);
+      toast.error(`Failed to add property: ${error?.message || JSON.stringify(error)}`);
       return;
     }
 
@@ -401,28 +410,34 @@ function PropertiesPage() {
     }
 
     if (editingProperty.isLocal) {
-      updateLocalProperty(editingProperty.property_id, {
+      const localPayload: any = {
         property_name: editForm.property_name,
         property_type: editForm.property_type,
         availability_status: editForm.availability_status,
         image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
         Description: editForm.Description,
         Category: editForm.Category,
-        Virtual_Tour: editVideo || undefined,
-      });
+      };
+      if (editVideo) {
+        localPayload.Virtual_Tour = editVideo;
+      }
+      updateLocalProperty(editingProperty.property_id, localPayload);
       toast.success("Property updated successfully!");
       setEditingProperty(null);
     } else {
       try {
-        await updateSupabaseProperty(editingProperty.property_id, {
+        const supabasePayload: any = {
           property_name: editForm.property_name,
           property_type: editForm.property_type,
           availability_status: editForm.availability_status,
           image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
           Description: editForm.Description,
           Category: editForm.Category,
-          Virtual_Tour: editVideo || undefined,
-        });
+        };
+        if (editVideo) {
+          supabasePayload.Virtual_Tour = editVideo;
+        }
+        await updateSupabaseProperty(editingProperty.property_id, supabasePayload);
         toast.success("Property updated successfully!");
         setEditingProperty(null);
         fetchSupabaseProperties();
