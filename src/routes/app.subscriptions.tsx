@@ -4,7 +4,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
 import { StatCard } from "@/shared/components/common/StatCard";
-import { subscriptions as initialSubscriptions } from "@/shared/utils/mock-data";
+import { useSubscriptions, addSubscription, updateSubscription, Subscription } from "@/shared/utils/subscriptions-store";
 import { CreditCard, DollarSign, TrendingUp, Plus, Pencil } from "lucide-react";
 import { formatINR } from "@/shared/utils/utils";
 import { useState } from "react";
@@ -19,9 +19,9 @@ export const Route = createFileRoute("/app/subscriptions")({
 });
 
 function SubsPage() {
-  const [subscriptions, setSubscriptions] = useState(initialSubscriptions);
+  const subscriptions = useSubscriptions();
   const [open, setOpen] = useState(false);
-  const [editingSub, setEditingSub] = useState<typeof initialSubscriptions[0] | null>(null);
+  const [editingSub, setEditingSub] = useState<Subscription | null>(null);
   
   const mrr = subscriptions.reduce((s, x) => s + x.mrr, 0);
 
@@ -45,21 +45,15 @@ function SubsPage() {
     };
     
     if (editingSub) {
-      setSubscriptions(subscriptions.map(s => 
-        s.id === editingSub.id ? { ...s, ...data } : s
-      ));
+      updateSubscription(editingSub.id, data);
     } else {
-      const newSub = {
-        id: `SUB-${9000 + subscriptions.length + 1}`,
-        ...data
-      };
-      setSubscriptions([newSub, ...subscriptions]);
+      addSubscription(data);
     }
     setOpen(false);
     setTimeout(() => setEditingSub(null), 200);
   };
 
-  const handleEditClick = (sub: typeof initialSubscriptions[0]) => {
+  const handleEditClick = (sub: Subscription) => {
     setEditingSub(sub);
     setOpen(true);
   };
