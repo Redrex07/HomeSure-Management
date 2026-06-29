@@ -12,6 +12,8 @@ export interface Property {
   image_url?: string;
   amenities?: string;
   listing_date?: string;
+  Listing_date?: string;
+  Description?: string;
 }
 
 const STORAGE_KEY = "homesure_properties";

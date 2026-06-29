@@ -118,6 +118,7 @@ function PropertiesPage() {
     availability_status: "Available",
     amenities: "",
     listing_date: "",
+    Description: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
@@ -136,6 +137,7 @@ function PropertiesPage() {
         availability_status: form.availability_status,
         image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
         Listing_date: new Date().toISOString(),
+        Description: form.Description,
       });
       toast.success("Property added successfully!");
       fetchSupabaseProperties();
@@ -283,6 +285,7 @@ function PropertiesPage() {
       availability_status: p.availability_status,
       amenities: p.amenities || "",
       listing_date: p.listing_date || "",
+      Description: p.Description || "",
     });
     setEditImages(parseImageUrls(p.image_url));
   };
@@ -346,6 +349,7 @@ function PropertiesPage() {
         property_type: editForm.property_type,
         availability_status: editForm.availability_status,
         image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+        Description: editForm.Description,
       });
       toast.success("Property updated successfully!");
       setEditingProperty(null);
@@ -356,6 +360,7 @@ function PropertiesPage() {
           property_type: editForm.property_type,
           availability_status: editForm.availability_status,
           image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+          Description: editForm.Description,
         });
         toast.success("Property updated successfully!");
         setEditingProperty(null);
@@ -427,6 +432,16 @@ function PropertiesPage() {
                 <option value="Occupied">Occupied</option>
                 <option value="Under Maintenance">Under Maintenance</option>
               </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Description</Label>
+              <textarea
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                value={form.Description}
+                onChange={(e) => setForm({ ...form, Description: e.target.value })}
+                placeholder="E.g., Great location, newly renovated..."
+              />
             </div>
 
 
@@ -684,6 +699,17 @@ function PropertiesPage() {
                 );
               },
             },
+            {
+              key: "Description",
+              label: "Description",
+              render: (p) => (
+                p.Description ? (
+                  <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                    {p.Description}
+                  </span>
+                ) : <span className="text-muted-foreground">—</span>
+              ),
+            },
 
             {
               key: "availability_status",
@@ -790,6 +816,16 @@ function PropertiesPage() {
                 <option value="Occupied">Occupied</option>
                 <option value="Under Maintenance">Under Maintenance</option>
               </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Description</Label>
+              <textarea
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                value={editForm.Description}
+                onChange={(e) => setEditForm({ ...editForm, Description: e.target.value })}
+                placeholder="E.g., Great location, newly renovated..."
+              />
             </div>
 
 
