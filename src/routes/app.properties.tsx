@@ -443,6 +443,7 @@ function PropertiesPage() {
               >
                 <option value="Available">Available</option>
                 <option value="Occupied">Occupied</option>
+                <option value="Under Maintenance">Under Maintenance</option>
               </select>
             </div>
 
@@ -801,6 +802,7 @@ function PropertiesPage() {
               >
                 <option value="Available">Available</option>
                 <option value="Occupied">Occupied</option>
+                <option value="Under Maintenance">Under Maintenance</option>
               </select>
             </div>
 
