@@ -719,6 +719,11 @@ function PropertiesPage() {
             {
               key: "Description",
               label: "Description",
+              render: (p) => (
+                <div className="whitespace-normal break-words text-foreground">
+                  {p.Description || "—"}
+                </div>
+              ),
             },
             {
               key: "Category",
