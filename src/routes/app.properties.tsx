@@ -132,11 +132,8 @@ function PropertiesPage() {
         landlord_id: "2", // Force "2" to match Supabase mock data
         property_name: form.property_name,
         property_type: form.property_type,
-        address: "N/A",
-        rent_amount: 0,
         availability_status: form.availability_status,
         image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
-        amenities: "",
       });
       toast.success("Property added successfully!");
       fetchSupabaseProperties();
