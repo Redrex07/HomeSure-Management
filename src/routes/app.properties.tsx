@@ -432,15 +432,7 @@ function PropertiesPage() {
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Rent Amount</Label>
-              <Input
-                type="number"
-                placeholder="18000"
-                value={form.rent_amount}
-                onChange={(e) => setForm({ ...form, rent_amount: e.target.value })}
-              />
-            </div>
+
 
             <div className="grid gap-2">
               <Label>Status</Label>
@@ -454,14 +446,7 @@ function PropertiesPage() {
               </select>
             </div>
 
-            <div className="grid gap-2">
-              <Label>Amenities</Label>
-              <Input
-                placeholder="E.g., Swimming pool, Gated community, Home theater"
-                value={form.amenities}
-                onChange={(e) => setForm({ ...form, amenities: e.target.value })}
-              />
-            </div>
+
 
             <div className="grid gap-2">
               <Label>Pictures (Up to 4)</Label>
@@ -704,37 +689,13 @@ function PropertiesPage() {
               key: "property_type",
               label: "Type",
             },
-            {
-              key: "rent_amount",
-              label: "Rent",
-              render: (p) => (
-                <span className="font-semibold text-foreground">
-                  {formatINR(p.rent_amount ?? 0)}
-                </span>
-              ),
-            },
+
             {
               key: "availability_status",
               label: "Status",
               render: (p) => <StatusBadge value={p.availability_status} />,
             },
-            {
-              key: "amenities",
-              label: "Amenities",
-              render: (p) => (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPropertyForAmenities(p);
-                  }}
-                  className="group/amenities relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-emerald-500/60 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-cyan-500/15 px-3 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm transition-all duration-300 hover:border-emerald-500 hover:from-emerald-500/25 hover:via-teal-500/20 hover:to-cyan-500/25 hover:shadow-md hover:shadow-emerald-500/20 dark:border-emerald-400/50 dark:text-emerald-300 dark:hover:border-emerald-400 dark:hover:shadow-emerald-400/20"
-                >
-                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/amenities:translate-x-full dark:via-white/10" />
-                  <ListChecks className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover/amenities:scale-110" />
-                  <span className="relative">Amenities</span>
-                </button>
-              ),
-            },
+
             {
               key: "image_url",
               label: "Pictures",
@@ -824,16 +785,7 @@ function PropertiesPage() {
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Rent Amount</Label>
-              <Input
-                type="number"
-                value={editForm.rent_amount}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, rent_amount: e.target.value })
-                }
-              />
-            </div>
+
 
             <div className="grid gap-2">
               <Label>Status</Label>
@@ -852,16 +804,7 @@ function PropertiesPage() {
               </select>
             </div>
 
-            <div className="grid gap-2">
-              <Label>Amenities</Label>
-              <Input
-                placeholder="E.g., Swimming pool, Gated community, Home theater"
-                value={editForm.amenities}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, amenities: e.target.value })
-                }
-              />
-            </div>
+
 
             <div className="grid gap-2">
               <Label>Pictures (Up to 4)</Label>
