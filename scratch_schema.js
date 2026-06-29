@@ -5,12 +5,18 @@ const supabaseKey = "sb_publishable_jj8zDSnN58sXynQag0bQLw_bUC0MDsp";
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function checkSchema() {
-  const { data, error } = await supabase.from("properties").select("*").limit(1);
-  if (data && data.length > 0) {
-    console.log("Columns:", Object.keys(data[0]));
-  } else {
-    console.log("No data or error:", error);
-  }
+async function testInsert() {
+  const payload = {
+    landlord_id: "2",
+    property_name: "Test Property",
+    property_type: "Apartment",
+    availability_status: "Available",
+    Listing_date: new Date().toISOString(),
+    Description: "Test",
+    Category: "Residential",
+  };
+  const { data, error } = await supabase.from("properties").insert([payload]).select();
+  console.log("Insert result:", data);
+  console.log("Insert error:", error);
 }
-checkSchema();
+testInsert();

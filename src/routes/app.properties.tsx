@@ -111,6 +111,9 @@ function PropertiesPage() {
     rent_amount: "",
     availability_status: "Available",
     amenities: "",
+    listing_date: "",
+    Description: "",
+    Category: "Residential",
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
