@@ -44,6 +44,8 @@ export function DataCardGrid<T extends Record<string, any>>({
   onCardClick?: (row: T) => void;
   /** Render action buttons in the top-right corner of each card */
   actions?: (row: T) => ReactNode;
+  /** Whether to use the theme-accented border styles (default: false) */
+  accentStyles?: boolean;
 }) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
@@ -107,7 +109,10 @@ export function DataCardGrid<T extends Record<string, any>>({
             <Card
               key={i}
               className={
-                "group relative flex flex-col border-2 border-primary/30 bg-card p-4 shadow-card transition-all duration-200 hover:border-primary/50 hover:shadow-elegant hover:-translate-y-[1px]" +
+                "group relative flex flex-col bg-card p-4 shadow-card transition-all duration-200 hover:shadow-elegant hover:-translate-y-[1px]" +
+                (accentStyles
+                  ? " border-2 border-primary/30 hover:border-primary/50"
+                  : " border border-border/70") +
                 (onCardClick ? " cursor-pointer" : "")
               }
               onClick={() => onCardClick?.(row)}
@@ -142,7 +147,7 @@ export function DataCardGrid<T extends Record<string, any>>({
 
               {/* Separator */}
               {primaryField && metaFields.length > 0 && (
-                <div className="mb-2.5 border-t-[1.5px] border-primary/20" />
+                <div className={`mb-2.5 ${accentStyles ? "border-t-[1.5px] border-primary/20" : "border-t border-border/60"}`} />
               )}
 
               {/* Meta grid – auto 2-col on wider cards */}

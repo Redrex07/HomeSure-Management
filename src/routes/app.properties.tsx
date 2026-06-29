@@ -34,6 +34,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/shared/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/shared/components/ui/sheet";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { toast } from "sonner";
@@ -443,13 +451,13 @@ function PropertiesPage() {
         }
       />
 
-      {/* Add Property Dialog */}
-      <Dialog open={isAdding} onOpenChange={setIsAdding}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Basic Property Information</DialogTitle>
-            <DialogDescription className="sr-only">Fill out this form to add a new property.</DialogDescription>
-          </DialogHeader>
+      {/* Add Property Sheet */}
+      <Sheet open={isAdding} onOpenChange={setIsAdding}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Basic Property Information</SheetTitle>
+            <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
+          </SheetHeader>
 
           <form onSubmit={handleAddProperty} className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -587,15 +595,15 @@ function PropertiesPage() {
               )}
             </div>
 
-            <DialogFooter className="mt-4">
+            <SheetFooter className="mt-4 pb-12">
               <Button type="button" variant="outline" onClick={() => setIsAdding(false)}>
                 Cancel
               </Button>
               <Button type="submit">Save Property</Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* View Image Gallery Dialog */}
       <Dialog
@@ -724,6 +732,7 @@ function PropertiesPage() {
         <DataCardGrid
           rows={filteredProps}
           pageSize={7}
+          accentStyles={true}
           toolbar={
             <div className="flex items-center gap-2">
               <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
@@ -899,7 +908,7 @@ function PropertiesPage() {
         open={!!editingProperty}
         onOpenChange={(open) => !open && setEditingProperty(null)}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto w-full sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Property</DialogTitle>
             <DialogDescription className="sr-only">
@@ -1055,7 +1064,7 @@ function PropertiesPage() {
               )}
             </div>
 
-            <DialogFooter className="mt-4">
+            <DialogFooter className="mt-4 pb-12">
               <Button
                 type="button"
                 variant="outline"
