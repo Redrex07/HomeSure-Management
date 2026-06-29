@@ -400,7 +400,7 @@ function PropertiesPage() {
       <Dialog open={isAdding} onOpenChange={setIsAdding}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Property</DialogTitle>
+            <DialogTitle>Basic Property Information</DialogTitle>
             <DialogDescription className="sr-only">Fill out this form to add a new property.</DialogDescription>
           </DialogHeader>
 
