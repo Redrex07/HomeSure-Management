@@ -3,7 +3,7 @@ import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks } from "lucide-react";
+import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSession } from "@/features/auth/store/auth-store";
 import {
@@ -90,6 +90,8 @@ function PropertiesPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
     useState<UnifiedProperty | null>(null);
+  const [selectedPropertyForVideo, setSelectedPropertyForVideo] =
+    useState<UnifiedProperty | null>(null);
   const [galleryPage, setGalleryPage] = useState(0);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [editingProperty, setEditingProperty] = useState<UnifiedProperty | null>(null);
@@ -104,6 +106,11 @@ function PropertiesPage() {
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
+
+  // Video Upload States
+  const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
+  const [editVideo, setEditVideo] = useState<string | null>(null);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   const [form, setForm] = useState({
     property_name: "",
@@ -135,6 +142,7 @@ function PropertiesPage() {
         Listing_date: new Date().toISOString(),
         Description: form.Description,
         Category: form.Category,
+        Virtual_Tour: uploadedVideo || undefined,
       });
       toast.success("Property added successfully!");
       fetchSupabaseProperties();
@@ -151,9 +159,51 @@ function PropertiesPage() {
       rent_amount: "",
       availability_status: "Available",
       amenities: "",
+      listing_date: "",
+      Description: "",
+      Category: "Residential",
     });
     setUploadedImages([]);
+    setUploadedVideo(null);
     setIsAdding(false);
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Video must be less than 10MB");
+      e.target.value = "";
+      return;
+    }
+
+    setIsUploadingVideo(true);
+    try {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+      const { error } = await supabase.storage
+        .from('property-videos')
+        .upload(`properties/${fileName}`, file, { cacheControl: '3600', upsert: false });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('property-videos')
+        .getPublicUrl(`properties/${fileName}`);
+
+      if (isEdit) {
+        setEditVideo(publicUrlData.publicUrl);
+      } else {
+        setUploadedVideo(publicUrlData.publicUrl);
+      }
+      toast.success("Video uploaded successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload video.");
+    } finally {
+      setIsUploadingVideo(false);
+      e.target.value = "";
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -286,6 +336,7 @@ function PropertiesPage() {
       Category: p.Category || "Residential",
     });
     setEditImages(parseImageUrls(p.image_url));
+    setEditVideo(p.Virtual_Tour || null);
   };
 
   const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -349,6 +400,7 @@ function PropertiesPage() {
         image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
         Description: editForm.Description,
         Category: editForm.Category,
+        Virtual_Tour: editVideo || undefined,
       });
       toast.success("Property updated successfully!");
       setEditingProperty(null);
@@ -361,6 +413,7 @@ function PropertiesPage() {
           image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
           Description: editForm.Description,
           Category: editForm.Category,
+          Virtual_Tour: editVideo || undefined,
         });
         toast.success("Property updated successfully!");
         setEditingProperty(null);
@@ -457,6 +510,27 @@ function PropertiesPage() {
             </div>
 
 
+
+            <div className="grid gap-2">
+              <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
+              {uploadedVideo ? (
+                <div className="flex items-center gap-4">
+                  <video src={uploadedVideo} className="h-20 w-32 object-cover rounded-md bg-black" />
+                  <Button variant="outline" size="sm" onClick={() => setUploadedVideo(null)}>
+                    Remove Video
+                  </Button>
+                </div>
+              ) : (
+                <Input
+                  type="file"
+                  accept="video/mp4,video/x-m4v,video/*"
+                  onChange={(e) => handleVideoUpload(e, false)}
+                  disabled={isUploadingVideo}
+                  className="cursor-pointer"
+                />
+              )}
+              {isUploadingVideo && <p className="text-xs text-muted-foreground animate-pulse">Uploading video...</p>}
+            </div>
 
             <div className="grid gap-2">
               <Label>Pictures (Up to 4)</Label>
@@ -622,6 +696,26 @@ function PropertiesPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={!!selectedPropertyForVideo}
+        onOpenChange={(open) => !open && setSelectedPropertyForVideo(null)}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 bg-black border-none">
+          {selectedPropertyForVideo?.Virtual_Tour ? (
+            <video
+              src={selectedPropertyForVideo.Virtual_Tour}
+              controls
+              autoPlay
+              className="w-full h-full object-contain max-h-[85vh]"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-64 text-white">
+              No video available
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {landlordProps.length === 0 ? (
         <div className="p-8 text-center text-gray-500">
           <p>No properties found.</p>
@@ -755,6 +849,25 @@ function PropertiesPage() {
                 </button>
               ),
             },
+            {
+              key: "Virtual_Tour",
+              label: "Virtual Tour",
+              render: (p) => (
+                p.Virtual_Tour ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPropertyForVideo(p);
+                    }}
+                    className="group/vid relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-emerald-500/60 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-green-500/15 px-3 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm transition-all duration-300 hover:border-emerald-500 hover:from-emerald-500/25 hover:via-teal-500/20 hover:to-green-500/25 hover:shadow-md hover:shadow-emerald-500/20"
+                  >
+                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/vid:translate-x-full" />
+                    <Video className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover/vid:scale-110" />
+                    <span className="relative">Watch Video</span>
+                  </button>
+                ) : <span className="text-muted-foreground text-[11px] italic">—</span>
+              )
+            },
           ]}
           actions={(p) => (
             <div className="flex items-center gap-0.5">
@@ -865,6 +978,27 @@ function PropertiesPage() {
             </div>
 
 
+
+            <div className="grid gap-2">
+              <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
+              {editVideo ? (
+                <div className="flex items-center gap-4">
+                  <video src={editVideo} className="h-20 w-32 object-cover rounded-md bg-black" />
+                  <Button variant="outline" size="sm" onClick={() => setEditVideo(null)}>
+                    Remove Video
+                  </Button>
+                </div>
+              ) : (
+                <Input
+                  type="file"
+                  accept="video/mp4,video/x-m4v,video/*"
+                  onChange={(e) => handleVideoUpload(e, true)}
+                  disabled={isUploadingVideo}
+                  className="cursor-pointer"
+                />
+              )}
+              {isUploadingVideo && <p className="text-xs text-muted-foreground animate-pulse">Uploading video...</p>}
+            </div>
 
             <div className="grid gap-2">
               <Label>Pictures (Up to 4)</Label>
