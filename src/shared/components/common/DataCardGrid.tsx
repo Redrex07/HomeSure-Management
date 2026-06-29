@@ -142,7 +142,7 @@ export function DataCardGrid<T extends Record<string, any>>({
 
               {/* Separator */}
               {primaryField && metaFields.length > 0 && (
-                <div className="mb-2.5 border-t border-border/60" />
+                <div className="mb-2.5 border-t-[1.5px] border-primary/20" />
               )}
 
               {/* Meta grid – auto 2-col on wider cards */}

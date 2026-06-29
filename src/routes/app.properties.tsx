@@ -748,7 +748,7 @@ function PropertiesPage() {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Statuses</SelectItem>
+                  <SelectItem value="All">All Status</SelectItem>
                   <SelectItem value="Available">Available</SelectItem>
                   <SelectItem value="Occupied">Occupied</SelectItem>
                   <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
