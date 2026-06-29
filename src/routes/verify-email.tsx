@@ -2,7 +2,7 @@ import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { AuthShell } from "@/features/auth/components/AuthShell";
 import { Button } from "@/shared/components/ui/button";
 import { MailCheck } from "lucide-react";
-import { supabase } from "@/core/db/supabase";
+import { resendVerificationEmail } from "@/core/api/auth.functions";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -30,15 +30,8 @@ function VerifyEmailPage() {
     }
     setIsResending(true);
     try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email,
-      });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success("Confirmation email sent. Please check your inbox.");
-      }
+      await resendVerificationEmail({ data: { email } });
+      toast.success("Confirmation email sent. Please check your inbox.");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to resend email.";
       toast.error(message);

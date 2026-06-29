@@ -4,6 +4,7 @@ import { AuthShell } from "@/features/auth/components/AuthShell";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { requestPasswordReset } from "@/core/api/auth.functions";
 import { toast } from "sonner";
 import { MailCheck } from "lucide-react";
 
@@ -20,6 +21,23 @@ export const Route = createFileRoute("/forgot-password")({
 function ForgotPage() {
   const [sent, setSent] = useState(false);
   const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      await requestPasswordReset({ data: { email } });
+      setSent(true);
+      toast.success("If an account exists, a reset link has been sent.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to send reset email.";
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <AuthShell
@@ -40,24 +58,11 @@ function ForgotPage() {
             <MailCheck className="h-4 w-4" /> Check your inbox
           </div>
           <p className="mt-1.5 text-muted-foreground">
-            If an account exists for {email}, we sent a reset link.
+            If an account exists for {email}, we sent a password reset link.
           </p>
-          <Link
-            to="/reset-password"
-            className="mt-3 inline-block text-xs font-medium text-primary hover:underline"
-          >
-            Open reset page (demo) →
-          </Link>
         </div>
       ) : (
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSent(true);
-            toast.success("Reset link sent");
-          }}
-        >
+        <form className="space-y-4" onSubmit={submit}>
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -68,8 +73,8 @@ function ForgotPage() {
               required
             />
           </div>
-          <Button type="submit" className="w-full">
-            Send reset link
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Sending..." : "Send reset link"}
           </Button>
         </form>
       )}
