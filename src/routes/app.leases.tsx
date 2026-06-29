@@ -313,6 +313,7 @@ function LeasesPage() {
 
       <DataCardGrid
         rows={leases}
+        accentStyles={true}
         filterKeys={["name", "property"]}
         fields={[
           {
