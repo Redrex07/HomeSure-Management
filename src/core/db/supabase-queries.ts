@@ -1057,3 +1057,78 @@ export async function getPlatformUsers(): Promise<PlatformUser[]> {
     return [];
   }
 }
+// ================= SUBSCRIPTIONS =================
+
+export async function getSubscriptionsData() {
+  try {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .order("id", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching subscriptions:", error);
+      return [];
+    }
+
+    return (data || []).map((s: any) => ({
+      id: s.id, // Assuming it's already SUB-XXXX or we can map it
+      customer: s.customer,
+      plan: s.plan,
+      seats: s.seats,
+      mrr: s.mrr,
+      status: s.status,
+      renews: s.renews,
+    }));
+  } catch (err) {
+    console.error("Exception fetching subscriptions:", err);
+    return [];
+  }
+}
+
+export async function createSubscriptionData(payload: any) {
+  try {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .insert([payload])
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error creating subscription:", err);
+    throw err;
+  }
+}
+
+export async function updateSubscriptionData(id: string, payload: any) {
+  try {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .update(payload)
+      .eq("id", id)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error updating subscription:", err);
+    throw err;
+  }
+}
+
+export async function deleteSubscriptionData(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .delete()
+      .eq("id", id)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error deleting subscription:", err);
+    throw err;
+  }
+}

@@ -4,14 +4,20 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
 import { StatCard } from "@/shared/components/common/StatCard";
-import { useSubscriptions, addSubscription, updateSubscription, Subscription } from "@/shared/utils/subscriptions-store";
+import { Subscription } from "@/shared/utils/subscriptions-store";
+import { 
+  getSubscriptionsData, 
+  createSubscriptionData, 
+  updateSubscriptionData 
+} from "@/core/db/supabase-queries";
 import { CreditCard, DollarSign, TrendingUp, Plus, Pencil } from "lucide-react";
 import { formatINR } from "@/shared/utils/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/subscriptions")({
   head: () => ({ meta: [{ title: "Subscriptions — HomeSure" }] }),
@@ -19,9 +25,28 @@ export const Route = createFileRoute("/app/subscriptions")({
 });
 
 function SubsPage() {
-  const subscriptions = useSubscriptions();
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [open, setOpen] = useState(false);
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
+
+  const fetchSubscriptions = async () => {
+    try {
+      const data = await getSubscriptionsData();
+      if (data && data.length > 0) {
+        setSubscriptions(data as Subscription[]);
+      } else {
+        // Fallback to local store data temporarily if Supabase is empty during testing
+        const storeModule = await import("@/shared/utils/subscriptions-store");
+        setSubscriptions(storeModule.getSubscriptions());
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchSubscriptions();
+  }, []);
   
   const mrr = subscriptions.reduce((s, x) => s + x.mrr, 0);
 
@@ -32,10 +57,19 @@ function SubsPage() {
     }
   };
 
-  const handleSaveSubscription = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveSubscription = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    
+    // Auto-generate ID if it's new
+    const maxId = subscriptions.reduce((max, s) => {
+      const num = parseInt(s.id.replace("SUB-", ""), 10);
+      return isNaN(num) ? max : Math.max(max, num);
+    }, 9000);
+    const newId = `SUB-${maxId + 1}`;
+    
     const data = {
+      id: editingSub ? editingSub.id : newId,
       customer: formData.get("customer") as string,
       plan: formData.get("plan") as string,
       seats: Number(formData.get("seats")),
@@ -44,11 +78,25 @@ function SubsPage() {
       renews: formData.get("renews") as string,
     };
     
-    if (editingSub) {
-      updateSubscription(editingSub.id, data);
-    } else {
-      addSubscription(data);
+    try {
+      if (editingSub) {
+        await updateSubscriptionData(editingSub.id, data);
+        toast.success("Subscription updated successfully");
+      } else {
+        await createSubscriptionData(data);
+        toast.success("Subscription created successfully");
+      }
+      fetchSubscriptions();
+    } catch (error) {
+      toast.error("Failed to save to Supabase. Make sure your RLS policies allow insertion/updates.");
+      // Fallback local update for UI
+      if (editingSub) {
+        setSubscriptions(subscriptions.map(s => s.id === editingSub.id ? { ...s, ...data } : s));
+      } else {
+        setSubscriptions([data, ...subscriptions]);
+      }
     }
+    
     setOpen(false);
     setTimeout(() => setEditingSub(null), 200);
   };
