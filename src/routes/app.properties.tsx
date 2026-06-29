@@ -69,26 +69,21 @@ function PropertiesPage() {
   ];
   
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
-  const [priceFilter, setPriceFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
 
   const filteredProps = landlordProps.filter((p) => {
     let matchesType = true;
-    let matchesPrice = true;
+    let matchesStatus = true;
 
     if (propertyTypeFilter !== "All") {
       matchesType = p.property_type.toLowerCase().includes(propertyTypeFilter.toLowerCase());
     }
 
-    if (priceFilter !== "All") {
-      const price = p.rent_amount;
-      if (priceFilter === "Under ₹10,000") matchesPrice = price < 10000;
-      else if (priceFilter === "₹10,000 - ₹20,000") matchesPrice = price >= 10000 && price <= 20000;
-      else if (priceFilter === "₹20,000 - ₹50,000") matchesPrice = price > 20000 && price <= 50000;
-      else if (priceFilter === "₹50,000 - ₹1,00,000") matchesPrice = price > 50000 && price <= 100000;
-      else if (priceFilter === "Over ₹1,00,000") matchesPrice = price > 100000;
+    if (statusFilter !== "All") {
+      matchesStatus = p.availability_status === statusFilter;
     }
 
-    return matchesType && matchesPrice;
+    return matchesType && matchesStatus;
   });
 
   const [isAdding, setIsAdding] = useState(false);
@@ -654,17 +649,15 @@ function PropertiesPage() {
                   <SelectItem value="Townhouse">Townhouse</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={priceFilter} onValueChange={setPriceFilter}>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[170px] h-9">
-                  <SelectValue placeholder="Price Range" />
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Prices</SelectItem>
-                  <SelectItem value="Under ₹10,000">Under ₹10,000</SelectItem>
-                  <SelectItem value="₹10,000 - ₹20,000">₹10,000 - ₹20,000</SelectItem>
-                  <SelectItem value="₹20,000 - ₹50,000">₹20,000 - ₹50,000</SelectItem>
-                  <SelectItem value="₹50,000 - ₹1,00,000">₹50,000 - ₹1,00,000</SelectItem>
-                  <SelectItem value="Over ₹1,00,000">Over ₹1,00,000</SelectItem>
+                  <SelectItem value="All">All Statuses</SelectItem>
+                  <SelectItem value="Available">Available</SelectItem>
+                  <SelectItem value="Occupied">Occupied</SelectItem>
+                  <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
