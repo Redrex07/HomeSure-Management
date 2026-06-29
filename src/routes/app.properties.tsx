@@ -122,7 +122,7 @@ function PropertiesPage() {
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.property_name || !form.property_type || !form.address || !form.rent_amount) {
+    if (!form.property_name || !form.property_type) {
       toast.error("Please fill all fields");
       return;
     }
@@ -335,12 +335,7 @@ function PropertiesPage() {
     e.preventDefault();
     if (!editingProperty) return;
 
-    if (
-      !editForm.property_name ||
-      !editForm.property_type ||
-      !editForm.address ||
-      !editForm.rent_amount
-    ) {
+    if (!editForm.property_name || !editForm.property_type) {
       toast.error("Please fill all fields");
       return;
     }
