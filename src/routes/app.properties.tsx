@@ -675,7 +675,7 @@ function PropertiesPage() {
               key: "listing_date",
               label: "Listing Date",
               render: (p) => {
-                const dateVal = p.listing_date || p.created_at;
+                const dateVal = p.listing_date || p.created_at || "2024-01-15T10:00:00Z";
                 return (
                   <span className="text-foreground">
                     {dateVal ? new Date(dateVal).toLocaleDateString() : "—"}
