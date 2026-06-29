@@ -33,6 +33,7 @@ export function DataCardGrid<T extends Record<string, any>>({
   empty = "No results.",
   onCardClick,
   actions,
+  accentStyles = false,
 }: {
   rows: T[];
   fields: CardField<T>[];
