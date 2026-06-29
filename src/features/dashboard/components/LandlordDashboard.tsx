@@ -239,7 +239,12 @@ export function LandlordDashboard() {
                     <div className="truncate text-xs text-muted-foreground">{p.address}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold">{fmt(p.rent_amount)}</div>
+                    <div className="text-sm font-semibold text-muted-foreground mb-1">
+                      {(() => {
+                        const dateVal = p.listing_date || p.Listing_date || "2024-01-15T10:00:00Z";
+                        return new Date(dateVal).toLocaleDateString();
+                      })()}
+                    </div>
                     <StatusBadge value={p.availability_status} />
                   </div>
                 </Link>
