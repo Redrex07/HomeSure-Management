@@ -119,6 +119,7 @@ function PropertiesPage() {
     amenities: "",
     listing_date: "",
     Description: "",
+    Category: "Residential",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
@@ -138,6 +139,7 @@ function PropertiesPage() {
         image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
         Listing_date: new Date().toISOString(),
         Description: form.Description,
+        Category: form.Category,
       });
       toast.success("Property added successfully!");
       fetchSupabaseProperties();
@@ -286,6 +288,7 @@ function PropertiesPage() {
       amenities: p.amenities || "",
       listing_date: p.listing_date || "",
       Description: p.Description || "",
+      Category: p.Category || "Residential",
     });
     setEditImages(parseImageUrls(p.image_url));
   };
@@ -350,6 +353,7 @@ function PropertiesPage() {
         availability_status: editForm.availability_status,
         image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
         Description: editForm.Description,
+        Category: editForm.Category,
       });
       toast.success("Property updated successfully!");
       setEditingProperty(null);
@@ -361,6 +365,7 @@ function PropertiesPage() {
           availability_status: editForm.availability_status,
           image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
           Description: editForm.Description,
+          Category: editForm.Category,
         });
         toast.success("Property updated successfully!");
         setEditingProperty(null);
@@ -442,6 +447,18 @@ function PropertiesPage() {
                 onChange={(e) => setForm({ ...form, Description: e.target.value })}
                 placeholder="E.g., Great location, newly renovated..."
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Category</Label>
+              <select
+                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                value={form.Category}
+                onChange={(e) => setForm({ ...form, Category: e.target.value })}
+              >
+                <option value="Residential">Residential</option>
+                <option value="Commercial">Commercial</option>
+              </select>
             </div>
 
 
@@ -702,10 +719,14 @@ function PropertiesPage() {
             {
               key: "Description",
               label: "Description",
+            },
+            {
+              key: "Category",
+              label: "Category",
               render: (p) => (
-                p.Description ? (
+                p.Category ? (
                   <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                    {p.Description}
+                    {p.Category}
                   </span>
                 ) : <span className="text-muted-foreground">—</span>
               ),
@@ -826,6 +847,23 @@ function PropertiesPage() {
                 onChange={(e) => setEditForm({ ...editForm, Description: e.target.value })}
                 placeholder="E.g., Great location, newly renovated..."
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Category</Label>
+              <select
+                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
+                value={editForm.Category}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    Category: e.target.value,
+                  })
+                }
+              >
+                <option value="Residential">Residential</option>
+                <option value="Commercial">Commercial</option>
+              </select>
             </div>
 
 

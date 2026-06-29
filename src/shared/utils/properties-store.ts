@@ -14,6 +14,7 @@ export interface Property {
   listing_date?: string;
   Listing_date?: string;
   Description?: string;
+  Category?: string;
 }
 
 const STORAGE_KEY = "homesure_properties";
