@@ -634,7 +634,7 @@ function PropertiesPage() {
       ) : (
         <DataCardGrid
           rows={filteredProps}
-          pageSize={100}
+          pageSize={7}
           toolbar={
             <div className="flex items-center gap-2">
               <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
