@@ -5,7 +5,7 @@ import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
 import { StatCard } from "@/shared/components/common/StatCard";
 import { subscriptions as initialSubscriptions } from "@/shared/utils/mock-data";
-import { CreditCard, DollarSign, TrendingUp, Plus } from "lucide-react";
+import { CreditCard, DollarSign, TrendingUp, Plus, Pencil } from "lucide-react";
 import { formatINR } from "@/shared/utils/utils";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/shared/components/ui/dialog";
@@ -21,14 +21,21 @@ export const Route = createFileRoute("/app/subscriptions")({
 function SubsPage() {
   const [subscriptions, setSubscriptions] = useState(initialSubscriptions);
   const [open, setOpen] = useState(false);
+  const [editingSub, setEditingSub] = useState<typeof initialSubscriptions[0] | null>(null);
   
   const mrr = subscriptions.reduce((s, x) => s + x.mrr, 0);
 
-  const handleAddSubscription = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      setTimeout(() => setEditingSub(null), 200);
+    }
+  };
+
+  const handleSaveSubscription = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const newSub = {
-      id: `SUB-${9000 + subscriptions.length + 1}`,
+    const data = {
       customer: formData.get("customer") as string,
       plan: formData.get("plan") as string,
       seats: Number(formData.get("seats")),
@@ -37,8 +44,24 @@ function SubsPage() {
       renews: formData.get("renews") as string,
     };
     
-    setSubscriptions([newSub, ...subscriptions]);
+    if (editingSub) {
+      setSubscriptions(subscriptions.map(s => 
+        s.id === editingSub.id ? { ...s, ...data } : s
+      ));
+    } else {
+      const newSub = {
+        id: `SUB-${9000 + subscriptions.length + 1}`,
+        ...data
+      };
+      setSubscriptions([newSub, ...subscriptions]);
+    }
     setOpen(false);
+    setTimeout(() => setEditingSub(null), 200);
+  };
+
+  const handleEditClick = (sub: typeof initialSubscriptions[0]) => {
+    setEditingSub(sub);
+    setOpen(true);
   };
 
   return (
@@ -47,25 +70,25 @@ function SubsPage() {
         title="Subscriptions"
         description="Plans, billing and renewals."
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" onClick={() => setEditingSub(null)}>
                 <Plus className="mr-2 h-4 w-4" /> Add subscription
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Add Subscription</DialogTitle>
+                <DialogTitle>{editingSub ? "Edit Subscription" : "Add Subscription"}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleAddSubscription} className="grid gap-4 py-4">
+              <form key={editingSub ? editingSub.id : "new"} onSubmit={handleSaveSubscription} className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label htmlFor="customer">Customer</Label>
-                  <Input id="customer" name="customer" required placeholder="Acme Corp" />
+                  <Input id="customer" name="customer" required placeholder="Acme Corp" defaultValue={editingSub?.customer} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="plan">Plan</Label>
-                    <Select name="plan" defaultValue="Starter" required>
+                    <Select name="plan" defaultValue={editingSub?.plan || "Starter"} required>
                       <SelectTrigger>
                         <SelectValue placeholder="Select plan" />
                       </SelectTrigger>
@@ -78,7 +101,7 @@ function SubsPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="status">Status</Label>
-                    <Select name="status" defaultValue="Active" required>
+                    <Select name="status" defaultValue={editingSub?.status || "Active"} required>
                       <SelectTrigger>
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
@@ -93,22 +116,22 @@ function SubsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="seats">Seats</Label>
-                    <Input id="seats" name="seats" type="number" required min="1" defaultValue="1" />
+                    <Input id="seats" name="seats" type="number" required min="1" defaultValue={editingSub?.seats || 1} />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="mrr">MRR ($)</Label>
-                    <Input id="mrr" name="mrr" type="number" required min="0" defaultValue="0" />
+                    <Input id="mrr" name="mrr" type="number" required min="0" defaultValue={editingSub?.mrr || 0} />
                   </div>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="renews">Renewal Date</Label>
-                  <Input id="renews" name="renews" type="date" required />
+                  <Input id="renews" name="renews" type="date" required defaultValue={editingSub?.renews} />
                 </div>
                 <DialogFooter className="mt-4">
                   <DialogClose asChild>
                     <Button type="button" variant="outline">Cancel</Button>
                   </DialogClose>
-                  <Button type="submit">Save Subscription</Button>
+                  <Button type="submit">{editingSub ? "Save Changes" : "Save Subscription"}</Button>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -156,6 +179,22 @@ function SubsPage() {
           { key: "mrr", header: "MRR", render: (s) => formatINR(s.mrr) },
           { key: "renews", header: "Renews" },
           { key: "status", header: "Status", render: (s) => <StatusBadge value={s.status} /> },
+          {
+            key: "actions",
+            header: "",
+            width: "50px",
+            render: (s) => (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 p-0"
+                onClick={() => handleEditClick(s)}
+              >
+                <Pencil className="h-4 w-4 text-slate-500" />
+                <span className="sr-only">Edit</span>
+              </Button>
+            ),
+          },
         ]}
       />
     </>
