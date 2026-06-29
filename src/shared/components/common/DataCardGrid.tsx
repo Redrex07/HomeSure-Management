@@ -153,8 +153,12 @@ export function DataCardGrid<T extends Record<string, any>>({
                       <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
                         {f.label}
                       </div>
-                      <div className="mt-0.5 truncate text-xs font-medium text-foreground">
-                        {f.render ? f.render(row) : String(row[f.key as keyof T] ?? "—")}
+                      <div className="mt-0.5 text-xs font-medium text-foreground">
+                        {f.render ? (
+                          f.render(row)
+                        ) : (
+                          <div className="truncate">{String(row[f.key as keyof T] ?? "—")}</div>
+                        )}
                       </div>
                     </div>
                   ))}
