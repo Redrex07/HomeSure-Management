@@ -135,6 +135,7 @@ function PropertiesPage() {
         property_type: form.property_type,
         availability_status: form.availability_status,
         image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
+        Listing_date: new Date().toISOString(),
       });
       toast.success("Property added successfully!");
       fetchSupabaseProperties();
@@ -675,7 +676,7 @@ function PropertiesPage() {
               key: "listing_date",
               label: "Listing Date",
               render: (p) => {
-                const dateVal = p.listing_date || p.created_at || "2024-01-15T10:00:00Z";
+                const dateVal = p.listing_date || p.Listing_date || "2024-01-15T10:00:00Z";
                 return (
                   <span className="text-foreground">
                     {dateVal ? new Date(dateVal).toLocaleDateString() : "—"}
