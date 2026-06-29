@@ -118,7 +118,6 @@ export async function deleteProperty(id: number) {
  */
 export async function getLandlordTenants(landlordId: string) {
   try {
-    // Ideally this filters by properties owned by landlordId, but for now we fetch all
     const { data, error } = await supabase
       .from("tenant_onboarding")
       .select("*")
@@ -182,6 +181,7 @@ export async function deleteTenant(id: string) {
     throw err;
   }
 }
+
 /**
  * STEP 3: Get invoices/rent data for the landlord
  */
@@ -190,7 +190,6 @@ export async function getLandlordInvoices(landlordId: string) {
     const { data, error } = await supabase
       .from("invoices")
       .select("*")
-      // .eq("landlord_id", landlordId) // Uncomment if landlord_id exists on invoices
       .order("invoice_id", { ascending: false });
 
     if (error) {
@@ -252,6 +251,7 @@ export async function updateInvoice(id: string, payload: any) {
     throw err;
   }
 }
+
 
 /**
  * STEP 4: Get service requests for the landlord's properties
@@ -321,59 +321,49 @@ export async function getLandlordRentCollection(landlordId: string) {
 
 // ================= SERVICE REQUESTS =================
 
-function mapServiceRequestRow(r: {
-  service_request_id: number;
-  title?: string | null;
-  description?: string | null;
-  category?: string | null;
-  priority?: string | null;
-  status?: string | null;
-  created_at?: string | null;
-  properties?: { property_name?: string | null } | { property_name?: string | null }[] | null;
-}) {
-  const propertyRecord = Array.isArray(r.properties) ? r.properties[0] : r.properties;
-
-  return {
-    id: `SR-${r.service_request_id}`,
-    title: r.title || "Untitled Request",
-    property: propertyRecord?.property_name || "Unassigned Property",
-    tenant: "Unassigned Tenant",
-    category: r.category || "General",
-    priority: r.priority || "Medium",
-    status: r.status || "Pending",
-    contractor: null,
-    created: r.created_at
-      ? new Date(r.created_at).toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0],
-  };
-}
-
 export async function getServiceRequests() {
-  return [
-    {
-      id: "SR-101",
-      title: "Water Leakage",
-      property: "Sunrise Apartments",
-    },
-    {
-      id: "SR-102",
-      title: "Electrical Fault",
-      property: "Green Villa",
-    },
-    {
-      id: "SR-103",
-      title: "AC Repair",
-      property: "Palm Residency",
-    },
-    {
-      id: "SR-104",
-      title: "Plumbing Issue",
-      property: "Lake View House",
-    },
-  ];
+  try {
+    const { data, error } = await supabase
+      .from("service_requests")
+      .select(`
+        service_request_id,
+        title,
+        description,
+        category,
+        priority,
+        status,
+        created_at,
+        properties (
+          property_name
+        ),
+        tenant:users!tenant_id (
+          name
+        )
+      `)
+      .order("service_request_id", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching service requests:", error);
+      return [];
+    }
+
+    return (data || []).map((r: any) => ({
+      id: `SR-${r.service_request_id}`,
+      title: r.title,
+      property: r.properties?.property_name || "Unassigned Property",
+      tenant: r.tenant?.name || "Unassigned Tenant",
+      category: r.category,
+      priority: r.priority,
+      status: r.status,
+      contractor: null,
+      created: r.created_at ? new Date(r.created_at).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    }));
+  } catch (err) {
+    console.error("Exception fetching service requests:", err);
+    return [];
+  }
 }
 
- 
 export async function createServiceRequest(payload: {
   title: string;
   category: string;
@@ -463,63 +453,73 @@ export async function deleteServiceRequest(id: string) {
 // ================= CONTRACTORS =================
 
 export async function getContractors() {
-  return [
-    {
-      id: "C-1",
-      name: "John Electric",
-      trade: "Electrical",
-      phone: "9876543210",
-    },
-    {
-      id: "C-2",
-      name: "Mike Plumbing",
-      trade: "Plumbing",
-      phone: "9876543211",
-    },
-    {
-      id: "C-3",
-      name: "David HVAC",
-      trade: "HVAC",
-      phone: "9876543212",
-    },
-    {
-      id: "C-4",
-      name: "Alex Carpenter",
-      trade: "Carpentry",
-      phone: "9876543213",
-    },
-    {
-      id: "C-5",
-      name: "Robert Painter",
-      trade: "Painting",
-      phone: "9876543214",
-    },
-  ];
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("user_id, name, phone, status")
+      .eq("role_id", 4);
+
+    if (error) {
+      console.error("Error fetching contractors:", error);
+      return [];
+    }
+
+    return (data || []).map((c: any) => ({
+      id: `C-${c.user_id}`,
+      name: c.name || "Unknown",
+      trade: "—",
+      rating: "—",
+      jobs: 0,
+      available: c.status === "Active",
+      phone: c.phone || "—",
+    }));
+  } catch (err) {
+    console.error("Exception fetching contractors:", err);
+    return [];
+  }
 }
 
 // ================= APPOINTMENTS =================
 
 export async function getAppointments() {
-  return [
-    {
-      id: "A-1",
-      title: "Leak Repair",
-      date: "2026-06-24",
-      time: "10:00",
-      property: "Sunrise Apartments",
-      contractor: "Mike Plumbing",
-      status: "Scheduled",
-    },
-    {
-      id: "A-2",
-      title: "Electrical Inspection",
-      date: "2026-06-25",
-      time: "14:30",
-      property: "Green Villa",
-      contractor: "John Electric",
-      status: "Scheduled",
-    },
-  ];
+  try {
+    const { data, error } = await supabase
+      .from("appointments")
+      .select(`
+        appointment_id,
+        appointment_date,
+        appointment_time,
+        status,
+        service_requests (
+          title,
+          properties (
+            property_name
+          )
+        ),
+        contractor:users!contractor_id (
+          name
+        )
+      `)
+      .order("appointment_date", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching appointments:", error);
+      return [];
+    }
+
+    return (data || []).map((a: any) => ({
+      id: `A-${a.appointment_id}`,
+      title: a.service_requests?.title || "Maintenance Visit",
+      date: a.appointment_date || new Date().toISOString().split("T")[0],
+      time: a.appointment_time ? a.appointment_time.slice(0, 5) : "12:00",
+      property: a.service_requests?.properties?.property_name || "Unassigned Property",
+      contractor: a.contractor?.name || "Unassigned",
+      status: a.status || "Scheduled",
+    }));
+  } catch (err) {
+    console.error("Exception fetching appointments:", err);
+    return [];
+  }
 }
 
 // ================= ESTIMATES =================
@@ -736,14 +736,39 @@ export async function createContractor(payload: {
   }
 }
 
-export async function createAppointment(payload: any) {
-  console.log("New Appointment:", payload);
+export async function createAppointment(payload: {
+  service_request_id: number;
+  contractor_id: number;
+  title: string;
+  appointment_date: string;
+  appointment_time: string;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from("appointments")
+      .insert([
+        {
+          service_request_id: payload.service_request_id,
+          contractor_id: payload.contractor_id,
+          title: payload.title,
+          appointment_date: payload.appointment_date,
+          appointment_time: payload.appointment_time,
+          status: "Scheduled",
+        },
+      ])
+      .select();
 
-  return {
-    success: true,
-    id: `A-${Date.now()}`,
-  };
+    if (error) {
+      console.error("Error creating appointment:", error);
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception creating appointment:", err);
+    throw err;
+  }
 }
+
 export async function updateAppointmentDateTime(
   id: string,
   payload: {
@@ -751,10 +776,28 @@ export async function updateAppointmentDateTime(
     appointment_time: string;
   }
 ) {
-  console.log("Reschedule:", id, payload);
+  try {
+    const numericId = parseInt(id.replace("A-", ""), 10);
+    const { data, error } = await supabase
+      .from("appointments")
+      .update({
+        appointment_date: payload.appointment_date,
+        appointment_time: payload.appointment_time,
+      })
+      .eq("appointment_id", numericId)
+      .select();
 
-  return { success: true };
+    if (error) {
+      console.error("Error updating appointment date/time:", error);
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception updating appointment date/time:", err);
+    throw err;
+  }
 }
+
 export async function createEstimate(payload: {
   service_request_id: number;
   contractor_id: number;
@@ -800,6 +843,168 @@ export async function getUsers() {
   } catch (err) {
     console.error("Exception fetching users:", err);
     return [];
+  }
+}
+
+export async function getServiceAdminDashboard() {
+  console.log("🔌 getServiceAdminDashboard executing in queries layer...");
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  try {
+    const [requestsRes, contractorsRes, activeRequestsRes, appointmentsRes] = await Promise.all([
+      supabase.from("service_requests").select("status, created_at"),
+      supabase.from("users").select("user_id, name, email, status").eq("role_id", 4).limit(5),
+      supabase.from("service_requests").select(`
+        service_request_id,
+        title,
+        priority,
+        status,
+        created_at,
+        properties (
+          property_name
+        ),
+        tenant:users!tenant_id (
+          name
+        )
+      `).order("service_request_id", { ascending: false }).limit(5),
+      supabase.from("appointments").select(`
+        appointment_id,
+        title,
+        appointment_date,
+        appointment_time,
+        status,
+        service_requests (
+          properties (
+            property_name
+          )
+        ),
+        contractor:users!contractor_id (
+          name
+        )
+      `).eq("appointment_date", todayStr)
+    ]);
+
+    // Logging Query 1: service_requests (stats)
+    console.log("📊 [SQL Query 1] Table: service_requests (for stats metrics)");
+    console.log("   - Rows returned:", requestsRes.data ? requestsRes.data.length : 0);
+    console.log("   - Error:", requestsRes.error ? JSON.stringify(requestsRes.error) : "None");
+    if (requestsRes.error) {
+      throw new Error(`[SQL Query 1: service_requests stats] Failed: ${requestsRes.error.message}`);
+    }
+
+    // Logging Query 2: users (contractors)
+    console.log("📊 [SQL Query 2] Table: users (for contractors list)");
+    console.log("   - Rows returned:", contractorsRes.data ? contractorsRes.data.length : 0);
+    console.log("   - Error:", contractorsRes.error ? JSON.stringify(contractorsRes.error) : "None");
+    if (contractorsRes.error) {
+      throw new Error(`[SQL Query 2: users contractors] Failed: ${contractorsRes.error.message}`);
+    }
+
+    // Logging Query 3: service_requests (active requests)
+    console.log("📊 [SQL Query 3] Table: service_requests (for active requests list)");
+    console.log("   - Rows returned:", activeRequestsRes.data ? activeRequestsRes.data.length : 0);
+    console.log("   - Error:", activeRequestsRes.error ? JSON.stringify(activeRequestsRes.error) : "None");
+    if (activeRequestsRes.error) {
+      throw new Error(`[SQL Query 3: service_requests active list] Failed: ${activeRequestsRes.error.message}`);
+    }
+
+    // Logging Query 4: appointments
+    console.log("📊 [SQL Query 4] Table: appointments (for today's schedule)");
+    console.log("   - Rows returned:", appointmentsRes.data ? appointmentsRes.data.length : 0);
+    console.log("   - Error:", appointmentsRes.error ? JSON.stringify(appointmentsRes.error) : "None");
+    if (appointmentsRes.error) {
+      throw new Error(`[SQL Query 4: appointments] Failed: ${appointmentsRes.error.message}`);
+    }
+
+    const allRequests = requestsRes.data || [];
+    const dbContractors = contractorsRes.data || [];
+    const activeRequests = activeRequestsRes.data || [];
+    const dbAppointments = appointmentsRes.data || [];
+
+    // Calculate Stat Cards
+    const totalRequests = allRequests.length;
+    const pending = allRequests.filter(r => r.status === "Pending").length;
+    const assigned = allRequests.filter(r => r.status === "Assigned" || r.status === "In Progress").length;
+    const completed = allRequests.filter(r => r.status === "Completed").length;
+
+    // Calculate last 7 days chart
+    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const requestsSeries = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dayName = daysOfWeek[d.getDay()];
+      const dateStr = d.toISOString().split("T")[0];
+      
+      const createdCount = allRequests.filter(r => {
+        if (!r.created_at) return false;
+        return r.created_at.startsWith(dateStr);
+      }).length;
+
+      const completedCount = allRequests.filter(r => {
+        if (!r.created_at) return false;
+        return r.created_at.startsWith(dateStr) && r.status === "Completed";
+      }).length;
+
+      requestsSeries.push({
+        day: dayName,
+        created: createdCount,
+        completed: completedCount
+      });
+    }
+
+    // Format Top Contractors
+    const formattedContractors = dbContractors.map(c => ({
+      id: `C-${c.user_id}`,
+      name: c.name,
+      email: c.email,
+      status: c.status,
+      trade: "—", // No fake trade
+      rating: "—", // No fake rating
+      available: c.status === "Active" // Active status maps to availability
+    }));
+
+    // Format Active Service Requests
+    const formattedActiveRequests = activeRequests.map((r: any) => ({
+      id: `SR-${r.service_request_id}`,
+      title: r.title,
+      priority: r.priority,
+      status: r.status,
+      property: r.properties?.property_name || "—",
+      tenant: r.tenant?.name || "—",
+      contractor: null
+    }));
+
+    // Format Appointments
+    const formattedAppointments = dbAppointments.map((a: any) => ({
+      id: `A-${a.appointment_id}`,
+      title: a.title,
+      date: a.appointment_date,
+      time: a.appointment_time ? a.appointment_time.slice(0, 5) : "12:00",
+      property: a.service_requests?.properties?.property_name || "—",
+      contractor: a.contractor?.name || "—",
+      status: a.status
+    }));
+
+    const result = {
+      stats: {
+        total: totalRequests,
+        pending,
+        assigned,
+        completed
+      },
+      requestsSeries,
+      contractors: formattedContractors,
+      activeRequests: formattedActiveRequests,
+      appointments: formattedAppointments
+    };
+
+    console.log("📊 [Final Mapped Object]:", JSON.stringify(result, null, 2));
+
+    return result;
+  } catch (err) {
+    console.error("Error in getServiceAdminDashboard:", err);
+    throw err;
   }
 }
 

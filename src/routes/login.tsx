@@ -48,14 +48,6 @@ function LoginPage() {
         return;
       }
 
-      if (!authUser.email_confirmed_at) {
-        await supabase.auth.signOut();
-        toast.error("Please confirm your email before signing in.");
-        nav({ to: "/verify-email", search: { email } });
-        setIsLoading(false);
-        return;
-      }
-
       const { data: userProfiles, error: userError } = await supabase
         .from("users")
         .select("name, role_id, status")
@@ -69,6 +61,15 @@ function LoginPage() {
       }
 
       const userData = userProfiles[0];
+
+      if (userData.status === "Pending") {
+        await supabase.auth.signOut();
+        toast.error("Please confirm your email before signing in.");
+        nav({ to: "/verify-email", search: { email } });
+        setIsLoading(false);
+        return;
+      }
+
       const role = ROLE_BY_ID[userData.role_id];
 
       if (!role) {
@@ -77,22 +78,12 @@ function LoginPage() {
         return;
       }
 
-      // Activate profile if email is confirmed but status is still Pending
-      let status = userData.status as "Active" | "Pending" | "Declined" | "Invited";
-      if (status === "Pending" && authUser.email_confirmed_at) {
-        await supabase
-          .from("users")
-          .update({ status: "Active" })
-          .eq("auth_user_id", authUser.id);
-        status = "Active";
-      }
-
       setSession({
         id: authUser.id,
+        email: authUser.email || email,
         name: userData.name,
-        email: email,
-        role: role,
-        status: status,
+        role,
+        status: userData.status as "Active" | "Pending" | "Declined" | "Invited",
       });
 
       toast.success(`Welcome back, signing in as ${userData.name}`);

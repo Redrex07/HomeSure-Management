@@ -137,6 +137,13 @@ function ContractorsPage() {
         <div className="flex h-64 items-center justify-center border border-border/60 rounded-md bg-background/50">
           <p className="text-sm text-muted-foreground animate-pulse">Loading contractor list...</p>
         </div>
+      ) : contractorList.length === 0 ? (
+        <div className="flex h-64 flex-col items-center justify-center border border-dashed border-border/80 rounded-md bg-background/50 p-6 text-center">
+          <p className="text-sm font-semibold text-muted-foreground mb-1">No contractors found</p>
+          <p className="text-xs text-muted-foreground/75">
+            Use the "Invite contractor" button to add a new contractor.
+          </p>
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {contractorList.map((c) => (

@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { getAppUrl } from "@/core/email/email.config.server";
+import { sendInvitationEmail } from "@/core/email/email.service.server";
+import { createInvitation } from "@/core/email/tokens.server";
 import { getSupabaseAdmin } from "@/core/db/supabase-admin.server";
-import { ROLE_IDS, type Role } from "@/features/auth/utils/roles";
+import { ROLE_LABELS, type Role } from "@/features/auth/utils/roles";
 
 const roleSchema = z.enum([
   "super_admin",
@@ -23,49 +26,42 @@ const deleteSchema = z.object({
   authUserId: z.string().nullable(),
 });
 
-function getSiteUrl() {
-  if (process.env.VITE_SITE_URL) return process.env.VITE_SITE_URL;
-  if (process.env.SITE_URL) return process.env.SITE_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3000";
-}
-
 export const invitePlatformUser = createServerFn({ method: "POST" })
   .inputValidator(inviteSchema)
   .handler(async ({ data }) => {
     const admin = getSupabaseAdmin();
-    const siteUrl = getSiteUrl();
+    const appUrl = getAppUrl();
+    const email = data.email.toLowerCase();
 
-    const { data: authData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-      data.email,
-      {
-        redirectTo: `${siteUrl}/login`,
-        data: { name: data.name, role: data.role },
-      }
-    );
+    const { data: existingUser } = await admin
+      .from("users")
+      .select("user_id")
+      .eq("email", email)
+      .maybeSingle();
 
-    if (inviteError) {
-      throw new Error(inviteError.message);
+    if (existingUser) {
+      throw new Error("A user with this email already exists.");
     }
 
-    if (!authData.user) {
-      throw new Error("Invite failed: no user returned from Supabase.");
-    }
-
-    const { error: profileError } = await admin.from("users").insert({
-      auth_user_id: authData.user.id,
+    const { rawToken, resent } = await createInvitation({
+      email,
       name: data.name,
-      email: data.email,
-      role_id: ROLE_IDS[data.role as Role],
-      status: "Invited",
+      role: data.role as Role,
     });
 
-    if (profileError) {
-      await admin.auth.admin.deleteUser(authData.user.id);
-      throw new Error(profileError.message);
+    const invitationLink = `${appUrl}/signup?invite=${rawToken}`;
+    const emailResult = await sendInvitationEmail({
+      recipientEmail: email,
+      recipientName: data.name,
+      role: ROLE_LABELS[data.role as Role],
+      invitationLink,
+    });
+
+    if (!emailResult.success) {
+      throw new Error(emailResult.error || "Failed to send invitation email.");
     }
 
-    return { success: true };
+    return { success: true, resent };
   });
 
 export const deletePlatformUser = createServerFn({ method: "POST" })
