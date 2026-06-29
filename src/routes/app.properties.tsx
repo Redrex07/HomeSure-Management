@@ -132,11 +132,11 @@ function PropertiesPage() {
         landlord_id: "2", // Force "2" to match Supabase mock data
         property_name: form.property_name,
         property_type: form.property_type,
-        address: form.address,
-        rent_amount: Number(form.rent_amount),
+        address: "N/A",
+        rent_amount: 0,
         availability_status: form.availability_status,
         image_url: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : undefined,
-        amenities: form.amenities,
+        amenities: "",
       });
       toast.success("Property added successfully!");
       fetchSupabaseProperties();
@@ -344,11 +344,8 @@ function PropertiesPage() {
       updateLocalProperty(editingProperty.property_id, {
         property_name: editForm.property_name,
         property_type: editForm.property_type,
-        address: editForm.address,
-        rent_amount: Number(editForm.rent_amount),
         availability_status: editForm.availability_status,
         image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
-        amenities: editForm.amenities,
       });
       toast.success("Property updated successfully!");
       setEditingProperty(null);
@@ -357,11 +354,8 @@ function PropertiesPage() {
         await updateSupabaseProperty(editingProperty.property_id, {
           property_name: editForm.property_name,
           property_type: editForm.property_type,
-          address: editForm.address,
-          rent_amount: Number(editForm.rent_amount),
           availability_status: editForm.availability_status,
           image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
-          amenities: editForm.amenities,
         });
         toast.success("Property updated successfully!");
         setEditingProperty(null);
