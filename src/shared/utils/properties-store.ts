@@ -11,6 +11,7 @@ export interface Property {
   availability_status: string;
   image_url?: string;
   amenities?: string;
+  listing_date?: string;
 }
 
 const STORAGE_KEY = "homesure_properties";
@@ -85,6 +86,7 @@ export const addProperty = (newProperty: Omit<Property, "property_id" | "landlor
     ...newProperty,
     property_id,
     landlord_id: 2,
+    listing_date: new Date().toISOString(),
   };
   properties = [property, ...properties];
   saveProperties(properties);

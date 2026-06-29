@@ -117,6 +117,7 @@ function PropertiesPage() {
     rent_amount: "",
     availability_status: "Available",
     amenities: "",
+    listing_date: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
@@ -280,6 +281,7 @@ function PropertiesPage() {
       rent_amount: String(p.rent_amount),
       availability_status: p.availability_status,
       amenities: p.amenities || "",
+      listing_date: p.listing_date || "",
     });
     setEditImages(parseImageUrls(p.image_url));
   };
@@ -658,7 +660,7 @@ function PropertiesPage() {
             },
             {
               key: "property_id",
-              label: "ID",
+              label: "Property ID",
               render: (p) => (
                 <span className="font-mono text-[11px] text-muted-foreground">
                   #{p.property_id}
@@ -668,6 +670,18 @@ function PropertiesPage() {
             {
               key: "property_type",
               label: "Type",
+            },
+            {
+              key: "listing_date",
+              label: "Listing Date",
+              render: (p) => {
+                const dateVal = p.listing_date || p.created_at;
+                return (
+                  <span className="text-foreground">
+                    {dateVal ? new Date(dateVal).toLocaleDateString() : "—"}
+                  </span>
+                );
+              },
             },
 
             {
