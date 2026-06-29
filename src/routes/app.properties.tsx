@@ -423,14 +423,7 @@ function PropertiesPage() {
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Address</Label>
-              <Input
-                placeholder="Chennai, Tamil Nadu"
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-              />
-            </div>
+
 
 
 
@@ -776,15 +769,7 @@ function PropertiesPage() {
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Address</Label>
-              <Input
-                value={editForm.address}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, address: e.target.value })
-                }
-              />
-            </div>
+
 
 
 
