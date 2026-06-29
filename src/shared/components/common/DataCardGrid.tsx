@@ -107,7 +107,7 @@ export function DataCardGrid<T extends Record<string, any>>({
             <Card
               key={i}
               className={
-                "group relative flex flex-col border-border/70 bg-card p-4 shadow-card transition-all duration-200 hover:shadow-elegant hover:-translate-y-[1px]" +
+                "group relative flex flex-col border-2 border-primary/30 bg-card p-4 shadow-card transition-all duration-200 hover:border-primary/50 hover:shadow-elegant hover:-translate-y-[1px]" +
                 (onCardClick ? " cursor-pointer" : "")
               }
               onClick={() => onCardClick?.(row)}
@@ -147,13 +147,13 @@ export function DataCardGrid<T extends Record<string, any>>({
 
               {/* Meta grid – auto 2-col on wider cards */}
               {metaFields.length > 0 && (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-4">
                   {metaFields.map((f) => (
                     <div key={String(f.key)} className="min-w-0">
                       <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
                         {f.label}
                       </div>
-                      <div className="mt-0.5 text-xs font-medium text-foreground">
+                      <div className="mt-1 text-xs font-medium text-foreground">
                         {f.render ? (
                           f.render(row)
                         ) : (
