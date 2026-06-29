@@ -229,8 +229,7 @@ export function LandlordDashboard() {
               return (
                 <Link
                   key={p.property_id}
-                  to="/app/properties/$id"
-                  params={{ id: String(p.property_id) }}
+                  to="/app/properties"
                   className="flex items-center gap-3 rounded-md border border-border/60 p-2.5 hover:bg-muted/40"
                 >
                   <img src={firstImage} alt="" className="h-12 w-16 rounded-md object-cover" />

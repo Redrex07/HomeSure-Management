@@ -258,7 +258,7 @@ export function LandlordDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {properties.slice(0, 4).map((p) => (
-              <Link key={p.id} to="/app/properties/$id" params={{ id: p.id }} className="flex items-center gap-3 rounded-md border border-border/60 p-2.5 hover:bg-muted/40">
+              <Link key={p.id} to="/app/properties" className="flex items-center gap-3 rounded-md border border-border/60 p-2.5 hover:bg-muted/40">
                 <img src={p.image} alt="" className="h-12 w-16 rounded-md object-cover" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{p.name}</div>
