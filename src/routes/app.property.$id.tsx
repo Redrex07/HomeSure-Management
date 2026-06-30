@@ -290,7 +290,7 @@ function PropertyDetailsPage() {
                       <Input value={editForm.locality || ""} onChange={(e) => setEditForm({...editForm, locality: e.target.value})} />
                     </div>
                     <div className="grid gap-2">
-                      <Label>Landmark</Label>
+                      <Label>Landmark (Optional)</Label>
                       <Input value={editForm.landmark || ""} onChange={(e) => setEditForm({...editForm, landmark: e.target.value})} />
                     </div>
                     <div className="grid gap-2">
@@ -310,7 +310,7 @@ function PropertyDetailsPage() {
                       <Input value={editForm.pin_code || ""} onChange={(e) => setEditForm({...editForm, pin_code: e.target.value})} />
                     </div>
                     <div className="grid gap-2 col-span-2">
-                      <Label>Google Map Location (Lat, Lng)</Label>
+                      <Label>Google Map Location (Lat, Lng) (Optional)</Label>
                       <Input value={editForm.map_location || ""} onChange={(e) => setEditForm({...editForm, map_location: e.target.value})} />
                     </div>
                   </div>
@@ -324,20 +324,6 @@ function PropertyDetailsPage() {
             </form>
           </DialogContent>
         </Dialog>
-
-        {/* Video Tour Section */}
-        {property.Virtual_Tour && (
-          <div className="space-y-3">
-            <h2 className="text-xl font-semibold">Virtual Tour</h2>
-            <div className="rounded-xl overflow-hidden border border-border bg-black aspect-video max-w-3xl">
-              <video
-                src={property.Virtual_Tour}
-                controls
-                className="w-full h-full object-contain"
-              />
-            </div>
-          </div>
-        )}
 
         {/* Details Accordions */}
         <div className="space-y-4">
@@ -434,6 +420,48 @@ function PropertyDetailsPage() {
                       <span className="font-medium text-base">{property.address || "—"}</span>
                     </div>
                   )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Images & Media Accordion */}
+            <AccordionItem value="media" className="border rounded-xl px-6 bg-card shadow-sm">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Images & Media
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-6 pb-6 pt-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {["Front View", "Living Room", "Bedroom", "Kitchen"].map((label, idx) => (
+                      <div key={idx} className="flex flex-col gap-2">
+                        <span className="text-muted-foreground text-xs uppercase tracking-wider">{label}</span>
+                        {parsedImages[idx] ? (
+                          <div className="aspect-square rounded-lg overflow-hidden border border-border">
+                            <img src={parsedImages[idx]} alt={label} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="aspect-square rounded-lg border border-dashed border-border flex items-center justify-center bg-muted/30">
+                            <span className="text-xs text-muted-foreground">Not uploaded</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-3">Virtual Tour Video</span>
+                    {property.Virtual_Tour ? (
+                      <div className="rounded-xl overflow-hidden border border-border bg-black aspect-video max-w-2xl">
+                        <video
+                          src={property.Virtual_Tour}
+                          controls
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <span className="font-medium text-sm text-muted-foreground">Not uploaded</span>
+                    )}
+                  </div>
                 </div>
               </AccordionContent>
             </AccordionItem>

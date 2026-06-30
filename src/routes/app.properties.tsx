@@ -59,7 +59,7 @@ export const Route = createFileRoute("/app/properties")({
 });
 
 /** Fixed room labels mapped by upload order (index 0–3) */
-const ROOM_LABELS = ["Hall View", "Front View", "Bed View", "Kitchen View"] as const;
+const ROOM_LABELS = ["Front View", "Living Room", "Bedroom", "Kitchen"] as const;
 
 export type UnifiedProperty = LocalProperty & { isLocal?: boolean };
 
@@ -583,86 +583,8 @@ function PropertiesPage() {
               </select>
             </div>
 
-
-
-            <div className="grid gap-2">
-              <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
-              {uploadedVideo ? (
-                <div className="flex items-center gap-4">
-                  <video src={uploadedVideo} className="h-20 w-32 object-cover rounded-md bg-black" />
-                  <Button variant="outline" size="sm" onClick={() => setUploadedVideo(null)}>
-                    Remove Video
-                  </Button>
-                </div>
-              ) : (
-                <Input
-                  type="file"
-                  accept="video/mp4,video/x-m4v,video/*"
-                  onChange={(e) => handleVideoUpload(e, false)}
-                  disabled={isUploadingVideo}
-                  className="cursor-pointer"
-                />
-              )}
-              {isUploadingVideo && <p className="text-xs text-muted-foreground animate-pulse">Uploading video...</p>}
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Pictures (Up to 4)</Label>
-
-              {/* Thumbnail preview of uploaded images */}
-              {uploadedImages.length > 0 && (
-                <div className="flex gap-3 flex-wrap">
-                  {uploadedImages.map((url, idx) => (
-                    <div key={idx} className="flex flex-col items-center gap-1">
-                      <div
-                        className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
-                      >
-                        <img
-                          src={url}
-                          alt={ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeUploadedImage(idx)}
-                          className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                      <span className="text-[10px] font-medium text-muted-foreground">
-                        {ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Upload button */}
-              {uploadedImages.length < 4 && (
-                <div className="relative">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    onChange={handleImageUpload}
-                    disabled={isUploading}
-                  />
-                  <div className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
-                    <ImagePlus className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      {isUploading
-                        ? "Uploading..."
-                        : `Upload next: ${ROOM_LABELS[uploadedImages.length] ?? "Image"} (${4 - uploadedImages.length} remaining)`}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
               </>
-            ) : (
+            ) : step === 2 ? (
               <>
                 <div className="grid gap-2">
                   <Label>House/Flat Number</Label>
@@ -681,7 +603,7 @@ function PropertiesPage() {
                   <Input placeholder="Anna Nagar" value={form.locality} onChange={(e) => setForm({ ...form, locality: e.target.value })} />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Landmark</Label>
+                  <Label>Landmark (Optional)</Label>
                   <Input placeholder="Near Bus Stand" value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} />
                 </div>
                 <div className="grid gap-2">
@@ -701,8 +623,87 @@ function PropertiesPage() {
                   <Input placeholder="600040" value={form.pin_code} onChange={(e) => setForm({ ...form, pin_code: e.target.value })} />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Google Map Location (Latitude & Longitude)</Label>
+                  <Label>Google Map Location (Latitude & Longitude) (Optional)</Label>
                   <Input placeholder="13.0827, 80.2707" value={form.map_location} onChange={(e) => setForm({ ...form, map_location: e.target.value })} />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid gap-2">
+                  <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
+                  {uploadedVideo ? (
+                    <div className="flex items-center gap-4">
+                      <video src={uploadedVideo} className="h-20 w-32 object-cover rounded-md bg-black" />
+                      <Button variant="outline" size="sm" onClick={() => setUploadedVideo(null)}>
+                        Remove Video
+                      </Button>
+                    </div>
+                  ) : (
+                    <Input
+                      type="file"
+                      accept="video/mp4,video/x-m4v,video/*"
+                      onChange={(e) => handleVideoUpload(e, false)}
+                      disabled={isUploadingVideo}
+                      className="cursor-pointer"
+                    />
+                  )}
+                  {isUploadingVideo && <p className="text-xs text-muted-foreground animate-pulse">Uploading video...</p>}
+                </div>
+
+                <div className="grid gap-2 mt-4">
+                  <Label>Pictures (Up to 4)</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Please upload images in order: 1. Front View, 2. Living Room, 3. Bedroom, 4. Kitchen</p>
+
+                  {/* Thumbnail preview of uploaded images */}
+                  {uploadedImages.length > 0 && (
+                    <div className="flex gap-3 flex-wrap">
+                      {uploadedImages.map((url, idx) => (
+                        <div key={idx} className="flex flex-col items-center gap-1">
+                          <div
+                            className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
+                          >
+                            <img
+                              src={url}
+                              alt={ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeUploadedImage(idx)}
+                              className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                          <span className="text-[10px] font-medium text-muted-foreground">
+                            {ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  {uploadedImages.length < 4 && (
+                    <div className="relative mt-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        onChange={handleImageUpload}
+                        disabled={isUploading}
+                      />
+                      <div className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                        <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          {isUploading
+                            ? "Uploading..."
+                            : `Upload next: ${ROOM_LABELS[uploadedImages.length] ?? "Image"} (${4 - uploadedImages.length} remaining)`}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -715,12 +716,21 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(2)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 2 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(1)}>
                     Back
                   </Button>
-                  <Button type="submit">Save Property</Button>
+                  <Button type="button" onClick={() => setStep(3)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(2)}>
+                    Back
+                  </Button>
+                  <Button type="submit" disabled={isUploading || isUploadingVideo}>
+                    {(isUploading || isUploadingVideo) ? "Uploading..." : "Save Property"}
+                  </Button>
                 </>
               )}
             </SheetFooter>
