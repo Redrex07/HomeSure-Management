@@ -3,7 +3,8 @@ import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video, CheckCircle } from "lucide-react";
+import { Card } from "@/shared/components/ui/card";
+import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video, CheckCircle, Search, Home } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSession } from "@/features/auth/store/auth-store";
 import {
@@ -63,6 +64,18 @@ const ROOM_LABELS = ["Front View", "Living Room", "Bedroom", "Kitchen"] as const
 
 export type UnifiedProperty = LocalProperty & { isLocal?: boolean };
 
+const parseImageUrls = (urlData: any): string[] => {
+  if (!urlData) return [];
+  if (Array.isArray(urlData)) return urlData;
+  try {
+    const parsed = JSON.parse(urlData);
+    if (Array.isArray(parsed)) return parsed;
+    return [urlData];
+  } catch {
+    return [urlData];
+  }
+};
+
 function PropertiesPage() {
   const localProps = useProperties();
   const { session } = useSession();
@@ -85,10 +98,14 @@ function PropertiesPage() {
   
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const pageSize = 8;
 
   const filteredProps = landlordProps.filter((p) => {
     let matchesType = true;
     let matchesStatus = true;
+    let matchesSearch = true;
 
     if (propertyTypeFilter !== "All") {
       matchesType = p.property_type.toLowerCase().includes(propertyTypeFilter.toLowerCase());
@@ -98,8 +115,17 @@ function PropertiesPage() {
       matchesStatus = p.availability_status === statusFilter;
     }
 
-    return matchesType && matchesStatus;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const locStr = p.address ? String(p.address).toLowerCase() : "";
+      matchesSearch = (p.property_name?.toLowerCase().includes(q) || String(p.property_id).includes(q) || locStr.includes(q));
+    }
+
+    return matchesType && matchesStatus && matchesSearch;
   });
+
+  const totalPages = Math.ceil(filteredProps.length / pageSize);
+  const paginatedProps = filteredProps.slice(page * pageSize, (page + 1) * pageSize);
 
   const [isAdding, setIsAdding] = useState(false);
   const [step, setStep] = useState(1);
@@ -858,15 +884,20 @@ function PropertiesPage() {
           <p>No properties found.</p>
         </div>
       ) : (
-        <DataCardGrid
-          rows={filteredProps}
-          pageSize={7}
-          accentStyles={true}
-          onCardClick={(p) => navigate({ to: "/app/property/$id", params: { id: String(p.property_id) } })}
-          toolbar={
-            <div className="flex items-center gap-2">
-              <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
-                <SelectTrigger className="w-[140px] h-9">
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card/80 backdrop-blur-sm p-4 rounded-xl border border-border shadow-sm">
+            <div className="relative w-full sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search properties by name, ID or address..."
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+                className="pl-9 h-10 w-full bg-background/50 border-border/80 focus-visible:ring-primary/30"
+              />
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+              <Select value={propertyTypeFilter} onValueChange={(val) => { setPropertyTypeFilter(val); setPage(0); }}>
+                <SelectTrigger className="w-[140px] h-10 bg-background/50">
                   <SelectValue placeholder="Property Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -882,8 +913,8 @@ function PropertiesPage() {
                   <SelectItem value="Townhouse">Townhouse</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[170px] h-9">
+              <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setPage(0); }}>
+                <SelectTrigger className="w-[170px] h-10 bg-background/50">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -894,143 +925,94 @@ function PropertiesPage() {
                 </SelectContent>
               </Select>
             </div>
-          }
-          filterKeys={["property_name", "address", "property_id"]}
-          fields={[
-            {
-              key: "property_name",
-              label: "Property",
-              primary: true,
-              render: (p) => (
-                <Link
-                  to="/app/property/$id"
-                  params={{ id: String(p.property_id) }}
-                  className="hover:text-primary hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {p.property_name}
-                </Link>
-              ),
-            },
-            {
-              key: "address",
-              label: "Address",
-              secondary: true,
-            },
-            {
-              key: "property_id",
-              label: "Property ID",
-              render: (p) => (
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  #{p.property_id}
-                </span>
-              ),
-            },
-            {
-              key: "property_type",
-              label: "Type",
-            },
-            {
-              key: "listing_date",
-              label: "Listing Date",
-              render: (p) => {
-                const dateVal = p.listing_date || p.Listing_date || "2024-01-15T10:00:00Z";
-                return (
-                  <span className="text-foreground">
-                    {dateVal ? new Date(dateVal).toLocaleDateString() : "—"}
-                  </span>
-                );
-              },
-            },
-            {
-              key: "Description",
-              label: "Description",
-              render: (p) => (
-                <div className="whitespace-normal break-words text-foreground">
-                  {p.Description || "—"}
-                </div>
-              ),
-            },
-            {
-              key: "Category",
-              label: "Category",
-              render: (p) => (
-                p.Category ? (
-                  <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                    {p.Category}
-                  </span>
-                ) : <span className="text-muted-foreground">—</span>
-              ),
-            },
+          </div>
 
-            {
-              key: "availability_status",
-              label: "Status",
-              render: (p) => <StatusBadge value={p.availability_status} />,
-            },
-
-            {
-              key: "image_url",
-              label: "Pictures",
-              render: (p) => (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPropertyForImage(p);
-                    setGalleryPage(0);
-                  }}
-                  className="group/pic relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-violet-500/60 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-amber-500/15 px-3 py-1 text-[11px] font-semibold text-violet-700 shadow-sm transition-all duration-300 hover:border-violet-500 hover:from-violet-500/25 hover:via-fuchsia-500/20 hover:to-amber-500/25 hover:shadow-md hover:shadow-violet-500/20 dark:border-violet-400/50 dark:text-violet-300 dark:hover:border-violet-400 dark:hover:shadow-violet-400/20"
-                >
-                  {/* Shimmer sweep effect */}
-                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/pic:translate-x-full dark:via-white/10" />
-                  <Image className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover/pic:scale-110" />
-                  <span className="relative">View Pictures</span>
-                </button>
-              ),
-            },
-            {
-              key: "Virtual_Tour",
-              label: "Virtual Tour",
-              render: (p) => (
-                p.Virtual_Tour ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPropertyForVideo(p);
-                    }}
-                    className="group/vid relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-emerald-500/60 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-green-500/15 px-3 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm transition-all duration-300 hover:border-emerald-500 hover:from-emerald-500/25 hover:via-teal-500/20 hover:to-green-500/25 hover:shadow-md hover:shadow-emerald-500/20"
-                  >
-                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/vid:translate-x-full" />
-                    <Video className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover/vid:scale-110" />
-                    <span className="relative">Watch Video</span>
-                  </button>
-                ) : <span className="text-muted-foreground text-[11px] italic">—</span>
-              )
-            },
-          ]}
-          actions={(p) => (
-            <div className="flex items-center gap-0.5">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                onClick={() => openEditDialog(p)}
-                title="Edit"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => handleDeleteProperty(p)}
-                title="Delete"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+          {filteredProps.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground bg-card/50 rounded-xl border border-border border-dashed">
+               <p className="mb-4">No properties match your filters.</p>
+               <Button variant="outline" onClick={() => { setSearchQuery(""); setPropertyTypeFilter("All"); setStatusFilter("All"); }}>Clear Filters</Button>
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {paginatedProps.map(p => (
+                   <Card key={p.property_id} className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-border/60 hover:border-primary/40 bg-card flex flex-col h-full rounded-2xl">
+                     <div className="relative h-56 w-full bg-muted/30 overflow-hidden cursor-pointer" onClick={() => navigate({ to: "/app/property/$id", params: { id: String(p.property_id) } })}>
+                       {parseImageUrls(p.image_url)[0] ? (
+                         <img src={parseImageUrls(p.image_url)[0]} alt={p.property_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                       ) : (
+                         <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/30 group-hover:bg-primary/10 transition-colors duration-500">
+                            <Home className="h-12 w-12 opacity-40" />
+                         </div>
+                       )}
+                       
+                       {/* Subtle overlay gradient */}
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none opacity-80" />
+                       
+                       <div className="absolute top-3 left-3">
+                         <StatusBadge value={p.availability_status} />
+                       </div>
+                       
+                       <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0">
+                         <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-white/95 hover:bg-white text-primary shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.stopPropagation(); openEditDialog(p); }} title="Quick Edit">
+                           <Pencil className="h-3.5 w-3.5" />
+                         </Button>
+                         <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
+                           <Trash2 className="h-3.5 w-3.5" />
+                         </Button>
+                       </div>
+                       
+                       <div className="absolute bottom-3 left-4 right-4 pointer-events-none">
+                         <h3 className="text-white font-bold text-xl truncate drop-shadow-md">{p.property_name}</h3>
+                         <div className="flex items-center gap-2 mt-1">
+                           <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-black/40 text-white/90 backdrop-blur-md">#{p.property_id}</span>
+                           <span className="text-xs font-medium text-white/90 line-clamp-1">
+                              {p.property_type} {p.Category ? `• ${p.Category}` : ''}
+                           </span>
+                         </div>
+                       </div>
+                     </div>
+                     
+                     <div className="p-5 flex flex-col flex-grow bg-card">
+                       <p className="text-sm text-muted-foreground line-clamp-2 mb-5 flex-grow font-medium leading-relaxed">
+                          {(() => {
+                             try {
+                               const loc = JSON.parse(p.address || "{}");
+                               return [loc.street_address, loc.locality, loc.city].filter(Boolean).join(", ") || "";
+                             } catch {
+                               return p.address || "";
+                             }
+                          })()}
+                       </p>
+                       
+                       <Button className="w-full mt-auto font-semibold shadow-sm hover:shadow-md transition-shadow group/btn" variant="default" asChild>
+                         <Link to="/app/property/$id" params={{ id: String(p.property_id) }}>
+                           View Property Details
+                           <ChevronRight className="ml-1 h-4 w-4 opacity-70 group-hover/btn:translate-x-1 transition-transform" />
+                         </Link>
+                       </Button>
+                     </div>
+                   </Card>
+                ))}
+              </div>
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-8 pt-4">
+                  <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="hover:bg-primary hover:text-primary-foreground">
+                    <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                  </Button>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Page {page + 1} of {totalPages}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1} className="hover:bg-primary hover:text-primary-foreground">
+                    Next <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              )}
+            </>
           )}
-        />
+        </div>
       )}
 
       {/* Edit Property Dialog */}
