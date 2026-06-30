@@ -9,7 +9,5 @@ if (!supabaseUrl || !supabaseKey) {
     "Make sure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set in your .env file or Vercel project settings."
   );
 }
-console.log("SUPABASE URL =", import.meta.env.VITE_SUPABASE_URL);
-console.log("SUPABASE KEY =", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.slice(0,20));
 
 export const supabase = createClient(supabaseUrl || "https://placeholder.supabase.co", supabaseKey || "placeholder");
