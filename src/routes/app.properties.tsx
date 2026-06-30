@@ -202,13 +202,13 @@ function PropertiesPage() {
     try {
       const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
       const { error } = await supabase.storage
-        .from('property-videos')
+        .from('property-images')
         .upload(`properties/${fileName}`, file, { cacheControl: '3600', upsert: false });
 
       if (error) throw error;
 
       const { data: publicUrlData } = supabase.storage
-        .from('property-videos')
+        .from('property-images')
         .getPublicUrl(`properties/${fileName}`);
 
       if (isEdit) {
