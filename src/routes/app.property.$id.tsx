@@ -12,7 +12,7 @@ import {
 } from "@/shared/components/ui/accordion";
 import { UnifiedProperty } from "./app.properties";
 
-export const Route = createFileRoute("/app/properties/$id")({
+export const Route = createFileRoute("/app/property/$id")({
   component: PropertyDetailsPage,
 });
 

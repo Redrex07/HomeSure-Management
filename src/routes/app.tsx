@@ -15,6 +15,7 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
     "/app/users",
     "/app/subscriptions",
     "/app/properties",
+    "/app/property",
     "/app/analytics",
     "/app/audit-logs",
     "/app/service-requests",
@@ -34,6 +35,7 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
   landlord: [
     "/app/dashboard",
     "/app/properties",
+    "/app/property",
     "/app/tenants",
     "/app/leases",
     "/app/invoices",
@@ -62,6 +64,7 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
   realtor: [
     "/app/dashboard",
     "/app/properties",
+    "/app/property",
     "/app/analytics",
     "/app/tenants",
     "/app/settings"

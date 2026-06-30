@@ -856,7 +856,7 @@ function PropertiesPage() {
           rows={filteredProps}
           pageSize={7}
           accentStyles={true}
-          onCardClick={(p) => navigate({ to: "/app/properties/$id", params: { id: String(p.property_id) } })}
+          onCardClick={(p) => navigate({ to: "/app/property/$id", params: { id: String(p.property_id) } })}
           toolbar={
             <div className="flex items-center gap-2">
               <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
@@ -897,7 +897,7 @@ function PropertiesPage() {
               primary: true,
               render: (p) => (
                 <Link
-                  to="/app/properties/$id"
+                  to="/app/property/$id"
                   params={{ id: String(p.property_id) }}
                   className="hover:text-primary hover:underline"
                   onClick={(e) => e.stopPropagation()}

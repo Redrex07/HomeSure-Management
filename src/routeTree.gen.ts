@@ -35,7 +35,7 @@ import { Route as AppAuditLogsRouteImport } from './routes/app.audit-logs'
 import { Route as AppAppointmentsRouteImport } from './routes/app.appointments'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as ApiTestEmailRouteImport } from './routes/api.test-email'
-import { Route as AppPropertiesIdRouteImport } from './routes/app.properties.$id'
+import { Route as AppPropertyIdRouteImport } from './routes/app.property.$id'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -167,10 +167,10 @@ const ApiTestEmailRoute = ApiTestEmailRouteImport.update({
   path: '/api/test-email',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppPropertiesIdRoute = AppPropertiesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppPropertiesRoute,
+const AppPropertyIdRoute = AppPropertyIdRouteImport.update({
+  id: '/property/$id',
+  path: '/property/$id',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -191,7 +191,7 @@ export interface FileRoutesByFullPath {
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/properties': typeof AppPropertiesRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -200,7 +200,7 @@ export interface FileRoutesByFullPath {
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/verify': typeof AuthVerifyRoute
-  '/app/properties/$id': typeof AppPropertiesIdRoute
+  '/app/property/$id': typeof AppPropertyIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -220,7 +220,7 @@ export interface FileRoutesByTo {
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/properties': typeof AppPropertiesRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -229,7 +229,7 @@ export interface FileRoutesByTo {
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/verify': typeof AuthVerifyRoute
-  '/app/properties/$id': typeof AppPropertiesIdRoute
+  '/app/property/$id': typeof AppPropertyIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -250,7 +250,7 @@ export interface FileRoutesById {
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/properties': typeof AppPropertiesRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -259,7 +259,7 @@ export interface FileRoutesById {
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/verify': typeof AuthVerifyRoute
-  '/app/properties/$id': typeof AppPropertiesIdRoute
+  '/app/property/$id': typeof AppPropertyIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -290,7 +290,7 @@ export interface FileRouteTypes {
     | '/app/users'
     | '/auth/confirm'
     | '/auth/verify'
-    | '/app/properties/$id'
+    | '/app/property/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -319,7 +319,7 @@ export interface FileRouteTypes {
     | '/app/users'
     | '/auth/confirm'
     | '/auth/verify'
-    | '/app/properties/$id'
+    | '/app/property/$id'
   id:
     | '__root__'
     | '/'
@@ -348,7 +348,7 @@ export interface FileRouteTypes {
     | '/app/users'
     | '/auth/confirm'
     | '/auth/verify'
-    | '/app/properties/$id'
+    | '/app/property/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -548,27 +548,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTestEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/properties/$id': {
-      id: '/app/properties/$id'
-      path: '/$id'
-      fullPath: '/app/properties/$id'
-      preLoaderRoute: typeof AppPropertiesIdRouteImport
-      parentRoute: typeof AppPropertiesRoute
+    '/app/property/$id': {
+      id: '/app/property/$id'
+      path: '/property/$id'
+      fullPath: '/app/property/$id'
+      preLoaderRoute: typeof AppPropertyIdRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
-
-interface AppPropertiesRouteChildren {
-  AppPropertiesIdRoute: typeof AppPropertiesIdRoute
-}
-
-const AppPropertiesRouteChildren: AppPropertiesRouteChildren = {
-  AppPropertiesIdRoute: AppPropertiesIdRoute,
-}
-
-const AppPropertiesRouteWithChildren = AppPropertiesRoute._addFileChildren(
-  AppPropertiesRouteChildren,
-)
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
@@ -580,13 +568,14 @@ interface AppRouteChildren {
   AppInvoicesRoute: typeof AppInvoicesRoute
   AppLeasesRoute: typeof AppLeasesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
-  AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
+  AppPropertiesRoute: typeof AppPropertiesRoute
   AppServiceRequestsRoute: typeof AppServiceRequestsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionsRoute: typeof AppSubscriptionsRoute
   AppSupportRoute: typeof AppSupportRoute
   AppTenantsRoute: typeof AppTenantsRoute
   AppUsersRoute: typeof AppUsersRoute
+  AppPropertyIdRoute: typeof AppPropertyIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -599,13 +588,14 @@ const AppRouteChildren: AppRouteChildren = {
   AppInvoicesRoute: AppInvoicesRoute,
   AppLeasesRoute: AppLeasesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
-  AppPropertiesRoute: AppPropertiesRouteWithChildren,
+  AppPropertiesRoute: AppPropertiesRoute,
   AppServiceRequestsRoute: AppServiceRequestsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionsRoute: AppSubscriptionsRoute,
   AppSupportRoute: AppSupportRoute,
   AppTenantsRoute: AppTenantsRoute,
   AppUsersRoute: AppUsersRoute,
+  AppPropertyIdRoute: AppPropertyIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
