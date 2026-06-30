@@ -42,6 +42,12 @@ import {
   SheetDescription,
   SheetFooter,
 } from "@/shared/components/ui/sheet";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/shared/components/ui/accordion";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { toast } from "sonner";
@@ -96,6 +102,8 @@ function PropertiesPage() {
   });
 
   const [isAdding, setIsAdding] = useState(false);
+  const [step, setStep] = useState(1);
+  const [selectedPropertyDetails, setSelectedPropertyDetails] = useState<UnifiedProperty | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
     useState<UnifiedProperty | null>(null);
@@ -134,6 +142,16 @@ function PropertiesPage() {
     listing_date: "",
     Description: "",
     Category: "Residential",
+    house_number: "",
+    building_name: "",
+    street_address: "",
+    locality: "",
+    landmark: "",
+    city: "Chennai",
+    state: "Tamil Nadu",
+    country: "India",
+    pin_code: "",
+    map_location: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
@@ -145,6 +163,19 @@ function PropertiesPage() {
     }
 
     try {
+      const location_details = {
+        house_number: form.house_number,
+        building_name: form.building_name,
+        street_address: form.street_address,
+        locality: form.locality,
+        landmark: form.landmark,
+        city: form.city,
+        state: form.state,
+        country: form.country,
+        pin_code: form.pin_code,
+        map_location: form.map_location,
+      };
+
       const payload: any = {
         landlord_id: "2", // Force "2" to match Supabase mock data
         property_name: form.property_name,
@@ -154,6 +185,7 @@ function PropertiesPage() {
         Listing_date: new Date().toISOString(),
         Description: form.Description,
         Category: form.Category,
+        address: JSON.stringify(location_details),
       };
       if (uploadedVideo) {
         payload.Virtual_Tour = uploadedVideo;
@@ -183,7 +215,18 @@ function PropertiesPage() {
       listing_date: "",
       Description: "",
       Category: "Residential",
+      house_number: "",
+      building_name: "",
+      street_address: "",
+      locality: "",
+      landmark: "",
+      city: "Chennai",
+      state: "Tamil Nadu",
+      country: "India",
+      pin_code: "",
+      map_location: "",
     });
+    setStep(1);
     setUploadedImages([]);
     setUploadedVideo(null);
     setIsAdding(false);
@@ -471,14 +514,19 @@ function PropertiesPage() {
       />
 
       {/* Add Property Sheet */}
-      <Sheet open={isAdding} onOpenChange={setIsAdding}>
+      <Sheet open={isAdding} onOpenChange={(open) => {
+        setIsAdding(open);
+        if(!open) setStep(1);
+      }}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Basic Property Information</SheetTitle>
+            <SheetTitle>{step === 1 ? "Basic Property Information" : "Location Details"}</SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
 
           <form onSubmit={handleAddProperty} className="grid gap-4 py-4">
+            {step === 1 ? (
+              <>
             <div className="grid gap-2">
               <Label>Property Name</Label>
               <Input
@@ -614,11 +662,68 @@ function PropertiesPage() {
               )}
             </div>
 
+              </>
+            ) : (
+              <>
+                <div className="grid gap-2">
+                  <Label>House/Flat Number</Label>
+                  <Input placeholder="A-302" value={form.house_number} onChange={(e) => setForm({ ...form, house_number: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Building Name</Label>
+                  <Input placeholder="Green Residency" value={form.building_name} onChange={(e) => setForm({ ...form, building_name: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Street Address</Label>
+                  <Input placeholder="MG Road" value={form.street_address} onChange={(e) => setForm({ ...form, street_address: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Area/Locality</Label>
+                  <Input placeholder="Anna Nagar" value={form.locality} onChange={(e) => setForm({ ...form, locality: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Landmark</Label>
+                  <Input placeholder="Near Bus Stand" value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>City</Label>
+                  <Input placeholder="Chennai" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>State</Label>
+                  <Input placeholder="Tamil Nadu" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Country</Label>
+                  <Input placeholder="India" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>PIN Code</Label>
+                  <Input placeholder="600040" value={form.pin_code} onChange={(e) => setForm({ ...form, pin_code: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Google Map Location (Latitude & Longitude)</Label>
+                  <Input placeholder="13.0827, 80.2707" value={form.map_location} onChange={(e) => setForm({ ...form, map_location: e.target.value })} />
+                </div>
+              </>
+            )}
+
             <SheetFooter className="mt-4 pb-12">
-              <Button type="button" variant="outline" onClick={() => setIsAdding(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Save Property</Button>
+              {step === 1 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setIsAdding(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="button" onClick={() => setStep(2)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(1)}>
+                    Back
+                  </Button>
+                  <Button type="submit">Save Property</Button>
+                </>
+              )}
             </SheetFooter>
           </form>
         </SheetContent>
@@ -752,7 +857,7 @@ function PropertiesPage() {
           rows={filteredProps}
           pageSize={7}
           accentStyles={true}
-          onCardClick={(p) => navigate({ to: "/app/properties/$id", params: { id: String(p.property_id) } })}
+          onCardClick={(p) => setSelectedPropertyDetails(p)}
           toolbar={
             <div className="flex items-center gap-2">
               <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
@@ -1133,6 +1238,116 @@ function PropertiesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Property Details Sheet */}
+      <Sheet
+        open={!!selectedPropertyDetails}
+        onOpenChange={(open) => !open && setSelectedPropertyDetails(null)}
+      >
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Property Details</SheetTitle>
+            <SheetDescription>Detailed information for this property.</SheetDescription>
+          </SheetHeader>
+          {selectedPropertyDetails && (() => {
+            const parsedLocation = (() => {
+              try {
+                return selectedPropertyDetails.address ? JSON.parse(selectedPropertyDetails.address) : null;
+              } catch (e) {
+                return { street_address: selectedPropertyDetails.address };
+              }
+            })();
+
+            return (
+              <div className="py-6 space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Basic Information</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground block text-xs">Property ID</span>
+                      <span className="font-medium">#{selectedPropertyDetails.property_id}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-xs">Title</span>
+                      <span className="font-medium">{selectedPropertyDetails.property_name}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-xs">Type</span>
+                      <span className="font-medium">{selectedPropertyDetails.property_type}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-xs">Status</span>
+                      <span className="font-medium">{selectedPropertyDetails.availability_status}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground block text-xs">Description</span>
+                      <span className="font-medium">{selectedPropertyDetails.Description || "—"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Accordion type="single" collapsible className="w-full border rounded-lg px-4">
+                  <AccordionItem value="location" className="border-none">
+                    <AccordionTrigger className="hover:no-underline font-semibold text-lg py-4">Location Details</AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid grid-cols-2 gap-4 text-sm pt-2 pb-4">
+                        {parsedLocation ? (
+                          <>
+                            <div>
+                              <span className="text-muted-foreground block text-xs">House/Flat Number</span>
+                              <span className="font-medium">{parsedLocation.house_number || "—"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-xs">Building Name</span>
+                              <span className="font-medium">{parsedLocation.building_name || "—"}</span>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-muted-foreground block text-xs">Street Address</span>
+                              <span className="font-medium">{parsedLocation.street_address || "—"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-xs">Area/Locality</span>
+                              <span className="font-medium">{parsedLocation.locality || "—"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-xs">Landmark</span>
+                              <span className="font-medium">{parsedLocation.landmark || "—"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-xs">City</span>
+                              <span className="font-medium">{parsedLocation.city || "—"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-xs">State</span>
+                              <span className="font-medium">{parsedLocation.state || "—"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-xs">Country</span>
+                              <span className="font-medium">{parsedLocation.country || "—"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-xs">PIN Code</span>
+                              <span className="font-medium">{parsedLocation.pin_code || "—"}</span>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-muted-foreground block text-xs">Google Map Location</span>
+                              <span className="font-medium">{parsedLocation.map_location || "—"}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="col-span-2">
+                            <span className="text-muted-foreground block text-xs">Address</span>
+                            <span className="font-medium">{selectedPropertyDetails.address || "—"}</span>
+                          </div>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
