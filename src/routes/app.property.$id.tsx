@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { getPropertyById, updateProperty } from "@/core/db/supabase-queries";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { Button } from "@/shared/components/ui/button";
-import { ChevronLeft, Pencil } from "lucide-react";
+import { ChevronLeft, Pencil, ImagePlus, X } from "lucide-react";
+import { supabase } from "@/core/db/supabase";
+import { toast } from "sonner";
 import {
   Accordion,
   AccordionItem,
@@ -26,7 +28,7 @@ export const Route = createFileRoute("/app/property/$id")({
   component: PropertyDetailsPage,
 });
 
-const ROOM_LABELS = ["Hall View", "Front View", "Bed View", "Kitchen View"] as const;
+const ROOM_LABELS = ["Front View", "Living Room", "Bedroom", "Kitchen"] as const;
 
 function PropertyDetailsPage() {
   const { id } = Route.useParams();
@@ -37,6 +39,11 @@ function PropertyDetailsPage() {
   const [editStep, setEditStep] = useState(1);
   const [editForm, setEditForm] = useState<any>({});
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [editVideo, setEditVideo] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   const openEditDialog = () => {
     let loc = {};
@@ -53,8 +60,96 @@ function PropertyDetailsPage() {
       Description: property?.Description || "",
       ...loc
     });
+    
+    let images = [];
+    try {
+      if (property?.image_url) {
+        const parsed = JSON.parse(property.image_url);
+        images = Array.isArray(parsed) ? parsed : [String(parsed)];
+      }
+    } catch {
+      images = property?.image_url ? [property.image_url] : [];
+    }
+    setEditImages(images);
+    setEditVideo(property?.Virtual_Tour || null);
+
     setEditStep(1);
     setIsEditing(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const slotsLeft = 4 - editImages.length;
+    if (slotsLeft <= 0) {
+      toast.error("Maximum 4 images allowed.");
+      return;
+    }
+
+    const filesToUpload = Array.from(files).slice(0, slotsLeft);
+    setIsUploading(true);
+
+    const uploadToSupabase = async (file: File): Promise<string> => {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "")}`;
+      const { error } = await supabase.storage
+        .from('property-images')
+        .upload(`properties/${fileName}`, file, { cacheControl: '3600', upsert: false });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('property-images')
+        .getPublicUrl(`properties/${fileName}`);
+
+      return publicUrlData.publicUrl;
+    };
+
+    try {
+      const publicUrls = await Promise.all(filesToUpload.map(uploadToSupabase));
+      setEditImages((prev) => [...prev, ...publicUrls]);
+      toast.success(`${publicUrls.length} image(s) uploaded!`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload images.");
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Video must be less than 10MB");
+      e.target.value = "";
+      return;
+    }
+
+    setIsUploadingVideo(true);
+    try {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+      const { error } = await supabase.storage
+        .from('property-images')
+        .upload(`properties/${fileName}`, file, { cacheControl: '3600', upsert: false });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('property-images')
+        .getPublicUrl(`properties/${fileName}`);
+
+      setEditVideo(publicUrlData.publicUrl);
+      toast.success("Video uploaded successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload video.");
+    } finally {
+      setIsUploadingVideo(false);
+      e.target.value = "";
+    }
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -75,23 +170,32 @@ function PropertyDetailsPage() {
       map_location: editForm.map_location || ""
     };
     
-    const payload = {
+    const payload: any = {
       property_name: editForm.property_name,
       property_type: editForm.property_type,
       availability_status: editForm.availability_status,
       Category: editForm.Category,
       Description: editForm.Description,
-      address: JSON.stringify(locationObj)
+      address: JSON.stringify(locationObj),
+      image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
+      Virtual_Tour: editVideo || null,
     };
     
-    await updateProperty(property.property_id, payload);
-    
-    // Refresh
-    const data = await getPropertyById(id);
-    setProperty(data as UnifiedProperty);
-    
-    setIsEditing(false);
-    setIsUpdating(false);
+    try {
+      await updateProperty(property.property_id, payload);
+      
+      // Refresh
+      const data = await getPropertyById(id);
+      setProperty(data as UnifiedProperty);
+      
+      setIsEditing(false);
+      toast.success("Property updated successfully!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Failed to update property: ${err.message}`);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   useEffect(() => {
@@ -269,7 +373,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(2)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : (
+              ) : editStep === 2 ? (
                 <>
                   <h3 className="font-semibold border-b pb-2">Location Details</h3>
                   <div className="grid grid-cols-2 gap-4">
@@ -317,7 +421,83 @@ function PropertyDetailsPage() {
                   
                   <DialogFooter className="mt-6">
                     <Button type="button" variant="outline" onClick={() => setEditStep(1)}>Back</Button>
-                    <Button type="submit" disabled={isUpdating}>{isUpdating ? "Saving..." : "Save Changes"}</Button>
+                    <Button type="button" onClick={() => setEditStep(3)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  <div className="grid gap-2">
+                    <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
+                    {editVideo ? (
+                      <div className="flex items-center gap-4">
+                        <video src={editVideo} className="h-20 w-32 object-cover rounded-md bg-black" />
+                        <Button variant="outline" size="sm" onClick={() => setEditVideo(null)}>
+                          Remove Video
+                        </Button>
+                      </div>
+                    ) : (
+                      <Input
+                        type="file"
+                        accept="video/mp4,video/x-m4v,video/*"
+                        onChange={handleVideoUpload}
+                        disabled={isUploadingVideo}
+                        className="cursor-pointer"
+                      />
+                    )}
+                    {isUploadingVideo && <p className="text-xs text-muted-foreground animate-pulse">Uploading video...</p>}
+                  </div>
+
+                  <div className="grid gap-2 mt-4">
+                    <Label>Pictures (Up to 4)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Please upload images in order: 1. Front View, 2. Living Room, 3. Bedroom, 4. Kitchen</p>
+
+                    {editImages.length > 0 && (
+                      <div className="flex gap-3 flex-wrap">
+                        {editImages.map((url, idx) => (
+                          <div key={idx} className="flex flex-col items-center gap-1">
+                            <div className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border">
+                              <img src={url} alt={ROOM_LABELS[idx] ?? `Image ${idx + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => setEditImages((prev) => prev.filter((_, i) => i !== idx))}
+                                className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <span className="text-[10px] font-medium text-muted-foreground">
+                              {ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {editImages.length < 4 && (
+                      <div className="relative mt-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          onChange={handleImageUpload}
+                          disabled={isUploading}
+                        />
+                        <div className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                          <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            {isUploading ? "Uploading..." : `Upload next: ${ROOM_LABELS[editImages.length] ?? "Image"} (${4 - editImages.length} remaining)`}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <DialogFooter className="mt-6">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(2)}>Back</Button>
+                    <Button type="submit" disabled={isUpdating || isUploading || isUploadingVideo}>
+                      {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
+                    </Button>
                   </DialogFooter>
                 </>
               )}
