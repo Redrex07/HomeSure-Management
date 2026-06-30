@@ -21,12 +21,12 @@ export function getSupabaseAdmin(): SupabaseClient {
   if (adminClient) return adminClient;
 
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.supabase_service_role_key;
   const missing = getMissingSupabaseAdminEnv(url, serviceKey);
 
   if (missing.length > 0) {
     throw new Error(
-      `Missing Supabase admin credentials: ${missing.join(", ")}. Set these as server-side environment variables in Vercel Production and in local .env.`
+      `Missing Supabase admin credentials: ${missing.join(", ")}. Set SUPABASE_SERVICE_ROLE_KEY as a server-side environment variable in Vercel Production. The legacy lowercase supabase_service_role_key name is also accepted.`
     );
   }
 
