@@ -103,7 +103,6 @@ function PropertiesPage() {
 
   const [isAdding, setIsAdding] = useState(false);
   const [step, setStep] = useState(1);
-  const [selectedPropertyDetails, setSelectedPropertyDetails] = useState<UnifiedProperty | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
     useState<UnifiedProperty | null>(null);
@@ -857,7 +856,7 @@ function PropertiesPage() {
           rows={filteredProps}
           pageSize={7}
           accentStyles={true}
-          onCardClick={(p) => setSelectedPropertyDetails(p)}
+          onCardClick={(p) => navigate({ to: "/app/properties/$id", params: { id: String(p.property_id) } })}
           toolbar={
             <div className="flex items-center gap-2">
               <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
@@ -1238,116 +1237,6 @@ function PropertiesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* Property Details Sheet */}
-      <Sheet
-        open={!!selectedPropertyDetails}
-        onOpenChange={(open) => !open && setSelectedPropertyDetails(null)}
-      >
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Property Details</SheetTitle>
-            <SheetDescription>Detailed information for this property.</SheetDescription>
-          </SheetHeader>
-          {selectedPropertyDetails && (() => {
-            const parsedLocation = (() => {
-              try {
-                return selectedPropertyDetails.address ? JSON.parse(selectedPropertyDetails.address) : null;
-              } catch (e) {
-                return { street_address: selectedPropertyDetails.address };
-              }
-            })();
-
-            return (
-              <div className="py-6 space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold border-b pb-2">Basic Information</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground block text-xs">Property ID</span>
-                      <span className="font-medium">#{selectedPropertyDetails.property_id}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground block text-xs">Title</span>
-                      <span className="font-medium">{selectedPropertyDetails.property_name}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground block text-xs">Type</span>
-                      <span className="font-medium">{selectedPropertyDetails.property_type}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground block text-xs">Status</span>
-                      <span className="font-medium">{selectedPropertyDetails.availability_status}</span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-muted-foreground block text-xs">Description</span>
-                      <span className="font-medium">{selectedPropertyDetails.Description || "—"}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <Accordion type="single" collapsible className="w-full border rounded-lg px-4">
-                  <AccordionItem value="location" className="border-none">
-                    <AccordionTrigger className="hover:no-underline font-semibold text-lg py-4">Location Details</AccordionTrigger>
-                    <AccordionContent>
-                      <div className="grid grid-cols-2 gap-4 text-sm pt-2 pb-4">
-                        {parsedLocation ? (
-                          <>
-                            <div>
-                              <span className="text-muted-foreground block text-xs">House/Flat Number</span>
-                              <span className="font-medium">{parsedLocation.house_number || "—"}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block text-xs">Building Name</span>
-                              <span className="font-medium">{parsedLocation.building_name || "—"}</span>
-                            </div>
-                            <div className="col-span-2">
-                              <span className="text-muted-foreground block text-xs">Street Address</span>
-                              <span className="font-medium">{parsedLocation.street_address || "—"}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block text-xs">Area/Locality</span>
-                              <span className="font-medium">{parsedLocation.locality || "—"}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block text-xs">Landmark</span>
-                              <span className="font-medium">{parsedLocation.landmark || "—"}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block text-xs">City</span>
-                              <span className="font-medium">{parsedLocation.city || "—"}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block text-xs">State</span>
-                              <span className="font-medium">{parsedLocation.state || "—"}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block text-xs">Country</span>
-                              <span className="font-medium">{parsedLocation.country || "—"}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground block text-xs">PIN Code</span>
-                              <span className="font-medium">{parsedLocation.pin_code || "—"}</span>
-                            </div>
-                            <div className="col-span-2">
-                              <span className="text-muted-foreground block text-xs">Google Map Location</span>
-                              <span className="font-medium">{parsedLocation.map_location || "—"}</span>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="col-span-2">
-                            <span className="text-muted-foreground block text-xs">Address</span>
-                            <span className="font-medium">{selectedPropertyDetails.address || "—"}</span>
-                          </div>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </div>
-            );
-          })()}
-        </SheetContent>
-      </Sheet>
     </>
   );
 }

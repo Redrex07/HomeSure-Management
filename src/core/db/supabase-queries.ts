@@ -113,6 +113,25 @@ export async function deleteProperty(id: number) {
   }
 }
 
+export async function getPropertyById(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("*")
+      .eq("property_id", id)
+      .single();
+
+    if (error) {
+      console.error("Error fetching property:", error);
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception fetching property:", err);
+    return null;
+  }
+}
+
 /**
  * STEP 2: Get all tenants for the landlord's properties
  */
