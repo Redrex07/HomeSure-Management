@@ -100,7 +100,7 @@ function PropertiesPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(0);
-  const pageSize = 8;
+  const pageSize = 9;
 
   const filteredProps = landlordProps.filter((p) => {
     let matchesType = true;
@@ -934,7 +934,7 @@ function PropertiesPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {paginatedProps.map(p => (
                    <Card key={p.property_id} className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-border/60 hover:border-primary/40 bg-card flex flex-col h-full rounded-2xl">
                      <div className="relative h-56 w-full bg-muted/30 overflow-hidden cursor-pointer" onClick={() => navigate({ to: "/app/property/$id", params: { id: String(p.property_id) } })}>
