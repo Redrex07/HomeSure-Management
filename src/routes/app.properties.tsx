@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
@@ -60,6 +60,7 @@ export type UnifiedProperty = LocalProperty & { isLocal?: boolean };
 function PropertiesPage() {
   const localProps = useProperties();
   const { session } = useSession();
+  const navigate = useNavigate();
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
 
   const fetchSupabaseProperties = async () => {
@@ -751,6 +752,7 @@ function PropertiesPage() {
           rows={filteredProps}
           pageSize={7}
           accentStyles={true}
+          onCardClick={(p) => navigate({ to: "/app/properties/$id", params: { id: String(p.property_id) } })}
           toolbar={
             <div className="flex items-center gap-2">
               <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
