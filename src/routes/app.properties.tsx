@@ -460,13 +460,11 @@ function PropertiesPage() {
         property_name: editForm.property_name,
         property_type: editForm.property_type,
         availability_status: editForm.availability_status,
-        image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+        image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
         Description: editForm.Description,
         Category: editForm.Category,
+        Virtual_Tour: editVideo || null,
       };
-      if (editVideo) {
-        localPayload.Virtual_Tour = editVideo;
-      }
       updateLocalProperty(editingProperty.property_id, localPayload);
       toast.success("Property updated successfully!");
       setEditingProperty(null);
@@ -476,13 +474,11 @@ function PropertiesPage() {
           property_name: editForm.property_name,
           property_type: editForm.property_type,
           availability_status: editForm.availability_status,
-          image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+          image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
           Description: editForm.Description,
           Category: editForm.Category,
+          Virtual_Tour: editVideo || null,
         };
-        if (editVideo) {
-          supabasePayload.Virtual_Tour = editVideo;
-        }
         await updateSupabaseProperty(editingProperty.property_id, supabasePayload);
         toast.success("Property updated successfully!");
         setEditingProperty(null);
