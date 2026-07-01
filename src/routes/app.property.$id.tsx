@@ -235,6 +235,30 @@ function PropertyDetailsPage() {
     fetchProperty();
   }, [id]);
 
+  let parsedLocation: any = null;
+  try {
+    if (property?.address) {
+      parsedLocation = JSON.parse(property.address);
+    }
+  } catch {}
+
+  let parsedImages: string[] = [];
+  try {
+    if (property?.image_url) {
+      const parsed = JSON.parse(property.image_url);
+      parsedImages = Array.isArray(parsed) ? parsed : [String(parsed)];
+    }
+  } catch {
+    if (property?.image_url) parsedImages = [property.image_url];
+  }
+
+  let parsedSpecs: any = null;
+  try {
+    if ((property as any)?.specifications) {
+      parsedSpecs = JSON.parse((property as any).specifications);
+    }
+  } catch {}
+
   if (loading) {
     return (
       <div className="p-8 text-center text-muted-foreground animate-pulse">
@@ -693,6 +717,82 @@ function PropertyDetailsPage() {
                     <div className="sm:col-span-2 md:col-span-3">
                       <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Address</span>
                       <span className="font-medium text-base">{property.address || "—"}</span>
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Property Specifications Accordion */}
+            <AccordionItem value="specifications" className="border rounded-xl px-6 bg-card shadow-sm">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Property Specifications
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
+                  {parsedSpecs ? (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Bedrooms</span>
+                        <span className="font-medium text-base">{parsedSpecs.bedrooms || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Bathrooms</span>
+                        <span className="font-medium text-base">{parsedSpecs.bathrooms || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Balconies</span>
+                        <span className="font-medium text-base">{parsedSpecs.balconies || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Kitchen</span>
+                        <span className="font-medium text-base">{parsedSpecs.kitchen || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Hall</span>
+                        <span className="font-medium text-base">{parsedSpecs.hall || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Dining Room</span>
+                        <span className="font-medium text-base">{parsedSpecs.dining_room || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Study Room</span>
+                        <span className="font-medium text-base">{parsedSpecs.study_room || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Floor Number</span>
+                        <span className="font-medium text-base">{parsedSpecs.floor_number || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Total Floors</span>
+                        <span className="font-medium text-base">{parsedSpecs.total_floors || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Built-up Area</span>
+                        <span className="font-medium text-base">{parsedSpecs.built_up_area || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Carpet Area</span>
+                        <span className="font-medium text-base">{parsedSpecs.carpet_area || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Plot Area</span>
+                        <span className="font-medium text-base">{parsedSpecs.plot_area || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Property Age</span>
+                        <span className="font-medium text-base">{parsedSpecs.property_age || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Facing Direction</span>
+                        <span className="font-medium text-base">{parsedSpecs.facing_direction || "—"}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2 md:col-span-3">
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Specifications</span>
+                      <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
                     </div>
                   )}
                 </div>
