@@ -322,110 +322,104 @@ function PropertyDetailsPage() {
               <DialogTitle>Edit Property Details</DialogTitle>
             </DialogHeader>
             
-            <form onSubmit={handleUpdate} className="grid gap-4 py-4">
-              {editStep === 1 ? (
-                <>
-                  <h3 className="font-semibold border-b pb-2">Basic Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2 col-span-2">
-                      <Label>Property Name</Label>
-                      <Input value={editForm.property_name || ""} onChange={(e) => setEditForm({...editForm, property_name: e.target.value})} required />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Property Type</Label>
-                      <Input value={editForm.property_type || ""} onChange={(e) => setEditForm({...editForm, property_type: e.target.value})} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Category</Label>
-                      <select
-                        className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
-                        value={editForm.Category || ""}
-                        onChange={(e) => setEditForm({ ...editForm, Category: e.target.value })}
-                      >
-                        <option value="Residential">Residential</option>
-                        <option value="Commercial">Commercial</option>
-                      </select>
-                    </div>
-                    <div className="grid gap-2 col-span-2">
-                      <Label>Status</Label>
-                      <select
-                        className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
-                        value={editForm.availability_status || "Available"}
-                        onChange={(e) => setEditForm({ ...editForm, availability_status: e.target.value })}
-                      >
-                        <option value="Available">Available</option>
-                        <option value="Occupied">Occupied</option>
-                        <option value="Under Maintenance">Under Maintenance</option>
-                      </select>
-                    </div>
-                    <div className="grid gap-2 col-span-2">
-                      <Label>Description</Label>
-                      <textarea
-                        className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        value={editForm.Description || ""}
-                        onChange={(e) => setEditForm({ ...editForm, Description: e.target.value })}
-                      />
-                    </div>
+            <form onSubmit={handleUpdate} className="grid gap-6 py-4">
+              {/* Basic Information */}
+              <div>
+                <h3 className="font-semibold border-b pb-2 mb-4">Basic Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2 col-span-2">
+                    <Label>Property Name</Label>
+                    <Input value={editForm.property_name || ""} onChange={(e) => setEditForm({...editForm, property_name: e.target.value})} required />
                   </div>
-                  
-                  <DialogFooter className="mt-6">
-                    <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                    <Button type="button" onClick={() => setEditStep(2)}>Next</Button>
-                  </DialogFooter>
-                </>
-              ) : editStep === 2 ? (
-                <>
-                  <h3 className="font-semibold border-b pb-2">Location Details</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label>House/Flat Number</Label>
-                      <Input value={editForm.house_number || ""} onChange={(e) => setEditForm({...editForm, house_number: e.target.value})} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Building Name</Label>
-                      <Input value={editForm.building_name || ""} onChange={(e) => setEditForm({...editForm, building_name: e.target.value})} />
-                    </div>
-                    <div className="grid gap-2 col-span-2">
-                      <Label>Street Address</Label>
-                      <Input value={editForm.street_address || ""} onChange={(e) => setEditForm({...editForm, street_address: e.target.value})} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Area/Locality</Label>
-                      <Input value={editForm.locality || ""} onChange={(e) => setEditForm({...editForm, locality: e.target.value})} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Landmark (Optional)</Label>
-                      <Input value={editForm.landmark || ""} onChange={(e) => setEditForm({...editForm, landmark: e.target.value})} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>City</Label>
-                      <Input value={editForm.city || ""} onChange={(e) => setEditForm({...editForm, city: e.target.value})} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>State</Label>
-                      <Input value={editForm.state || ""} onChange={(e) => setEditForm({...editForm, state: e.target.value})} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Country</Label>
-                      <Input value={editForm.country || ""} onChange={(e) => setEditForm({...editForm, country: e.target.value})} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>PIN Code</Label>
-                      <Input value={editForm.pin_code || ""} onChange={(e) => setEditForm({...editForm, pin_code: e.target.value})} />
-                    </div>
-                    <div className="grid gap-2 col-span-2">
-                      <Label>Google Map Location (Lat, Lng) (Optional)</Label>
-                      <Input value={editForm.map_location || ""} onChange={(e) => setEditForm({...editForm, map_location: e.target.value})} />
-                    </div>
+                  <div className="grid gap-2">
+                    <Label>Property Type</Label>
+                    <Input value={editForm.property_type || ""} onChange={(e) => setEditForm({...editForm, property_type: e.target.value})} />
                   </div>
-                  
-                  <DialogFooter className="mt-6">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(1)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(3)}>Next</Button>
-                  </DialogFooter>
-                </>
-              ) : (
-                <>
+                  <div className="grid gap-2">
+                    <Label>Category</Label>
+                    <select
+                      className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
+                      value={editForm.Category || ""}
+                      onChange={(e) => setEditForm({ ...editForm, Category: e.target.value })}
+                    >
+                      <option value="Residential">Residential</option>
+                      <option value="Commercial">Commercial</option>
+                    </select>
+                  </div>
+                  <div className="grid gap-2 col-span-2">
+                    <Label>Status</Label>
+                    <select
+                      className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
+                      value={editForm.availability_status || "Available"}
+                      onChange={(e) => setEditForm({ ...editForm, availability_status: e.target.value })}
+                    >
+                      <option value="Available">Available</option>
+                      <option value="Occupied">Occupied</option>
+                      <option value="Under Maintenance">Under Maintenance</option>
+                    </select>
+                  </div>
+                  <div className="grid gap-2 col-span-2">
+                    <Label>Description</Label>
+                    <textarea
+                      className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      value={editForm.Description || ""}
+                      onChange={(e) => setEditForm({ ...editForm, Description: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Location Details */}
+              <div>
+                <h3 className="font-semibold border-b pb-2 mb-4">Location Details</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>House/Flat Number</Label>
+                    <Input value={editForm.house_number || ""} onChange={(e) => setEditForm({...editForm, house_number: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Building Name</Label>
+                    <Input value={editForm.building_name || ""} onChange={(e) => setEditForm({...editForm, building_name: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2 col-span-2">
+                    <Label>Street Address</Label>
+                    <Input value={editForm.street_address || ""} onChange={(e) => setEditForm({...editForm, street_address: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Area/Locality</Label>
+                    <Input value={editForm.locality || ""} onChange={(e) => setEditForm({...editForm, locality: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Landmark (Optional)</Label>
+                    <Input value={editForm.landmark || ""} onChange={(e) => setEditForm({...editForm, landmark: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>City</Label>
+                    <Input value={editForm.city || ""} onChange={(e) => setEditForm({...editForm, city: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>State</Label>
+                    <Input value={editForm.state || ""} onChange={(e) => setEditForm({...editForm, state: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Country</Label>
+                    <Input value={editForm.country || ""} onChange={(e) => setEditForm({...editForm, country: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>PIN Code</Label>
+                    <Input value={editForm.pin_code || ""} onChange={(e) => setEditForm({...editForm, pin_code: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2 col-span-2">
+                    <Label>Google Map Location (Lat, Lng) (Optional)</Label>
+                    <Input value={editForm.map_location || ""} onChange={(e) => setEditForm({...editForm, map_location: e.target.value})} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Media */}
+              <div>
+                <h3 className="font-semibold border-b pb-2 mb-4">Media</h3>
+                <div className="grid gap-4">
                   <div className="grid gap-2">
                     <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
                     {editVideo ? (
@@ -447,7 +441,7 @@ function PropertyDetailsPage() {
                     {isUploadingVideo && <p className="text-xs text-muted-foreground animate-pulse">Uploading video...</p>}
                   </div>
 
-                  <div className="grid gap-2 mt-4">
+                  <div className="grid gap-2 mt-2">
                     <Label>Pictures (Up to 4)</Label>
                     <p className="text-xs text-muted-foreground mb-2">Please upload images in order: 1. Front View, 2. Living Room, 3. Bedroom, 4. Kitchen</p>
 
@@ -492,15 +486,15 @@ function PropertyDetailsPage() {
                       </div>
                     )}
                   </div>
-                  
-                  <DialogFooter className="mt-6">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(2)}>Back</Button>
-                    <Button type="submit" disabled={isUpdating || isUploading || isUploadingVideo}>
-                      {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </DialogFooter>
-                </>
-              )}
+                </div>
+              </div>
+              
+              <DialogFooter className="mt-6 pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                <Button type="submit" disabled={isUpdating || isUploading || isUploadingVideo}>
+                  {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
