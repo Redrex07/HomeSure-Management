@@ -163,6 +163,10 @@ function PropertyDetailsPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (editStep < 2) {
+      setEditStep(editStep + 1);
+      return;
+    }
     if (!property) return;
     setIsUpdating(true);
     

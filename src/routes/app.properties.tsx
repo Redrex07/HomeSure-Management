@@ -195,6 +195,12 @@ function PropertiesPage() {
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Prevent premature saving if they press "Enter" on an earlier step
+    if (step < 4) {
+      setStep(step + 1);
+      return;
+    }
+
     if (!form.property_name || !form.property_type) {
       toast.error("Please fill all fields");
       return;
