@@ -466,7 +466,7 @@ function PropertyDetailsPage() {
                         {editVideo ? (
                           <div className="flex items-center gap-4">
                             <video src={editVideo} className="h-20 w-32 object-cover rounded-md bg-black" />
-                            <Button variant="outline" size="sm" onClick={() => setEditVideo(null)}>
+                            <Button type="button" variant="outline" size="sm" onClick={() => setEditVideo(null)}>
                               Remove Video
                             </Button>
                           </div>

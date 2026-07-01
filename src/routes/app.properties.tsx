@@ -592,7 +592,9 @@ function PropertiesPage() {
       }}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{step === 1 ? "Basic Property Information" : "Location Details"}</SheetTitle>
+            <SheetTitle>
+              {step === 1 ? "Basic Property Information" : step === 2 ? "Location Details" : step === 3 ? "Property Specifications" : "Images & Media"}
+            </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
 
@@ -766,7 +768,7 @@ function PropertiesPage() {
                   {uploadedVideo ? (
                     <div className="flex items-center gap-4">
                       <video src={uploadedVideo} className="h-20 w-32 object-cover rounded-md bg-black" />
-                      <Button variant="outline" size="sm" onClick={() => setUploadedVideo(null)}>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setUploadedVideo(null)}>
                         Remove Video
                       </Button>
                     </div>
