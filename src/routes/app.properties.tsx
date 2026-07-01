@@ -78,7 +78,6 @@ const parseImageUrls = (urlData: any): string[] => {
 
 function PropertiesPage() {
   const localProps = useProperties();
-  const { session } = useSession();
   const navigate = useNavigate();
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
 

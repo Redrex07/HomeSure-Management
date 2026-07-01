@@ -80,12 +80,12 @@ function TenantsPage() {
 
       toast.dismiss(loadingId);
 
-      if (emailResult?.success && emailResult.previewUrl) {
+      if (emailResult?.success && (emailResult as any).previewUrl) {
         toast.success("Tenant invited and email sent successfully!", {
           duration: 10000,
           action: {
             label: "View Email",
-            onClick: () => window.open(emailResult.previewUrl as string, "_blank"),
+            onClick: () => window.open((emailResult as any).previewUrl as string, "_blank"),
           },
         });
       } else {

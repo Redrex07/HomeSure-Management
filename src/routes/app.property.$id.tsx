@@ -235,22 +235,6 @@ function PropertyDetailsPage() {
     fetchProperty();
   }, [id]);
 
-  let parsedLocation: any = null;
-  try {
-    if (property?.address) {
-      parsedLocation = JSON.parse(property.address);
-    }
-  } catch {}
-
-  let parsedImages: string[] = [];
-  try {
-    if (property?.image_url) {
-      const parsed = JSON.parse(property.image_url);
-      parsedImages = Array.isArray(parsed) ? parsed : [String(parsed)];
-    }
-  } catch {
-    if (property?.image_url) parsedImages = [property.image_url];
-  }
 
   let parsedSpecs: any = null;
   try {
