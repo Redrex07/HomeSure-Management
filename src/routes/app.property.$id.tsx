@@ -61,6 +61,15 @@ function PropertyDetailsPage() {
       ...loc
     });
     
+    let specs = {};
+    try {
+      if ((property as any)?.specifications) {
+        specs = JSON.parse((property as any).specifications);
+      }
+    } catch { }
+
+    setEditForm((prev: any) => ({ ...prev, ...specs }));
+
     let images = [];
     try {
       if (property?.image_url) {
@@ -170,6 +179,23 @@ function PropertyDetailsPage() {
       map_location: editForm.map_location || ""
     };
     
+    const specsObj = {
+      bedrooms: editForm.bedrooms || "",
+      bathrooms: editForm.bathrooms || "",
+      balconies: editForm.balconies || "",
+      kitchen: editForm.kitchen || "",
+      hall: editForm.hall || "",
+      dining_room: editForm.dining_room || "",
+      study_room: editForm.study_room || "",
+      floor_number: editForm.floor_number || "",
+      total_floors: editForm.total_floors || "",
+      built_up_area: editForm.built_up_area || "",
+      carpet_area: editForm.carpet_area || "",
+      plot_area: editForm.plot_area || "",
+      property_age: editForm.property_age || "",
+      facing_direction: editForm.facing_direction || "",
+    };
+    
     const payload: any = {
       property_name: editForm.property_name,
       property_type: editForm.property_type,
@@ -177,6 +203,7 @@ function PropertyDetailsPage() {
       Category: editForm.Category,
       Description: editForm.Description,
       address: JSON.stringify(locationObj),
+      specifications: JSON.stringify(specsObj),
       image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
       Virtual_Tour: editVideo || null,
     };
@@ -323,178 +350,252 @@ function PropertyDetailsPage() {
             </DialogHeader>
             
             <form onSubmit={handleUpdate} className="grid gap-6 py-4">
-              {/* Basic Information */}
-              <div>
-                <h3 className="font-semibold border-b pb-2 mb-4">Basic Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2 col-span-2">
-                    <Label>Property Name</Label>
-                    <Input value={editForm.property_name || ""} onChange={(e) => setEditForm({...editForm, property_name: e.target.value})} required />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Property Type</Label>
-                    <Input value={editForm.property_type || ""} onChange={(e) => setEditForm({...editForm, property_type: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Category</Label>
-                    <select
-                      className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
-                      value={editForm.Category || ""}
-                      onChange={(e) => setEditForm({ ...editForm, Category: e.target.value })}
-                    >
-                      <option value="Residential">Residential</option>
-                      <option value="Commercial">Commercial</option>
-                    </select>
-                  </div>
-                  <div className="grid gap-2 col-span-2">
-                    <Label>Status</Label>
-                    <select
-                      className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
-                      value={editForm.availability_status || "Available"}
-                      onChange={(e) => setEditForm({ ...editForm, availability_status: e.target.value })}
-                    >
-                      <option value="Available">Available</option>
-                      <option value="Occupied">Occupied</option>
-                      <option value="Under Maintenance">Under Maintenance</option>
-                    </select>
-                  </div>
-                  <div className="grid gap-2 col-span-2">
-                    <Label>Description</Label>
-                    <textarea
-                      className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      value={editForm.Description || ""}
-                      onChange={(e) => setEditForm({ ...editForm, Description: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Location Details */}
-              <div>
-                <h3 className="font-semibold border-b pb-2 mb-4">Location Details</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>House/Flat Number</Label>
-                    <Input value={editForm.house_number || ""} onChange={(e) => setEditForm({...editForm, house_number: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Building Name</Label>
-                    <Input value={editForm.building_name || ""} onChange={(e) => setEditForm({...editForm, building_name: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2 col-span-2">
-                    <Label>Street Address</Label>
-                    <Input value={editForm.street_address || ""} onChange={(e) => setEditForm({...editForm, street_address: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Area/Locality</Label>
-                    <Input value={editForm.locality || ""} onChange={(e) => setEditForm({...editForm, locality: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Landmark (Optional)</Label>
-                    <Input value={editForm.landmark || ""} onChange={(e) => setEditForm({...editForm, landmark: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>City</Label>
-                    <Input value={editForm.city || ""} onChange={(e) => setEditForm({...editForm, city: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>State</Label>
-                    <Input value={editForm.state || ""} onChange={(e) => setEditForm({...editForm, state: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Country</Label>
-                    <Input value={editForm.country || ""} onChange={(e) => setEditForm({...editForm, country: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>PIN Code</Label>
-                    <Input value={editForm.pin_code || ""} onChange={(e) => setEditForm({...editForm, pin_code: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2 col-span-2">
-                    <Label>Google Map Location (Lat, Lng) (Optional)</Label>
-                    <Input value={editForm.map_location || ""} onChange={(e) => setEditForm({...editForm, map_location: e.target.value})} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Media */}
-              <div>
-                <h3 className="font-semibold border-b pb-2 mb-4">Media</h3>
-                <div className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
-                    {editVideo ? (
-                      <div className="flex items-center gap-4">
-                        <video src={editVideo} className="h-20 w-32 object-cover rounded-md bg-black" />
-                        <Button variant="outline" size="sm" onClick={() => setEditVideo(null)}>
-                          Remove Video
-                        </Button>
+              {editStep === 1 ? (
+                <>
+                  {/* Basic Information */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Basic Information</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2 col-span-2">
+                        <Label>Property Name</Label>
+                        <Input value={editForm.property_name || ""} onChange={(e) => setEditForm({...editForm, property_name: e.target.value})} required />
                       </div>
-                    ) : (
-                      <Input
-                        type="file"
-                        accept="video/mp4,video/x-m4v,video/*"
-                        onChange={handleVideoUpload}
-                        disabled={isUploadingVideo}
-                        className="cursor-pointer"
-                      />
-                    )}
-                    {isUploadingVideo && <p className="text-xs text-muted-foreground animate-pulse">Uploading video...</p>}
-                  </div>
-
-                  <div className="grid gap-2 mt-2">
-                    <Label>Pictures (Up to 4)</Label>
-                    <p className="text-xs text-muted-foreground mb-2">Please upload images in order: 1. Front View, 2. Living Room, 3. Bedroom, 4. Kitchen</p>
-
-                    {editImages.length > 0 && (
-                      <div className="flex gap-3 flex-wrap">
-                        {editImages.map((url, idx) => (
-                          <div key={idx} className="flex flex-col items-center gap-1">
-                            <div className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border">
-                              <img src={url} alt={ROOM_LABELS[idx] ?? `Image ${idx + 1}`} className="w-full h-full object-cover" />
-                              <button
-                                type="button"
-                                onClick={() => setEditImages((prev) => prev.filter((_, i) => i !== idx))}
-                                className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                            <span className="text-[10px] font-medium text-muted-foreground">
-                              {ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
-                            </span>
-                          </div>
-                        ))}
+                      <div className="grid gap-2">
+                        <Label>Property Type</Label>
+                        <Input value={editForm.property_type || ""} onChange={(e) => setEditForm({...editForm, property_type: e.target.value})} />
                       </div>
-                    )}
-
-                    {editImages.length < 4 && (
-                      <div className="relative mt-2">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          onChange={handleImageUpload}
-                          disabled={isUploading}
+                      <div className="grid gap-2">
+                        <Label>Category</Label>
+                        <select
+                          className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
+                          value={editForm.Category || ""}
+                          onChange={(e) => setEditForm({ ...editForm, Category: e.target.value })}
+                        >
+                          <option value="Residential">Residential</option>
+                          <option value="Commercial">Commercial</option>
+                        </select>
+                      </div>
+                      <div className="grid gap-2 col-span-2">
+                        <Label>Status</Label>
+                        <select
+                          className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
+                          value={editForm.availability_status || "Available"}
+                          onChange={(e) => setEditForm({ ...editForm, availability_status: e.target.value })}
+                        >
+                          <option value="Available">Available</option>
+                          <option value="Occupied">Occupied</option>
+                          <option value="Under Maintenance">Under Maintenance</option>
+                        </select>
+                      </div>
+                      <div className="grid gap-2 col-span-2">
+                        <Label>Description</Label>
+                        <textarea
+                          className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                          value={editForm.Description || ""}
+                          onChange={(e) => setEditForm({ ...editForm, Description: e.target.value })}
                         />
-                        <div className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
-                          <ImagePlus className="h-5 w-5 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            {isUploading ? "Uploading..." : `Upload next: ${ROOM_LABELS[editImages.length] ?? "Image"} (${4 - editImages.length} remaining)`}
-                          </span>
-                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              </div>
-              
-              <DialogFooter className="mt-6 pt-4 border-t">
-                <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                <Button type="submit" disabled={isUpdating || isUploading || isUploadingVideo}>
-                  {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
-                </Button>
-              </DialogFooter>
+
+                  {/* Location Details */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Location Details</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>House/Flat Number</Label>
+                        <Input value={editForm.house_number || ""} onChange={(e) => setEditForm({...editForm, house_number: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Building Name</Label>
+                        <Input value={editForm.building_name || ""} onChange={(e) => setEditForm({...editForm, building_name: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2 col-span-2">
+                        <Label>Street Address</Label>
+                        <Input value={editForm.street_address || ""} onChange={(e) => setEditForm({...editForm, street_address: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Area/Locality</Label>
+                        <Input value={editForm.locality || ""} onChange={(e) => setEditForm({...editForm, locality: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Landmark (Optional)</Label>
+                        <Input value={editForm.landmark || ""} onChange={(e) => setEditForm({...editForm, landmark: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>City</Label>
+                        <Input value={editForm.city || ""} onChange={(e) => setEditForm({...editForm, city: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>State</Label>
+                        <Input value={editForm.state || ""} onChange={(e) => setEditForm({...editForm, state: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Country</Label>
+                        <Input value={editForm.country || ""} onChange={(e) => setEditForm({...editForm, country: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>PIN Code</Label>
+                        <Input value={editForm.pin_code || ""} onChange={(e) => setEditForm({...editForm, pin_code: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2 col-span-2">
+                        <Label>Google Map Location (Lat, Lng) (Optional)</Label>
+                        <Input value={editForm.map_location || ""} onChange={(e) => setEditForm({...editForm, map_location: e.target.value})} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Media */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Media</h3>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
+                        {editVideo ? (
+                          <div className="flex items-center gap-4">
+                            <video src={editVideo} className="h-20 w-32 object-cover rounded-md bg-black" />
+                            <Button variant="outline" size="sm" onClick={() => setEditVideo(null)}>
+                              Remove Video
+                            </Button>
+                          </div>
+                        ) : (
+                          <Input
+                            type="file"
+                            accept="video/mp4,video/x-m4v,video/*"
+                            onChange={handleVideoUpload}
+                            disabled={isUploadingVideo}
+                            className="cursor-pointer"
+                          />
+                        )}
+                        {isUploadingVideo && <p className="text-xs text-muted-foreground animate-pulse">Uploading video...</p>}
+                      </div>
+
+                      <div className="grid gap-2 mt-2">
+                        <Label>Pictures (Up to 4)</Label>
+                        <p className="text-xs text-muted-foreground mb-2">Please upload images in order: 1. Front View, 2. Living Room, 3. Bedroom, 4. Kitchen</p>
+
+                        {editImages.length > 0 && (
+                          <div className="flex gap-3 flex-wrap">
+                            {editImages.map((url, idx) => (
+                              <div key={idx} className="flex flex-col items-center gap-1">
+                                <div className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border">
+                                  <img src={url} alt={ROOM_LABELS[idx] ?? `Image ${idx + 1}`} className="w-full h-full object-cover" />
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditImages((prev) => prev.filter((_, i) => i !== idx))}
+                                    className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                                <span className="text-[10px] font-medium text-muted-foreground">
+                                  {ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {editImages.length < 4 && (
+                          <div className="relative mt-2">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              onChange={handleImageUpload}
+                              disabled={isUploading}
+                            />
+                            <div className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                              <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">
+                                {isUploading ? "Uploading..." : `Upload next: ${ROOM_LABELS[editImages.length] ?? "Image"} (${4 - editImages.length} remaining)`}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                    <Button type="button" onClick={() => setEditStep(2)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  {/* Property Specifications */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Property Specifications</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Bedrooms</Label>
+                        <Input type="number" placeholder="e.g. 2" value={editForm.bedrooms || ""} onChange={(e) => setEditForm({...editForm, bedrooms: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Bathrooms</Label>
+                        <Input type="number" placeholder="e.g. 2" value={editForm.bathrooms || ""} onChange={(e) => setEditForm({...editForm, bathrooms: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Balconies</Label>
+                        <Input type="number" placeholder="e.g. 1" value={editForm.balconies || ""} onChange={(e) => setEditForm({...editForm, balconies: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Kitchen</Label>
+                        <Input placeholder="e.g. Modular" value={editForm.kitchen || ""} onChange={(e) => setEditForm({...editForm, kitchen: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Hall</Label>
+                        <Input type="number" placeholder="e.g. 1" value={editForm.hall || ""} onChange={(e) => setEditForm({...editForm, hall: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Dining Room</Label>
+                        <Input placeholder="e.g. Yes" value={editForm.dining_room || ""} onChange={(e) => setEditForm({...editForm, dining_room: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Study Room</Label>
+                        <Input placeholder="e.g. Optional" value={editForm.study_room || ""} onChange={(e) => setEditForm({...editForm, study_room: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Floor Number</Label>
+                        <Input type="number" placeholder="e.g. 3" value={editForm.floor_number || ""} onChange={(e) => setEditForm({...editForm, floor_number: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Total Floors</Label>
+                        <Input type="number" placeholder="e.g. 5" value={editForm.total_floors || ""} onChange={(e) => setEditForm({...editForm, total_floors: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Built-up Area</Label>
+                        <Input placeholder="e.g. 1200 sq.ft" value={editForm.built_up_area || ""} onChange={(e) => setEditForm({...editForm, built_up_area: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Carpet Area</Label>
+                        <Input placeholder="e.g. 1000 sq.ft" value={editForm.carpet_area || ""} onChange={(e) => setEditForm({...editForm, carpet_area: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Plot Area</Label>
+                        <Input placeholder="e.g. 1500 sq.ft" value={editForm.plot_area || ""} onChange={(e) => setEditForm({...editForm, plot_area: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Property Age</Label>
+                        <Input placeholder="e.g. 5 Years" value={editForm.property_age || ""} onChange={(e) => setEditForm({...editForm, property_age: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Facing Direction</Label>
+                        <Input placeholder="e.g. East" value={editForm.facing_direction || ""} onChange={(e) => setEditForm({...editForm, facing_direction: e.target.value})} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(1)}>Back</Button>
+                    <Button type="submit" disabled={isUpdating || isUploading || isUploadingVideo}>
+                      {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </DialogFooter>
+                </>
+              )}
             </form>
           </DialogContent>
         </Dialog>

@@ -177,6 +177,20 @@ function PropertiesPage() {
     country: "India",
     pin_code: "",
     map_location: "",
+    bedrooms: "",
+    bathrooms: "",
+    balconies: "",
+    kitchen: "",
+    hall: "",
+    dining_room: "",
+    study_room: "",
+    floor_number: "",
+    total_floors: "",
+    built_up_area: "",
+    carpet_area: "",
+    plot_area: "",
+    property_age: "",
+    facing_direction: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
@@ -201,6 +215,23 @@ function PropertiesPage() {
         map_location: form.map_location,
       };
 
+      const specifications = {
+        bedrooms: form.bedrooms,
+        bathrooms: form.bathrooms,
+        balconies: form.balconies,
+        kitchen: form.kitchen,
+        hall: form.hall,
+        dining_room: form.dining_room,
+        study_room: form.study_room,
+        floor_number: form.floor_number,
+        total_floors: form.total_floors,
+        built_up_area: form.built_up_area,
+        carpet_area: form.carpet_area,
+        plot_area: form.plot_area,
+        property_age: form.property_age,
+        facing_direction: form.facing_direction,
+      };
+
       const payload: any = {
         landlord_id: "2", // Force "2" to match Supabase mock data
         property_name: form.property_name,
@@ -211,6 +242,7 @@ function PropertiesPage() {
         Description: form.Description,
         Category: form.Category,
         address: JSON.stringify(location_details),
+        specifications: JSON.stringify(specifications),
       };
       if (uploadedVideo) {
         payload.Virtual_Tour = uploadedVideo;
@@ -250,6 +282,20 @@ function PropertiesPage() {
       country: "India",
       pin_code: "",
       map_location: "",
+      bedrooms: "",
+      bathrooms: "",
+      balconies: "",
+      kitchen: "",
+      hall: "",
+      dining_room: "",
+      study_room: "",
+      floor_number: "",
+      total_floors: "",
+      built_up_area: "",
+      carpet_area: "",
+      plot_area: "",
+      property_age: "",
+      facing_direction: "",
     });
     setStep(1);
     setUploadedImages([]);
@@ -649,6 +695,65 @@ function PropertiesPage() {
                   <Input placeholder="13.0827, 80.2707" value={form.map_location} onChange={(e) => setForm({ ...form, map_location: e.target.value })} />
                 </div>
               </>
+            ) : step === 3 ? (
+              <>
+                <div className="grid gap-2">
+                  <Label>Bedrooms</Label>
+                  <Input type="number" placeholder="e.g. 2" value={form.bedrooms} onChange={(e) => setForm({...form, bedrooms: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Bathrooms</Label>
+                  <Input type="number" placeholder="e.g. 2" value={form.bathrooms} onChange={(e) => setForm({...form, bathrooms: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Balconies</Label>
+                  <Input type="number" placeholder="e.g. 1" value={form.balconies} onChange={(e) => setForm({...form, balconies: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Kitchen</Label>
+                  <Input placeholder="e.g. Modular" value={form.kitchen} onChange={(e) => setForm({...form, kitchen: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Hall</Label>
+                  <Input type="number" placeholder="e.g. 1" value={form.hall} onChange={(e) => setForm({...form, hall: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Dining Room</Label>
+                  <Input placeholder="e.g. Yes" value={form.dining_room} onChange={(e) => setForm({...form, dining_room: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Study Room</Label>
+                  <Input placeholder="e.g. Optional" value={form.study_room} onChange={(e) => setForm({...form, study_room: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Floor Number</Label>
+                  <Input type="number" placeholder="e.g. 3" value={form.floor_number} onChange={(e) => setForm({...form, floor_number: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Total Floors</Label>
+                  <Input type="number" placeholder="e.g. 5" value={form.total_floors} onChange={(e) => setForm({...form, total_floors: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Built-up Area</Label>
+                  <Input placeholder="e.g. 1200 sq.ft" value={form.built_up_area} onChange={(e) => setForm({...form, built_up_area: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Carpet Area</Label>
+                  <Input placeholder="e.g. 1000 sq.ft" value={form.carpet_area} onChange={(e) => setForm({...form, carpet_area: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Plot Area</Label>
+                  <Input placeholder="e.g. 1500 sq.ft" value={form.plot_area} onChange={(e) => setForm({...form, plot_area: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Property Age</Label>
+                  <Input placeholder="e.g. 5 Years" value={form.property_age} onChange={(e) => setForm({...form, property_age: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Facing Direction</Label>
+                  <Input placeholder="e.g. East" value={form.facing_direction} onChange={(e) => setForm({...form, facing_direction: e.target.value})} />
+                </div>
+              </>
             ) : (
               <>
                 <div className="grid gap-2">
@@ -745,9 +850,16 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(3)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 3 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(2)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(4)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(3)}>
                     Back
                   </Button>
                   <Button type="submit" disabled={isUploading || isUploadingVideo}>
