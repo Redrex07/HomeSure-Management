@@ -6,6 +6,7 @@ import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Card } from "@/shared/components/ui/card";
 import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video, CheckCircle, Search, Home } from "lucide-react";
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "@/features/auth/store/auth-store";
 import {
   useProperties,
@@ -1053,64 +1054,88 @@ function PropertiesPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {paginatedProps.map(p => (
-                   <Card key={p.property_id} className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-border/60 hover:border-primary/40 bg-card flex flex-col h-full rounded-2xl">
-                     <div className="relative h-56 w-full bg-muted/30 overflow-hidden cursor-pointer" onClick={() => navigate({ to: "/app/property/$id", params: { id: String(p.property_id) } })}>
-                       {parseImageUrls(p.image_url)[0] ? (
-                         <img src={parseImageUrls(p.image_url)[0]} alt={p.property_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
-                       ) : (
-                         <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/30 group-hover:bg-primary/10 transition-colors duration-500">
-                            <Home className="h-12 w-12 opacity-40" />
-                         </div>
-                       )}
-                       
-                       {/* Subtle overlay gradient */}
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none opacity-80" />
-                       
-                       <div className="absolute top-3 left-3">
-                         <StatusBadge value={p.availability_status} />
-                       </div>
-                       
-                       <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0">
-                         <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
-                           <Trash2 className="h-3.5 w-3.5" />
-                         </Button>
-                       </div>
-                       
-                       <div className="absolute bottom-3 left-4 right-4 pointer-events-none">
-                         <h3 className="text-white font-bold text-xl truncate drop-shadow-md">{p.property_name}</h3>
-                         <div className="flex items-center gap-2 mt-1">
-                           <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-black/40 text-white/90 backdrop-blur-md">#{p.property_id}</span>
-                           <span className="text-xs font-medium text-white/90 line-clamp-1">
-                              {p.property_type} {p.Category ? `• ${p.Category}` : ''}
-                           </span>
-                         </div>
-                       </div>
-                     </div>
-                     
-                     <div className="p-5 flex flex-col flex-grow bg-card">
-                       <p className="text-sm text-muted-foreground line-clamp-2 mb-5 flex-grow font-medium leading-relaxed">
-                          {(() => {
-                             try {
-                               const loc = JSON.parse(p.address || "{}");
-                               return [loc.street_address, loc.locality, loc.city].filter(Boolean).join(", ") || "";
-                             } catch {
-                               return p.address || "";
-                             }
-                          })()}
-                       </p>
-                       
-                       <Button className="w-full mt-auto font-semibold shadow-sm hover:shadow-md transition-shadow group/btn" variant="default" asChild>
-                         <Link to="/app/property/$id" params={{ id: String(p.property_id) }}>
-                           View Property Details
-                           <ChevronRight className="ml-1 h-4 w-4 opacity-70 group-hover/btn:translate-x-1 transition-transform" />
-                         </Link>
-                       </Button>
-                     </div>
-                   </Card>
-                ))}
-              </div>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              >
+                <AnimatePresence mode="popLayout">
+                  {paginatedProps.map((p, idx) => (
+                    <motion.div
+                      key={p.property_id}
+                      initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ 
+                        duration: 0.5, 
+                        delay: idx * 0.08, 
+                        type: "spring",
+                        stiffness: 100,
+                        damping: 15
+                      }}
+                      className="h-full"
+                    >
+                      <Card className="overflow-hidden group hover:shadow-2xl transition-all duration-500 border-border/60 hover:border-primary/50 bg-card flex flex-col h-full rounded-2xl hover:-translate-y-1">
+                        <div className="relative h-56 w-full bg-muted/30 overflow-hidden cursor-pointer" onClick={() => navigate({ to: "/app/property/$id", params: { id: String(p.property_id) } })}>
+                          {parseImageUrls(p.image_url)[0] ? (
+                            <img src={parseImageUrls(p.image_url)[0]} alt={p.property_name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/30 group-hover:bg-primary/10 transition-colors duration-500">
+                               <Home className="h-12 w-12 opacity-40" />
+                            </div>
+                          )}
+                          
+                          {/* Subtle overlay gradient */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
+                          
+                          <div className="absolute top-3 left-3">
+                            <StatusBadge value={p.availability_status} />
+                          </div>
+                          
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0">
+                            <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          
+                          <div className="absolute bottom-3 left-4 right-4 pointer-events-none transform transition-transform duration-500 group-hover:-translate-y-1">
+                            <h3 className="text-white font-bold text-xl truncate drop-shadow-md">{p.property_name}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-black/40 text-white/90 backdrop-blur-md">#{p.property_id}</span>
+                              <span className="text-xs font-medium text-white/90 line-clamp-1">
+                                 {p.property_type} {p.Category ? `• ${p.Category}` : ''}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="p-5 flex flex-col flex-grow bg-card relative overflow-hidden">
+                          {/* Subtle background flair */}
+                          <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                          
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-5 flex-grow font-medium leading-relaxed z-10">
+                             {(() => {
+                                try {
+                                  const loc = JSON.parse(p.address || "{}");
+                                  return [loc.street_address, loc.locality, loc.city].filter(Boolean).join(", ") || "";
+                                } catch {
+                                  return p.address || "";
+                                }
+                             })()}
+                          </p>
+                          
+                          <Button className="w-full mt-auto font-semibold shadow-sm hover:shadow-md transition-all duration-300 group/btn bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90" variant="default" asChild>
+                            <Link to="/app/property/$id" params={{ id: String(p.property_id) }}>
+                              View Property Details
+                              <ChevronRight className="ml-1 h-4 w-4 opacity-70 group-hover/btn:translate-x-1.5 transition-transform" />
+                            </Link>
+                          </Button>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
               
               {/* Pagination Controls */}
               {totalPages > 1 && (
