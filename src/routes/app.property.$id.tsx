@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { getPropertyById, updateProperty } from "@/core/db/supabase-queries";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { Button } from "@/shared/components/ui/button";
@@ -284,43 +285,85 @@ function PropertyDetailsPage() {
     }
   })();
 
+  const pageVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1, 
+      transition: { staggerChildren: 0.15, delayChildren: 0.1 } 
+    }
+  };
+
+  const heroImageVariants = {
+    hidden: { scale: 1.15, filter: "blur(10px)" },
+    visible: { 
+      scale: 1, 
+      filter: "blur(0px)",
+      transition: { duration: 1.2, ease: [0.16, 1, 0.3, 1] } 
+    }
+  };
+
+  const heroTextVariants = {
+    hidden: { opacity: 0, y: 30, filter: "blur(4px)" },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      filter: "blur(0px)",
+      transition: { duration: 0.8, ease: "easeOut", delay: 0.4 } 
+    }
+  };
+
+  const backBtnVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.6, delay: 0.2 } }
+  };
+
+  const contentVariants = {
+    hidden: { opacity: 0, y: 40 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }
+  };
+
   return (
-    <div className="space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
+    <motion.div 
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6 pb-12 overflow-x-hidden"
+    >
       {/* Hero Banner Section */}
-      <div className="relative w-full h-[45vh] rounded-2xl overflow-hidden bg-muted/30 shadow-md">
+      <div className="relative w-full h-[45vh] rounded-2xl overflow-hidden bg-black shadow-md">
         {parsedImages.length > 0 ? (
-          <>
+          <motion.div variants={heroImageVariants} className="absolute inset-0 w-full h-full">
             <img
               src={parsedImages[0]}
               alt="Blurred Background"
-              className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-50"
+              className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-40"
             />
             <img
               src={parsedImages[0]}
               alt="Front View"
               className="relative z-0 w-full h-full object-contain"
             />
-          </>
+          </motion.div>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted">
+          <motion.div variants={heroImageVariants} className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted">
             <span className="text-lg">No pictures uploaded</span>
-          </div>
+          </motion.div>
         )}
 
         {/* Dark Gradient Overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/10 pointer-events-none" />
 
         {/* Back Button */}
-        <div className="absolute top-6 left-6 z-10 flex items-center gap-3">
+        <motion.div variants={backBtnVariants} className="absolute top-6 left-6 z-10 flex items-center gap-3">
           <Button variant="outline" size="sm" asChild className="bg-background/20 text-white border-white/30 hover:bg-background/40 hover:text-white backdrop-blur-md">
             <Link to="/app/properties">
               <ChevronLeft className="mr-2 h-4 w-4" /> Back to Properties
             </Link>
           </Button>
-        </div>
+        </motion.div>
 
         {/* Property Title Overlay */}
-        <div className="absolute bottom-8 left-6 md:left-10 z-10 text-white">
+        <motion.div variants={heroTextVariants} className="absolute bottom-8 left-6 md:left-10 z-10 text-white">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-sm font-medium mb-3">
             <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
             {property.availability_status || "Available"}
@@ -339,10 +382,10 @@ function PropertyDetailsPage() {
               </>
             )}
           </p>
-        </div>
+        </motion.div>
       </div>
 
-      <div className="max-w-5xl mx-auto flex flex-col gap-8 mt-8">
+      <motion.div variants={contentVariants} className="max-w-5xl mx-auto flex flex-col gap-8 mt-8">
         <div className="flex justify-end w-full">
           <Button 
             variant="default" 
@@ -831,7 +874,7 @@ function PropertyDetailsPage() {
 
           </Accordion>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
