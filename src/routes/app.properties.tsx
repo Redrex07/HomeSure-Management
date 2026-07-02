@@ -81,11 +81,17 @@ function PropertiesPage() {
   const localProps = useProperties();
   const navigate = useNavigate();
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchSupabaseProperties = async () => {
-    const landlordId = "2"; // Force "2" to match Supabase mock data
-    const data = await getLandlordProperties(landlordId);
-    setSupabaseProps(data as UnifiedProperty[]);
+    setIsLoading(true);
+    try {
+      const landlordId = "2"; // Force "2" to match Supabase mock data
+      const data = await getLandlordProperties(landlordId);
+      setSupabaseProps(data as UnifiedProperty[]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -999,9 +1005,16 @@ function PropertiesPage() {
         </DialogContent>
       </Dialog>
 
-      {landlordProps.length === 0 ? (
-        <div className="p-8 text-center text-gray-500">
-          <p>No properties found.</p>
+      {isLoading ? (
+        <div className="py-24 text-center flex flex-col items-center justify-center gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground font-medium">Loading your properties...</p>
+        </div>
+      ) : landlordProps.length === 0 ? (
+        <div className="py-24 text-center text-muted-foreground bg-card/50 rounded-xl border border-border border-dashed">
+          <h3 className="text-xl font-medium mb-2">No properties found</h3>
+          <p className="mb-4">You haven't added any properties yet.</p>
+          <Button onClick={() => setIsAdding(true)}>Add your first property</Button>
         </div>
       ) : (
         <div className="space-y-6">
