@@ -164,7 +164,7 @@ function PropertyDetailsPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editStep < 2) {
+    if (editStep < 4) {
       setEditStep(editStep + 1);
       return;
     }
@@ -452,7 +452,14 @@ function PropertyDetailsPage() {
                       </div>
                     </div>
                   </div>
-
+                  
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                    <Button type="button" onClick={() => setEditStep(2)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : editStep === 2 ? (
+                <>
                   {/* Location Details */}
                   <div>
                     <h3 className="font-semibold border-b pb-2 mb-4">Location Details</h3>
@@ -500,9 +507,16 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(1)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(3)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : editStep === 3 ? (
+                <>
                   {/* Media */}
                   <div>
-                    <h3 className="font-semibold border-b pb-2 mb-4">Media</h3>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Images & Media</h3>
                     <div className="grid gap-4">
                       <div className="grid gap-2">
                         <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
@@ -572,10 +586,10 @@ function PropertyDetailsPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                    <Button type="button" onClick={() => setEditStep(2)}>Next</Button>
+                    <Button type="button" variant="outline" onClick={() => setEditStep(2)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(4)}>Next</Button>
                   </DialogFooter>
                 </>
               ) : (
@@ -644,7 +658,7 @@ function PropertyDetailsPage() {
                   </div>
 
                   <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(1)}>Back</Button>
+                    <Button type="button" variant="outline" onClick={() => setEditStep(3)}>Back</Button>
                     <Button type="submit" disabled={isUpdating || isUploading || isUploadingVideo}>
                       {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
                     </Button>
@@ -754,6 +768,48 @@ function PropertyDetailsPage() {
               </AccordionContent>
             </AccordionItem>
 
+            {/* Images & Media Accordion */}
+            <AccordionItem value="media" className="border rounded-xl px-6 bg-card shadow-sm">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Images & Media
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-6 pb-6 pt-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {["Front View", "Living Room", "Bedroom", "Kitchen"].map((label, idx) => (
+                      <div key={idx} className="flex flex-col gap-2">
+                        <span className="text-muted-foreground text-xs uppercase tracking-wider">{label}</span>
+                        {parsedImages[idx] ? (
+                          <div className="aspect-square rounded-lg overflow-hidden border border-border">
+                            <img src={parsedImages[idx]} alt={label} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="aspect-square rounded-lg border border-dashed border-border flex items-center justify-center bg-muted/30">
+                            <span className="text-xs text-muted-foreground">Not uploaded</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-3">Virtual Tour Video</span>
+                    {property.Virtual_Tour ? (
+                      <div className="rounded-xl overflow-hidden border border-border bg-black aspect-video max-w-2xl">
+                        <video
+                          src={property.Virtual_Tour}
+                          controls
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <span className="font-medium text-sm text-muted-foreground">Not uploaded</span>
+                    )}
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
             {/* Property Specifications Accordion */}
             <AccordionItem value="specifications" className="border rounded-xl px-6 bg-card shadow-sm">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
@@ -826,48 +882,6 @@ function PropertyDetailsPage() {
                       <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
                     </div>
                   )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-
-            {/* Images & Media Accordion */}
-            <AccordionItem value="media" className="border rounded-xl px-6 bg-card shadow-sm">
-              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Images & Media
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-6 pb-6 pt-2">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {["Front View", "Living Room", "Bedroom", "Kitchen"].map((label, idx) => (
-                      <div key={idx} className="flex flex-col gap-2">
-                        <span className="text-muted-foreground text-xs uppercase tracking-wider">{label}</span>
-                        {parsedImages[idx] ? (
-                          <div className="aspect-square rounded-lg overflow-hidden border border-border">
-                            <img src={parsedImages[idx]} alt={label} className="w-full h-full object-cover" />
-                          </div>
-                        ) : (
-                          <div className="aspect-square rounded-lg border border-dashed border-border flex items-center justify-center bg-muted/30">
-                            <span className="text-xs text-muted-foreground">Not uploaded</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="pt-4 border-t">
-                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-3">Virtual Tour Video</span>
-                    {property.Virtual_Tour ? (
-                      <div className="rounded-xl overflow-hidden border border-border bg-black aspect-video max-w-2xl">
-                        <video
-                          src={property.Virtual_Tour}
-                          controls
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                    ) : (
-                      <span className="font-medium text-sm text-muted-foreground">Not uploaded</span>
-                    )}
-                  </div>
                 </div>
               </AccordionContent>
             </AccordionItem>

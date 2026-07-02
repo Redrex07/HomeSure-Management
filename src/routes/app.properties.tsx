@@ -594,7 +594,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Basic Property Information" : step === 2 ? "Location Details" : step === 3 ? "Property Specifications" : "Images & Media"}
+              {step === 1 ? "Basic Property Information" : step === 2 ? "Location Details" : step === 3 ? "Images & Media" : "Property Specifications"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -706,65 +706,6 @@ function PropertiesPage() {
             ) : step === 3 ? (
               <>
                 <div className="grid gap-2">
-                  <Label>Bedrooms</Label>
-                  <Input type="number" placeholder="e.g. 2" value={form.bedrooms} onChange={(e) => setForm({...form, bedrooms: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Bathrooms</Label>
-                  <Input type="number" placeholder="e.g. 2" value={form.bathrooms} onChange={(e) => setForm({...form, bathrooms: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Balconies</Label>
-                  <Input type="number" placeholder="e.g. 1" value={form.balconies} onChange={(e) => setForm({...form, balconies: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Kitchen</Label>
-                  <Input placeholder="e.g. Modular" value={form.kitchen} onChange={(e) => setForm({...form, kitchen: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Hall</Label>
-                  <Input type="number" placeholder="e.g. 1" value={form.hall} onChange={(e) => setForm({...form, hall: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Dining Room</Label>
-                  <Input placeholder="e.g. Yes" value={form.dining_room} onChange={(e) => setForm({...form, dining_room: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Study Room</Label>
-                  <Input placeholder="e.g. Optional" value={form.study_room} onChange={(e) => setForm({...form, study_room: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Floor Number</Label>
-                  <Input type="number" placeholder="e.g. 3" value={form.floor_number} onChange={(e) => setForm({...form, floor_number: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Total Floors</Label>
-                  <Input type="number" placeholder="e.g. 5" value={form.total_floors} onChange={(e) => setForm({...form, total_floors: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Built-up Area</Label>
-                  <Input placeholder="e.g. 1200 sq.ft" value={form.built_up_area} onChange={(e) => setForm({...form, built_up_area: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Carpet Area</Label>
-                  <Input placeholder="e.g. 1000 sq.ft" value={form.carpet_area} onChange={(e) => setForm({...form, carpet_area: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Plot Area</Label>
-                  <Input placeholder="e.g. 1500 sq.ft" value={form.plot_area} onChange={(e) => setForm({...form, plot_area: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Property Age</Label>
-                  <Input placeholder="e.g. 5 Years" value={form.property_age} onChange={(e) => setForm({...form, property_age: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Facing Direction</Label>
-                  <Input placeholder="e.g. East" value={form.facing_direction} onChange={(e) => setForm({...form, facing_direction: e.target.value})} />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="grid gap-2">
                   <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
                   {uploadedVideo ? (
                     <div className="flex items-center gap-4">
@@ -839,6 +780,65 @@ function PropertiesPage() {
                       </div>
                     </div>
                   )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid gap-2">
+                  <Label>Bedrooms</Label>
+                  <Input type="number" placeholder="e.g. 2" value={form.bedrooms} onChange={(e) => setForm({...form, bedrooms: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Bathrooms</Label>
+                  <Input type="number" placeholder="e.g. 2" value={form.bathrooms} onChange={(e) => setForm({...form, bathrooms: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Balconies</Label>
+                  <Input type="number" placeholder="e.g. 1" value={form.balconies} onChange={(e) => setForm({...form, balconies: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Kitchen</Label>
+                  <Input placeholder="e.g. Modular" value={form.kitchen} onChange={(e) => setForm({...form, kitchen: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Hall</Label>
+                  <Input type="number" placeholder="e.g. 1" value={form.hall} onChange={(e) => setForm({...form, hall: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Dining Room</Label>
+                  <Input placeholder="e.g. Yes" value={form.dining_room} onChange={(e) => setForm({...form, dining_room: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Study Room</Label>
+                  <Input placeholder="e.g. Optional" value={form.study_room} onChange={(e) => setForm({...form, study_room: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Floor Number</Label>
+                  <Input type="number" placeholder="e.g. 3" value={form.floor_number} onChange={(e) => setForm({...form, floor_number: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Total Floors</Label>
+                  <Input type="number" placeholder="e.g. 5" value={form.total_floors} onChange={(e) => setForm({...form, total_floors: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Built-up Area</Label>
+                  <Input placeholder="e.g. 1200 sq.ft" value={form.built_up_area} onChange={(e) => setForm({...form, built_up_area: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Carpet Area</Label>
+                  <Input placeholder="e.g. 1000 sq.ft" value={form.carpet_area} onChange={(e) => setForm({...form, carpet_area: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Plot Area</Label>
+                  <Input placeholder="e.g. 1500 sq.ft" value={form.plot_area} onChange={(e) => setForm({...form, plot_area: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Property Age</Label>
+                  <Input placeholder="e.g. 5 Years" value={form.property_age} onChange={(e) => setForm({...form, property_age: e.target.value})} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Facing Direction</Label>
+                  <Input placeholder="e.g. East" value={form.facing_direction} onChange={(e) => setForm({...form, facing_direction: e.target.value})} />
                 </div>
               </>
             )}
