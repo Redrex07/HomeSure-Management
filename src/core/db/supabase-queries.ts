@@ -79,6 +79,8 @@ export async function createProperty(payload: any) {
   try {
     const rentAmount = payload.rent_amount;
     delete payload.rent_amount;
+    const amenitiesObj = payload.amenities;
+    delete payload.amenities;
     
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -125,6 +127,27 @@ export async function createProperty(payload: any) {
       if (rentError) {
         console.error("Error creating rent details:", rentError);
       }
+
+      if (amenitiesObj) {
+        const amenitiesPayload = {
+          property_id: propertyId,
+          wifi: amenitiesObj.wifi,
+          power_backup: amenitiesObj.power_backup,
+          parking: amenitiesObj.parking,
+          lift: amenitiesObj.lift,
+          gym: amenitiesObj.gym,
+          swimming_pool: amenitiesObj.swimming_pool,
+          cctv: amenitiesObj.cctv,
+          security: amenitiesObj.security,
+          garden: amenitiesObj.garden,
+          childrens_play_area: amenitiesObj.childrens_play_area,
+          furnished: amenitiesObj.furnished,
+          semi_furnished: amenitiesObj.semi_furnished,
+          air_conditioning: amenitiesObj.air_conditioning
+        };
+        const { error: amError } = await supabase.from("property_amenities").insert([amenitiesPayload]);
+        if (amError) console.error("Error creating amenities:", amError);
+      }
     }
 
     return data;
@@ -138,6 +161,8 @@ export async function updateProperty(id: number, payload: any) {
   try {
     const rentAmount = payload.rent_amount;
     delete payload.rent_amount;
+    const amenitiesObj = payload.amenities;
+    delete payload.amenities;
 
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -187,6 +212,37 @@ export async function updateProperty(id: number, payload: any) {
       await supabase.from("property_rent_details").insert([rentPayload]);
     }
 
+    if (amenitiesObj) {
+      const amenitiesPayload = {
+        property_id: id,
+        wifi: amenitiesObj.wifi,
+        power_backup: amenitiesObj.power_backup,
+        parking: amenitiesObj.parking,
+        lift: amenitiesObj.lift,
+        gym: amenitiesObj.gym,
+        swimming_pool: amenitiesObj.swimming_pool,
+        cctv: amenitiesObj.cctv,
+        security: amenitiesObj.security,
+        garden: amenitiesObj.garden,
+        childrens_play_area: amenitiesObj.childrens_play_area,
+        furnished: amenitiesObj.furnished,
+        semi_furnished: amenitiesObj.semi_furnished,
+        air_conditioning: amenitiesObj.air_conditioning
+      };
+      
+      const { data: existingAm } = await supabase
+        .from("property_amenities")
+        .select("amenity_id")
+        .eq("property_id", id)
+        .maybeSingle();
+
+      if (existingAm) {
+        await supabase.from("property_amenities").update(amenitiesPayload).eq("property_id", id);
+      } else {
+        await supabase.from("property_amenities").insert([amenitiesPayload]);
+      }
+    }
+
     return data;
   } catch (err) {
     console.error("Error updating property:", err);
@@ -214,7 +270,7 @@ export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(*)")
+      .select("*, property_rent_details(*), property_amenities(*)")
       .eq("property_id", id)
       .single();
 
@@ -227,6 +283,9 @@ export async function getPropertyById(id: string) {
       data.rent_amount = data.property_rent_details?.[0]?.monthly_rent || data.property_rent_details?.monthly_rent || "";
       data.rentDetailsData = data.property_rent_details?.[0] || data.property_rent_details || null;
       delete data.property_rent_details;
+      
+      data.amenitiesData = data.property_amenities?.[0] || data.property_amenities || null;
+      delete data.property_amenities;
     }
     return data;
   } catch (err) {

@@ -4,7 +4,7 @@ import { motion, Variants } from "framer-motion";
 import { getPropertyById, updateProperty } from "@/core/db/supabase-queries";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { Button } from "@/shared/components/ui/button";
-import { ChevronLeft, Pencil, ImagePlus, X } from "lucide-react";
+import { ChevronLeft, Pencil, ImagePlus, X, CheckCircle } from "lucide-react";
 import { supabase } from "@/core/db/supabase";
 import { toast } from "sonner";
 import {
@@ -23,6 +23,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { Checkbox } from "@/shared/components/ui/checkbox";
 import { UnifiedProperty } from "./app.properties";
 
 export const Route = createFileRoute("/app/property/$id")({
@@ -71,7 +72,8 @@ function PropertyDetailsPage() {
     } catch { }
 
     const rentDetails = specs.rent_details || {};
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails }));
+    const amenities = (property as any)?.amenitiesData || {};
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities }));
 
     let images = [];
     try {
@@ -166,7 +168,7 @@ function PropertyDetailsPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editStep < 5) {
+    if (editStep < 6) {
       setEditStep(editStep + 1);
       return;
     }
@@ -224,6 +226,21 @@ function PropertyDetailsPage() {
       specifications: JSON.stringify(specsObj),
       image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
       Virtual_Tour: editVideo || null,
+      amenities: {
+        wifi: editForm.wifi === true,
+        power_backup: editForm.power_backup === true,
+        parking: editForm.parking === true,
+        lift: editForm.lift === true,
+        gym: editForm.gym === true,
+        swimming_pool: editForm.swimming_pool === true,
+        cctv: editForm.cctv === true,
+        security: editForm.security === true,
+        garden: editForm.garden === true,
+        childrens_play_area: editForm.childrens_play_area === true,
+        furnished: editForm.furnished === true,
+        semi_furnished: editForm.semi_furnished === true,
+        air_conditioning: editForm.air_conditioning === true
+      }
     };
     
     try {
@@ -675,7 +692,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(5)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : (
+              ) : editStep === 5 ? (
                 <>
                   {/* Rent Details */}
                   <div>
@@ -722,6 +739,72 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(4)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(6)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  {/* Amenities */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Amenities</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_wifi" checked={editForm.wifi} onCheckedChange={(checked) => setEditForm({...editForm, wifi: checked === true})} />
+                        <Label htmlFor="edit_wifi" className="cursor-pointer">Wi-Fi</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_power_backup" checked={editForm.power_backup} onCheckedChange={(checked) => setEditForm({...editForm, power_backup: checked === true})} />
+                        <Label htmlFor="edit_power_backup" className="cursor-pointer">Power Backup</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_parking" checked={editForm.parking} onCheckedChange={(checked) => setEditForm({...editForm, parking: checked === true})} />
+                        <Label htmlFor="edit_parking" className="cursor-pointer">Parking</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_lift" checked={editForm.lift} onCheckedChange={(checked) => setEditForm({...editForm, lift: checked === true})} />
+                        <Label htmlFor="edit_lift" className="cursor-pointer">Lift</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_gym" checked={editForm.gym} onCheckedChange={(checked) => setEditForm({...editForm, gym: checked === true})} />
+                        <Label htmlFor="edit_gym" className="cursor-pointer">Gym/Fitness Center</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_swimming_pool" checked={editForm.swimming_pool} onCheckedChange={(checked) => setEditForm({...editForm, swimming_pool: checked === true})} />
+                        <Label htmlFor="edit_swimming_pool" className="cursor-pointer">Swimming Pool</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_cctv" checked={editForm.cctv} onCheckedChange={(checked) => setEditForm({...editForm, cctv: checked === true})} />
+                        <Label htmlFor="edit_cctv" className="cursor-pointer">CCTV Surveillance</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_security" checked={editForm.security} onCheckedChange={(checked) => setEditForm({...editForm, security: checked === true})} />
+                        <Label htmlFor="edit_security" className="cursor-pointer">Security Guard</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_garden" checked={editForm.garden} onCheckedChange={(checked) => setEditForm({...editForm, garden: checked === true})} />
+                        <Label htmlFor="edit_garden" className="cursor-pointer">Garden</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_childrens_play_area" checked={editForm.childrens_play_area} onCheckedChange={(checked) => setEditForm({...editForm, childrens_play_area: checked === true})} />
+                        <Label htmlFor="edit_childrens_play_area" className="cursor-pointer">Children's Play Area</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_furnished" checked={editForm.furnished} onCheckedChange={(checked) => setEditForm({...editForm, furnished: checked === true})} />
+                        <Label htmlFor="edit_furnished" className="cursor-pointer">Furnished</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_semi_furnished" checked={editForm.semi_furnished} onCheckedChange={(checked) => setEditForm({...editForm, semi_furnished: checked === true})} />
+                        <Label htmlFor="edit_semi_furnished" className="cursor-pointer">Semi-Furnished</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_air_conditioning" checked={editForm.air_conditioning} onCheckedChange={(checked) => setEditForm({...editForm, air_conditioning: checked === true})} />
+                        <Label htmlFor="edit_air_conditioning" className="cursor-pointer">Air Conditioning</Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(5)}>Back</Button>
                     <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo}>
                       {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
                     </Button>
@@ -1043,6 +1126,60 @@ function PropertyDetailsPage() {
                       <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
                     </div>
                   )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Amenities Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="amenities" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Amenities
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const amData = (property as any)?.amenitiesData || {};
+                    const amenitiesList = [
+                      { id: "wifi", label: "Wi-Fi" },
+                      { id: "power_backup", label: "Power Backup" },
+                      { id: "parking", label: "Parking" },
+                      { id: "lift", label: "Lift" },
+                      { id: "gym", label: "Gym/Fitness Center" },
+                      { id: "swimming_pool", label: "Swimming Pool" },
+                      { id: "cctv", label: "CCTV Surveillance" },
+                      { id: "security", label: "Security Guard" },
+                      { id: "garden", label: "Garden" },
+                      { id: "childrens_play_area", label: "Children's Play Area" },
+                      { id: "furnished", label: "Furnished" },
+                      { id: "semi_furnished", label: "Semi-Furnished" },
+                      { id: "air_conditioning", label: "Air Conditioning" }
+                    ];
+
+                    const presentAmenities = amenitiesList.filter(am => amData[am.id] === true);
+
+                    if (presentAmenities.length > 0) {
+                      return presentAmenities.map(am => (
+                        <div key={am.id} className="flex items-center space-x-2 text-muted-foreground">
+                          <CheckCircle className="h-4 w-4 text-primary" />
+                          <span>{am.label}</span>
+                        </div>
+                      ));
+                    } else if (Object.keys(amData).length > 0) {
+                      return (
+                        <div className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">No amenities marked</span>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Amenities not specified</span>
+                        </div>
+                      );
+                    }
+                  })()}
                 </div>
               </AccordionContent>
             </AccordionItem>

@@ -52,6 +52,7 @@ import {
 } from "@/shared/components/ui/accordion";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { Checkbox } from "@/shared/components/ui/checkbox";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
 
@@ -162,6 +163,19 @@ function PropertiesPage() {
     advance_payment: "",
     available_from: "",
     lease_duration: "",
+    wifi: false,
+    power_backup: false,
+    parking: false,
+    lift: false,
+    gym: false,
+    swimming_pool: false,
+    cctv: false,
+    security: false,
+    garden: false,
+    childrens_play_area: false,
+    furnished: false,
+    semi_furnished: false,
+    air_conditioning: false,
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -213,13 +227,26 @@ function PropertiesPage() {
     advance_payment: "",
     available_from: "",
     lease_duration: "",
+    wifi: false,
+    power_backup: false,
+    parking: false,
+    lift: false,
+    gym: false,
+    swimming_pool: false,
+    cctv: false,
+    security: false,
+    garden: false,
+    childrens_play_area: false,
+    furnished: false,
+    semi_furnished: false,
+    air_conditioning: false,
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 5) {
+    if (step < 6) {
       setStep(step + 1);
       return;
     }
@@ -279,9 +306,23 @@ function PropertiesPage() {
         Listing_date: new Date().toISOString(),
         Description: form.Description,
         Category: form.Category,
-        rent_amount: form.rent_amount,
         address: JSON.stringify(location_details),
         specifications: JSON.stringify(specifications),
+        amenities: {
+          wifi: form.wifi,
+          power_backup: form.power_backup,
+          parking: form.parking,
+          lift: form.lift,
+          gym: form.gym,
+          swimming_pool: form.swimming_pool,
+          cctv: form.cctv,
+          security: form.security,
+          garden: form.garden,
+          childrens_play_area: form.childrens_play_area,
+          furnished: form.furnished,
+          semi_furnished: form.semi_furnished,
+          air_conditioning: form.air_conditioning
+        }
       };
       if (uploadedVideo) {
         payload.Virtual_Tour = uploadedVideo;
@@ -343,6 +384,19 @@ function PropertiesPage() {
       advance_payment: "",
       available_from: "",
       lease_duration: "",
+      wifi: false,
+      power_backup: false,
+      parking: false,
+      lift: false,
+      gym: false,
+      swimming_pool: false,
+      cctv: false,
+      security: false,
+      garden: false,
+      childrens_play_area: false,
+      furnished: false,
+      semi_furnished: false,
+      air_conditioning: false,
     });
     setStep(1);
     setUploadedImages([]);
@@ -524,6 +578,19 @@ function PropertiesPage() {
       advance_payment: "",
       available_from: "",
       lease_duration: "",
+      wifi: false,
+      power_backup: false,
+      parking: false,
+      lift: false,
+      gym: false,
+      swimming_pool: false,
+      cctv: false,
+      security: false,
+      garden: false,
+      childrens_play_area: false,
+      furnished: false,
+      semi_furnished: false,
+      air_conditioning: false,
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);
@@ -643,7 +710,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 5: Basic Property Information" : step === 2 ? "Step 2 of 5: Location Details" : step === 3 ? "Step 3 of 5: Images & Media" : step === 4 ? "Step 4 of 5: Property Specifications" : "Step 5 of 5: Rent Details"}
+              {step === 1 ? "Step 1 of 6: Basic Property Information" : step === 2 ? "Step 2 of 6: Location Details" : step === 3 ? "Step 3 of 6: Images & Media" : step === 4 ? "Step 4 of 6: Property Specifications" : step === 5 ? "Step 5 of 6: Rent Details" : "Step 6 of 6: Amenities"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -890,7 +957,7 @@ function PropertiesPage() {
                     <Input placeholder="e.g. East" value={form.facing_direction} onChange={(e) => setForm({...form, facing_direction: e.target.value})} />
                   </div>
                 </>
-              ) : (
+              ) : step === 5 ? (
                 <>
                   <div className="grid gap-2">
                     <Label>Monthly Rent</Label>
@@ -929,6 +996,63 @@ function PropertiesPage() {
                     <Input placeholder="e.g. 11 Months" value={form.lease_duration} onChange={(e) => setForm({...form, lease_duration: e.target.value})} />
                   </div>
                 </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="wifi" checked={form.wifi} onCheckedChange={(checked) => setForm({...form, wifi: checked === true})} />
+                      <Label htmlFor="wifi" className="cursor-pointer">Wi-Fi</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="power_backup" checked={form.power_backup} onCheckedChange={(checked) => setForm({...form, power_backup: checked === true})} />
+                      <Label htmlFor="power_backup" className="cursor-pointer">Power Backup</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="parking" checked={form.parking} onCheckedChange={(checked) => setForm({...form, parking: checked === true})} />
+                      <Label htmlFor="parking" className="cursor-pointer">Parking</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="lift" checked={form.lift} onCheckedChange={(checked) => setForm({...form, lift: checked === true})} />
+                      <Label htmlFor="lift" className="cursor-pointer">Lift</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="gym" checked={form.gym} onCheckedChange={(checked) => setForm({...form, gym: checked === true})} />
+                      <Label htmlFor="gym" className="cursor-pointer">Gym/Fitness Center</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="swimming_pool" checked={form.swimming_pool} onCheckedChange={(checked) => setForm({...form, swimming_pool: checked === true})} />
+                      <Label htmlFor="swimming_pool" className="cursor-pointer">Swimming Pool</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="cctv" checked={form.cctv} onCheckedChange={(checked) => setForm({...form, cctv: checked === true})} />
+                      <Label htmlFor="cctv" className="cursor-pointer">CCTV Surveillance</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="security" checked={form.security} onCheckedChange={(checked) => setForm({...form, security: checked === true})} />
+                      <Label htmlFor="security" className="cursor-pointer">Security Guard</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="garden" checked={form.garden} onCheckedChange={(checked) => setForm({...form, garden: checked === true})} />
+                      <Label htmlFor="garden" className="cursor-pointer">Garden</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="childrens_play_area" checked={form.childrens_play_area} onCheckedChange={(checked) => setForm({...form, childrens_play_area: checked === true})} />
+                      <Label htmlFor="childrens_play_area" className="cursor-pointer">Children's Play Area</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="furnished" checked={form.furnished} onCheckedChange={(checked) => setForm({...form, furnished: checked === true})} />
+                      <Label htmlFor="furnished" className="cursor-pointer">Furnished</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="semi_furnished" checked={form.semi_furnished} onCheckedChange={(checked) => setForm({...form, semi_furnished: checked === true})} />
+                      <Label htmlFor="semi_furnished" className="cursor-pointer">Semi-Furnished</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="air_conditioning" checked={form.air_conditioning} onCheckedChange={(checked) => setForm({...form, air_conditioning: checked === true})} />
+                      <Label htmlFor="air_conditioning" className="cursor-pointer">Air Conditioning</Label>
+                    </div>
+                  </div>
+                </>
               )}
 
             <SheetFooter className="mt-4 pb-12">
@@ -960,9 +1084,16 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(5)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 5 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(4)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(6)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(5)}>
                     Back
                   </Button>
                   <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo}>
