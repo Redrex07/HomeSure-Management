@@ -154,6 +154,14 @@ function PropertiesPage() {
     listing_date: "",
     Description: "",
     Category: "Residential",
+    security_deposit: "",
+    maintenance_charges: "",
+    electricity_charges: "",
+    water_charges: "",
+    parking_charges: "",
+    advance_payment: "",
+    available_from: "",
+    lease_duration: "",
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -197,13 +205,21 @@ function PropertiesPage() {
     plot_area: "",
     property_age: "",
     facing_direction: "",
+    security_deposit: "",
+    maintenance_charges: "",
+    electricity_charges: "",
+    water_charges: "",
+    parking_charges: "",
+    advance_payment: "",
+    available_from: "",
+    lease_duration: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 4) {
+    if (step < 5) {
       setStep(step + 1);
       return;
     }
@@ -242,6 +258,16 @@ function PropertiesPage() {
         plot_area: form.plot_area,
         property_age: form.property_age,
         facing_direction: form.facing_direction,
+        rent_details: {
+          security_deposit: form.security_deposit,
+          maintenance_charges: form.maintenance_charges,
+          electricity_charges: form.electricity_charges,
+          water_charges: form.water_charges,
+          parking_charges: form.parking_charges,
+          advance_payment: form.advance_payment,
+          available_from: form.available_from,
+          lease_duration: form.lease_duration,
+        }
       };
 
       const payload: any = {
@@ -253,6 +279,7 @@ function PropertiesPage() {
         Listing_date: new Date().toISOString(),
         Description: form.Description,
         Category: form.Category,
+        rent_amount: form.rent_amount,
         address: JSON.stringify(location_details),
         specifications: JSON.stringify(specifications),
       };
@@ -308,6 +335,14 @@ function PropertiesPage() {
       plot_area: "",
       property_age: "",
       facing_direction: "",
+      security_deposit: "",
+      maintenance_charges: "",
+      electricity_charges: "",
+      water_charges: "",
+      parking_charges: "",
+      advance_payment: "",
+      available_from: "",
+      lease_duration: "",
     });
     setStep(1);
     setUploadedImages([]);
@@ -600,12 +635,12 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Basic Property Information" : step === 2 ? "Location Details" : step === 3 ? "Images & Media" : "Property Specifications"}
+              {step === 1 ? "Step 1 of 5: Basic Property Information" : step === 2 ? "Step 2 of 5: Location Details" : step === 3 ? "Step 3 of 5: Images & Media" : step === 4 ? "Step 4 of 5: Property Specifications" : "Step 5 of 5: Rent Details"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
 
-          <form onSubmit={handleAddProperty} className="grid gap-4 py-4">
+          <form onSubmit={(e) => e.preventDefault()} className="grid gap-4 py-4">
             {step === 1 ? (
               <>
             <div className="grid gap-2">
@@ -788,66 +823,105 @@ function PropertiesPage() {
                   )}
                 </div>
               </>
-            ) : (
-              <>
-                <div className="grid gap-2">
-                  <Label>Bedrooms</Label>
-                  <Input type="number" placeholder="e.g. 2" value={form.bedrooms} onChange={(e) => setForm({...form, bedrooms: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Bathrooms</Label>
-                  <Input type="number" placeholder="e.g. 2" value={form.bathrooms} onChange={(e) => setForm({...form, bathrooms: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Balconies</Label>
-                  <Input type="number" placeholder="e.g. 1" value={form.balconies} onChange={(e) => setForm({...form, balconies: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Kitchen</Label>
-                  <Input placeholder="e.g. Modular" value={form.kitchen} onChange={(e) => setForm({...form, kitchen: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Hall</Label>
-                  <Input type="number" placeholder="e.g. 1" value={form.hall} onChange={(e) => setForm({...form, hall: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Dining Room</Label>
-                  <Input placeholder="e.g. Yes" value={form.dining_room} onChange={(e) => setForm({...form, dining_room: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Study Room</Label>
-                  <Input placeholder="e.g. Optional" value={form.study_room} onChange={(e) => setForm({...form, study_room: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Floor Number</Label>
-                  <Input type="number" placeholder="e.g. 3" value={form.floor_number} onChange={(e) => setForm({...form, floor_number: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Total Floors</Label>
-                  <Input type="number" placeholder="e.g. 5" value={form.total_floors} onChange={(e) => setForm({...form, total_floors: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Built-up Area</Label>
-                  <Input placeholder="e.g. 1200 sq.ft" value={form.built_up_area} onChange={(e) => setForm({...form, built_up_area: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Carpet Area</Label>
-                  <Input placeholder="e.g. 1000 sq.ft" value={form.carpet_area} onChange={(e) => setForm({...form, carpet_area: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Plot Area</Label>
-                  <Input placeholder="e.g. 1500 sq.ft" value={form.plot_area} onChange={(e) => setForm({...form, plot_area: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Property Age</Label>
-                  <Input placeholder="e.g. 5 Years" value={form.property_age} onChange={(e) => setForm({...form, property_age: e.target.value})} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Facing Direction</Label>
-                  <Input placeholder="e.g. East" value={form.facing_direction} onChange={(e) => setForm({...form, facing_direction: e.target.value})} />
-                </div>
-              </>
-            )}
+            ) : step === 4 ? (
+                <>
+                  <div className="grid gap-2">
+                    <Label>Bedrooms</Label>
+                    <Input type="number" placeholder="e.g. 2" value={form.bedrooms} onChange={(e) => setForm({...form, bedrooms: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Bathrooms</Label>
+                    <Input type="number" placeholder="e.g. 2" value={form.bathrooms} onChange={(e) => setForm({...form, bathrooms: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Balconies</Label>
+                    <Input type="number" placeholder="e.g. 1" value={form.balconies} onChange={(e) => setForm({...form, balconies: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Kitchen</Label>
+                    <Input placeholder="e.g. Modular" value={form.kitchen} onChange={(e) => setForm({...form, kitchen: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Hall</Label>
+                    <Input placeholder="e.g. 1" value={form.hall} onChange={(e) => setForm({...form, hall: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Dining Room</Label>
+                    <Input placeholder="e.g. Yes/No" value={form.dining_room} onChange={(e) => setForm({...form, dining_room: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Study Room</Label>
+                    <Input placeholder="e.g. Yes/No" value={form.study_room} onChange={(e) => setForm({...form, study_room: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Floor Number</Label>
+                    <Input type="number" placeholder="e.g. 2" value={form.floor_number} onChange={(e) => setForm({...form, floor_number: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Total Floors</Label>
+                    <Input type="number" placeholder="e.g. 5" value={form.total_floors} onChange={(e) => setForm({...form, total_floors: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Built-up Area (sq.ft)</Label>
+                    <Input type="number" placeholder="e.g. 1200" value={form.built_up_area} onChange={(e) => setForm({...form, built_up_area: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Carpet Area (sq.ft)</Label>
+                    <Input type="number" placeholder="e.g. 1000" value={form.carpet_area} onChange={(e) => setForm({...form, carpet_area: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Plot Area (sq.ft)</Label>
+                    <Input type="number" placeholder="e.g. 1500" value={form.plot_area} onChange={(e) => setForm({...form, plot_area: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Property Age</Label>
+                    <Input placeholder="e.g. 5 Years" value={form.property_age} onChange={(e) => setForm({...form, property_age: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Facing Direction</Label>
+                    <Input placeholder="e.g. East" value={form.facing_direction} onChange={(e) => setForm({...form, facing_direction: e.target.value})} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="grid gap-2">
+                    <Label>Monthly Rent</Label>
+                    <Input placeholder="e.g. ₹18,000" value={form.rent_amount} onChange={(e) => setForm({...form, rent_amount: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Security Deposit</Label>
+                    <Input placeholder="e.g. ₹50,000" value={form.security_deposit} onChange={(e) => setForm({...form, security_deposit: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Maintenance Charges</Label>
+                    <Input placeholder="e.g. ₹2,000" value={form.maintenance_charges} onChange={(e) => setForm({...form, maintenance_charges: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Electricity Charges</Label>
+                    <Input placeholder="e.g. Included/Separate" value={form.electricity_charges} onChange={(e) => setForm({...form, electricity_charges: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Water Charges</Label>
+                    <Input placeholder="e.g. Included" value={form.water_charges} onChange={(e) => setForm({...form, water_charges: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Parking Charges</Label>
+                    <Input placeholder="e.g. ₹500" value={form.parking_charges} onChange={(e) => setForm({...form, parking_charges: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Advance Payment</Label>
+                    <Input placeholder="e.g. 2 Months" value={form.advance_payment} onChange={(e) => setForm({...form, advance_payment: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Available From</Label>
+                    <Input placeholder="e.g. 1-Aug-26" type="date" value={form.available_from} onChange={(e) => setForm({...form, available_from: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Lease Duration</Label>
+                    <Input placeholder="e.g. 11 Months" value={form.lease_duration} onChange={(e) => setForm({...form, lease_duration: e.target.value})} />
+                  </div>
+                </>
+              )}
 
             <SheetFooter className="mt-4 pb-12">
               {step === 1 ? (
@@ -871,12 +945,19 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(4)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 4 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(3)}>
                     Back
                   </Button>
-                  <Button type="submit" disabled={isUploading || isUploadingVideo}>
+                  <Button type="button" onClick={() => setStep(5)}>Next: Rent Details</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(4)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo}>
                     {(isUploading || isUploadingVideo) ? "Uploading..." : "Save Property"}
                   </Button>
                 </>
@@ -1182,7 +1263,7 @@ function PropertiesPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleUpdateProperty} className="grid gap-4 py-4">
+          <form onSubmit={(e) => e.preventDefault()} className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Property Name</Label>
               <Input
@@ -1338,7 +1419,7 @@ function PropertiesPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit">Update Property</Button>
+              <Button type="button" onClick={handleUpdateProperty}>Update Property</Button>
             </DialogFooter>
           </form>
         </DialogContent>

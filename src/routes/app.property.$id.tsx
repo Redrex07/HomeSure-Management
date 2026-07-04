@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { getPropertyById, updateProperty } from "@/core/db/supabase-queries";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { Button } from "@/shared/components/ui/button";
@@ -59,6 +59,7 @@ function PropertyDetailsPage() {
       availability_status: property?.availability_status || "Available",
       Category: property?.Category || "",
       Description: property?.Description || "",
+      rent_amount: property?.rent_amount || "",
       ...loc
     });
     
@@ -69,7 +70,8 @@ function PropertyDetailsPage() {
       }
     } catch { }
 
-    setEditForm((prev: any) => ({ ...prev, ...specs }));
+    const rentDetails = specs.rent_details || {};
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails }));
 
     let images = [];
     try {
@@ -164,7 +166,7 @@ function PropertyDetailsPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editStep < 4) {
+    if (editStep < 5) {
       setEditStep(editStep + 1);
       return;
     }
@@ -199,6 +201,16 @@ function PropertyDetailsPage() {
       plot_area: editForm.plot_area || "",
       property_age: editForm.property_age || "",
       facing_direction: editForm.facing_direction || "",
+      rent_details: {
+        security_deposit: editForm.security_deposit || "",
+        maintenance_charges: editForm.maintenance_charges || "",
+        electricity_charges: editForm.electricity_charges || "",
+        water_charges: editForm.water_charges || "",
+        parking_charges: editForm.parking_charges || "",
+        advance_payment: editForm.advance_payment || "",
+        available_from: editForm.available_from || "",
+        lease_duration: editForm.lease_duration || "",
+      }
     };
     
     const payload: any = {
@@ -207,6 +219,7 @@ function PropertyDetailsPage() {
       availability_status: editForm.availability_status,
       Category: editForm.Category,
       Description: editForm.Description,
+      rent_amount: editForm.rent_amount,
       address: JSON.stringify(locationObj),
       specifications: JSON.stringify(specsObj),
       image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
@@ -285,7 +298,7 @@ function PropertyDetailsPage() {
     }
   })();
 
-  const pageVariants = {
+  const pageVariants: Variants = {
     hidden: { opacity: 0 },
     visible: { 
       opacity: 1, 
@@ -293,7 +306,7 @@ function PropertyDetailsPage() {
     }
   };
 
-  const heroImageVariants = {
+  const heroImageVariants: Variants = {
     hidden: { scale: 1.15, filter: "blur(10px)" },
     visible: { 
       scale: 1, 
@@ -302,7 +315,7 @@ function PropertyDetailsPage() {
     }
   };
 
-  const heroTextVariants = {
+  const heroTextVariants: Variants = {
     hidden: { opacity: 0, y: 30, filter: "blur(4px)" },
     visible: { 
       opacity: 1, 
@@ -312,12 +325,12 @@ function PropertyDetailsPage() {
     }
   };
 
-  const backBtnVariants = {
+  const backBtnVariants: Variants = {
     hidden: { opacity: 0, x: -20 },
     visible: { opacity: 1, x: 0, transition: { duration: 0.6, delay: 0.2 } }
   };
 
-  const contentVariants = {
+  const contentVariants: Variants = {
     hidden: { opacity: 0, y: 40 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }
   };
@@ -401,10 +414,10 @@ function PropertyDetailsPage() {
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details</DialogTitle>
+              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 5`}</DialogTitle>
             </DialogHeader>
             
-            <form onSubmit={handleUpdate} className="grid gap-6 py-4">
+            <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
               {editStep === 1 ? (
                 <>
                   {/* Basic Information */}
@@ -659,7 +672,57 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(3)}>Back</Button>
-                    <Button type="submit" disabled={isUpdating || isUploading || isUploadingVideo}>
+                    <Button type="button" onClick={() => setEditStep(5)}>Next: Rent Details</Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  {/* Rent Details */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Rent Details</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Monthly Rent</Label>
+                        <Input placeholder="e.g. ₹18,000" value={editForm.rent_amount || ""} onChange={(e) => setEditForm({...editForm, rent_amount: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Security Deposit</Label>
+                        <Input placeholder="e.g. ₹50,000" value={editForm.security_deposit || ""} onChange={(e) => setEditForm({...editForm, security_deposit: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Maintenance Charges</Label>
+                        <Input placeholder="e.g. ₹2,000" value={editForm.maintenance_charges || ""} onChange={(e) => setEditForm({...editForm, maintenance_charges: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Electricity Charges</Label>
+                        <Input placeholder="e.g. Included/Separate" value={editForm.electricity_charges || ""} onChange={(e) => setEditForm({...editForm, electricity_charges: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Water Charges</Label>
+                        <Input placeholder="e.g. Included" value={editForm.water_charges || ""} onChange={(e) => setEditForm({...editForm, water_charges: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Parking Charges</Label>
+                        <Input placeholder="e.g. ₹500" value={editForm.parking_charges || ""} onChange={(e) => setEditForm({...editForm, parking_charges: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Advance Payment</Label>
+                        <Input placeholder="e.g. 2 Months" value={editForm.advance_payment || ""} onChange={(e) => setEditForm({...editForm, advance_payment: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Available From</Label>
+                        <Input type="date" placeholder="e.g. 1-Aug-26" value={editForm.available_from || ""} onChange={(e) => setEditForm({...editForm, available_from: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Lease Duration</Label>
+                        <Input placeholder="e.g. 11 Months" value={editForm.lease_duration || ""} onChange={(e) => setEditForm({...editForm, lease_duration: e.target.value})} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(4)}>Back</Button>
+                    <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo}>
                       {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
                     </Button>
                   </DialogFooter>
