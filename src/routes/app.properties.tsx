@@ -958,7 +958,7 @@ function PropertiesPage() {
                   <Button type="button" variant="outline" onClick={() => setStep(3)}>
                     Back
                   </Button>
-                  <Button type="button" onClick={() => setStep(5)}>Next: Rent Details</Button>
+                  <Button type="button" onClick={() => setStep(5)}>Next</Button>
                 </>
               ) : (
                 <>

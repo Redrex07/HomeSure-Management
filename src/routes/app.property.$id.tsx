@@ -672,7 +672,7 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(3)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(5)}>Next: Rent Details</Button>
+                    <Button type="button" onClick={() => setEditStep(5)}>Next</Button>
                   </DialogFooter>
                 </>
               ) : (
@@ -949,6 +949,103 @@ function PropertyDetailsPage() {
               </AccordionContent>
             </AccordionItem>
 
+          </Accordion>
+
+          {/* Rent Details Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="rent" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Rent Details
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
+                  {(property as any).rentDetailsData ? (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Monthly Rent</span>
+                        <span className="font-medium text-base">{(property as any).rentDetailsData.monthly_rent ? `₹${(property as any).rentDetailsData.monthly_rent}` : "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Security Deposit</span>
+                        <span className="font-medium text-base">{(property as any).rentDetailsData.security_deposit ? `₹${(property as any).rentDetailsData.security_deposit}` : "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Maintenance Charges</span>
+                        <span className="font-medium text-base">{(property as any).rentDetailsData.maintenance_charges ? `₹${(property as any).rentDetailsData.maintenance_charges}` : "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Electricity Charges</span>
+                        <span className="font-medium text-base">{(property as any).rentDetailsData.electricity_charges ? `₹${(property as any).rentDetailsData.electricity_charges}` : "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Water Charges</span>
+                        <span className="font-medium text-base">{(property as any).rentDetailsData.water_charges ? `₹${(property as any).rentDetailsData.water_charges}` : "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Charges</span>
+                        <span className="font-medium text-base">{(property as any).rentDetailsData.parking_charges ? `₹${(property as any).rentDetailsData.parking_charges}` : "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Advance Payment</span>
+                        <span className="font-medium text-base">{parsedSpecs?.rent_details?.advance_payment || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Available From</span>
+                        <span className="font-medium text-base">{(property as any).rentDetailsData.available_from || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Lease Duration</span>
+                        <span className="font-medium text-base">{(property as any).rentDetailsData.lease_duration || "—"}</span>
+                      </div>
+                    </>
+                  ) : parsedSpecs?.rent_details ? (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Monthly Rent</span>
+                        <span className="font-medium text-base">{property.rent_amount || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Security Deposit</span>
+                        <span className="font-medium text-base">{parsedSpecs.rent_details.security_deposit || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Maintenance Charges</span>
+                        <span className="font-medium text-base">{parsedSpecs.rent_details.maintenance_charges || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Electricity Charges</span>
+                        <span className="font-medium text-base">{parsedSpecs.rent_details.electricity_charges || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Water Charges</span>
+                        <span className="font-medium text-base">{parsedSpecs.rent_details.water_charges || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Charges</span>
+                        <span className="font-medium text-base">{parsedSpecs.rent_details.parking_charges || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Advance Payment</span>
+                        <span className="font-medium text-base">{parsedSpecs.rent_details.advance_payment || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Available From</span>
+                        <span className="font-medium text-base">{parsedSpecs.rent_details.available_from || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Lease Duration</span>
+                        <span className="font-medium text-base">{parsedSpecs.rent_details.lease_duration || "—"}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2 md:col-span-3">
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Rent Details</span>
+                      <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </div>
       </motion.div>

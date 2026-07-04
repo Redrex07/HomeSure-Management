@@ -214,7 +214,7 @@ export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(monthly_rent)")
+      .select("*, property_rent_details(*)")
       .eq("property_id", id)
       .single();
 
@@ -225,6 +225,7 @@ export async function getPropertyById(id: string) {
     
     if (data) {
       data.rent_amount = data.property_rent_details?.[0]?.monthly_rent || data.property_rent_details?.monthly_rent || "";
+      data.rentDetailsData = data.property_rent_details?.[0] || data.property_rent_details || null;
       delete data.property_rent_details;
     }
     return data;
