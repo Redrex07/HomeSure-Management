@@ -31,7 +31,7 @@ export async function getAllProperties() {
   try {
     console.log("🔍 Fetching ALL properties...");
 
-    const { data, error } = await supabase.from("properties").select("*");
+    const { data, error } = await supabase.from("properties").select("*, property_rent_details(monthly_rent)");
 
     console.log("📊 DATA:", data);
     console.log("❌ ERROR:", error);
@@ -41,7 +41,11 @@ export async function getAllProperties() {
       return [];
     }
 
-    return data || [];
+    return (data || []).map((p: any) => ({
+      ...p,
+      rent_amount: p.property_rent_details?.[0]?.monthly_rent || p.property_rent_details?.monthly_rent || "",
+      property_rent_details: undefined
+    }));
   } catch (err) {
     console.error("Exception:", err);
     return [];
@@ -51,7 +55,7 @@ export async function getLandlordProperties(landlordId: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*")
+      .select("*, property_rent_details(monthly_rent)")
       .eq("landlord_id", landlordId)
       .order("property_id", { ascending: false });
 
@@ -59,7 +63,12 @@ export async function getLandlordProperties(landlordId: string) {
       console.error("Error fetching properties:", error);
       return [];
     }
-    return data || [];
+    
+    return (data || []).map((p: any) => ({
+      ...p,
+      rent_amount: p.property_rent_details?.[0]?.monthly_rent || p.property_rent_details?.monthly_rent || "",
+      property_rent_details: undefined
+    }));
   } catch (err) {
     console.error("Exception fetching properties:", err);
     return [];
@@ -68,12 +77,56 @@ export async function getLandlordProperties(landlordId: string) {
 
 export async function createProperty(payload: any) {
   try {
+    const rentAmount = payload.rent_amount;
+    delete payload.rent_amount;
+    
+    let rentDetailsObj: any = null;
+    if (payload.specifications) {
+      try {
+        const specs = JSON.parse(payload.specifications);
+        if (specs.rent_details) {
+          rentDetailsObj = { ...specs.rent_details };
+        }
+      } catch (e) {}
+    }
+
     const { data, error } = await supabase
       .from("properties")
       .insert([payload])
       .select();
 
     if (error) throw error;
+    
+    if (data && data.length > 0) {
+      const propertyId = data[0].property_id;
+      
+      const parseNumeric = (val: any) => {
+        if (!val) return null;
+        const num = Number(String(val).replace(/[^0-9.-]/g, ''));
+        return isNaN(num) ? null : num;
+      };
+
+      const rentPayload = {
+        property_id: propertyId,
+        monthly_rent: parseNumeric(rentAmount),
+        security_deposit: rentDetailsObj ? parseNumeric(rentDetailsObj.security_deposit) : null,
+        maintenance_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.maintenance_charges) : null,
+        electricity_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.electricity_charges) : null,
+        water_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.water_charges) : null,
+        parking_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.parking_charges) : null,
+        lease_duration: rentDetailsObj?.lease_duration || null,
+        available_from: (rentDetailsObj?.available_from && rentDetailsObj.available_from !== "") ? rentDetailsObj.available_from : null
+      };
+
+      const { error: rentError } = await supabase
+        .from("property_rent_details")
+        .insert([rentPayload]);
+
+      if (rentError) {
+        console.error("Error creating rent details:", rentError);
+      }
+    }
+
     return data;
   } catch (err) {
     console.error("Error creating property:", err);
@@ -83,6 +136,19 @@ export async function createProperty(payload: any) {
 
 export async function updateProperty(id: number, payload: any) {
   try {
+    const rentAmount = payload.rent_amount;
+    delete payload.rent_amount;
+
+    let rentDetailsObj: any = null;
+    if (payload.specifications) {
+      try {
+        const specs = JSON.parse(payload.specifications);
+        if (specs.rent_details) {
+          rentDetailsObj = { ...specs.rent_details };
+        }
+      } catch (e) {}
+    }
+
     const { data, error } = await supabase
       .from("properties")
       .update(payload)
@@ -90,6 +156,37 @@ export async function updateProperty(id: number, payload: any) {
       .select();
 
     if (error) throw error;
+    
+    const parseNumeric = (val: any) => {
+      if (!val) return null;
+      const num = Number(String(val).replace(/[^0-9.-]/g, ''));
+      return isNaN(num) ? null : num;
+    };
+
+    const rentPayload = {
+      property_id: id,
+      monthly_rent: parseNumeric(rentAmount),
+      security_deposit: rentDetailsObj ? parseNumeric(rentDetailsObj.security_deposit) : null,
+      maintenance_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.maintenance_charges) : null,
+      electricity_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.electricity_charges) : null,
+      water_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.water_charges) : null,
+      parking_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.parking_charges) : null,
+      lease_duration: rentDetailsObj?.lease_duration || null,
+      available_from: (rentDetailsObj?.available_from && rentDetailsObj.available_from !== "") ? rentDetailsObj.available_from : null
+    };
+
+    const { data: existingRent } = await supabase
+      .from("property_rent_details")
+      .select("rent_detail_id")
+      .eq("property_id", id)
+      .maybeSingle();
+
+    if (existingRent) {
+      await supabase.from("property_rent_details").update(rentPayload).eq("property_id", id);
+    } else {
+      await supabase.from("property_rent_details").insert([rentPayload]);
+    }
+
     return data;
   } catch (err) {
     console.error("Error updating property:", err);
@@ -117,13 +214,18 @@ export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*")
+      .select("*, property_rent_details(monthly_rent)")
       .eq("property_id", id)
       .single();
 
     if (error) {
       console.error("Error fetching property:", error);
       return null;
+    }
+    
+    if (data) {
+      data.rent_amount = data.property_rent_details?.[0]?.monthly_rent || data.property_rent_details?.monthly_rent || "";
+      delete data.property_rent_details;
     }
     return data;
   } catch (err) {
