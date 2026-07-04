@@ -516,6 +516,14 @@ function PropertiesPage() {
       listing_date: p.listing_date || "",
       Description: p.Description || "",
       Category: p.Category || "Residential",
+      security_deposit: "",
+      maintenance_charges: "",
+      electricity_charges: "",
+      water_charges: "",
+      parking_charges: "",
+      advance_payment: "",
+      available_from: "",
+      lease_duration: "",
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);

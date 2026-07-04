@@ -63,7 +63,7 @@ function PropertyDetailsPage() {
       ...loc
     });
     
-    let specs = {};
+    let specs: any = {};
     try {
       if ((property as any)?.specifications) {
         specs = JSON.parse((property as any).specifications);
@@ -605,7 +605,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(4)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : (
+              ) : editStep === 4 ? (
                 <>
                   {/* Property Specifications */}
                   <div>
