@@ -24,6 +24,13 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Checkbox } from "@/shared/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
 import { UnifiedProperty } from "./app.properties";
 
 export const Route = createFileRoute("/app/property/$id")({
@@ -829,29 +836,55 @@ function PropertyDetailsPage() {
                         <Label>Preferred Tenant Type</Label>
                         <Input placeholder="e.g. Family" value={editForm.preferred_tenant_type || ""} onChange={(e) => setEditForm({...editForm, preferred_tenant_type: e.target.value})} />
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="edit_bachelors_allowed" checked={editForm.bachelors_allowed} onCheckedChange={(checked) => setEditForm({...editForm, bachelors_allowed: checked === true})} />
-                        <Label htmlFor="edit_bachelors_allowed" className="cursor-pointer">Bachelors Allowed</Label>
+                      <div className="grid gap-2">
+                        <Label>Bachelors Allowed</Label>
+                        <Select value={editForm.bachelors_allowed ? "yes" : "no"} onValueChange={(val) => setEditForm({...editForm, bachelors_allowed: val === "yes"})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="edit_family_allowed" checked={editForm.family_allowed} onCheckedChange={(checked) => setEditForm({...editForm, family_allowed: checked === true})} />
-                        <Label htmlFor="edit_family_allowed" className="cursor-pointer">Family Allowed</Label>
+                      <div className="grid gap-2">
+                        <Label>Students Allowed</Label>
+                        <Select value={editForm.students_allowed ? "yes" : "no"} onValueChange={(val) => setEditForm({...editForm, students_allowed: val === "yes"})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="edit_students_allowed" checked={editForm.students_allowed} onCheckedChange={(checked) => setEditForm({...editForm, students_allowed: checked === true})} />
-                        <Label htmlFor="edit_students_allowed" className="cursor-pointer">Students Allowed</Label>
+                      <div className="grid gap-2">
+                        <Label>Pets Allowed</Label>
+                        <Select value={editForm.pets_allowed ? "yes" : "no"} onValueChange={(val) => setEditForm({...editForm, pets_allowed: val === "yes"})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="edit_pets_allowed" checked={editForm.pets_allowed} onCheckedChange={(checked) => setEditForm({...editForm, pets_allowed: checked === true})} />
-                        <Label htmlFor="edit_pets_allowed" className="cursor-pointer">Pets Allowed</Label>
+                      <div className="grid gap-2">
+                        <Label>Smoking Allowed</Label>
+                        <Select value={editForm.smoking_allowed ? "yes" : "no"} onValueChange={(val) => setEditForm({...editForm, smoking_allowed: val === "yes"})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="edit_smoking_allowed" checked={editForm.smoking_allowed} onCheckedChange={(checked) => setEditForm({...editForm, smoking_allowed: checked === true})} />
-                        <Label htmlFor="edit_smoking_allowed" className="cursor-pointer">Smoking Allowed</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="edit_drinking_allowed" checked={editForm.drinking_allowed} onCheckedChange={(checked) => setEditForm({...editForm, drinking_allowed: checked === true})} />
-                        <Label htmlFor="edit_drinking_allowed" className="cursor-pointer">Drinking Allowed</Label>
+                      <div className="grid gap-2">
+                        <Label>Drinking Allowed</Label>
+                        <Select value={editForm.drinking_allowed ? "yes" : "no"} onValueChange={(val) => setEditForm({...editForm, drinking_allowed: val === "yes"})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="col-span-2 grid gap-2">
                         <Label>Maximum Occupants</Label>
@@ -1254,7 +1287,6 @@ function PropertyDetailsPage() {
                     const tpData = (property as any)?.tenantPreferencesData || {};
                     const allowedList = [
                       { id: "bachelors_allowed", label: "Bachelors Allowed" },
-                      { id: "family_allowed", label: "Family Allowed" },
                       { id: "students_allowed", label: "Students Allowed" },
                       { id: "pets_allowed", label: "Pets Allowed" },
                       { id: "smoking_allowed", label: "Smoking Allowed" },

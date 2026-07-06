@@ -742,7 +742,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 6: Basic Property Information" : step === 2 ? "Step 2 of 6: Location Details" : step === 3 ? "Step 3 of 6: Images & Media" : step === 4 ? "Step 4 of 6: Property Specifications" : step === 5 ? "Step 5 of 6: Rent Details" : "Step 6 of 6: Amenities"}
+              {step === 1 ? "Step 1 of 7: Basic Property Information" : step === 2 ? "Step 2 of 7: Location Details" : step === 3 ? "Step 3 of 7: Images & Media" : step === 4 ? "Step 4 of 7: Property Specifications" : step === 5 ? "Step 5 of 7: Rent Details" : step === 6 ? "Step 6 of 7: Amenities" : "Step 7 of 7: Tenant Preferences"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -1092,29 +1092,55 @@ function PropertiesPage() {
                       <Label>Preferred Tenant Type</Label>
                       <Input placeholder="e.g. Family" value={form.preferred_tenant_type} onChange={(e) => setForm({...form, preferred_tenant_type: e.target.value})} />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="bachelors_allowed" checked={form.bachelors_allowed} onCheckedChange={(checked) => setForm({...form, bachelors_allowed: checked === true})} />
-                      <Label htmlFor="bachelors_allowed" className="cursor-pointer">Bachelors Allowed</Label>
+                    <div className="grid gap-2">
+                      <Label>Bachelors Allowed</Label>
+                      <Select value={form.bachelors_allowed ? "yes" : "no"} onValueChange={(val) => setForm({...form, bachelors_allowed: val === "yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="family_allowed" checked={form.family_allowed} onCheckedChange={(checked) => setForm({...form, family_allowed: checked === true})} />
-                      <Label htmlFor="family_allowed" className="cursor-pointer">Family Allowed</Label>
+                    <div className="grid gap-2">
+                      <Label>Students Allowed</Label>
+                      <Select value={form.students_allowed ? "yes" : "no"} onValueChange={(val) => setForm({...form, students_allowed: val === "yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="students_allowed" checked={form.students_allowed} onCheckedChange={(checked) => setForm({...form, students_allowed: checked === true})} />
-                      <Label htmlFor="students_allowed" className="cursor-pointer">Students Allowed</Label>
+                    <div className="grid gap-2">
+                      <Label>Pets Allowed</Label>
+                      <Select value={form.pets_allowed ? "yes" : "no"} onValueChange={(val) => setForm({...form, pets_allowed: val === "yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="pets_allowed" checked={form.pets_allowed} onCheckedChange={(checked) => setForm({...form, pets_allowed: checked === true})} />
-                      <Label htmlFor="pets_allowed" className="cursor-pointer">Pets Allowed</Label>
+                    <div className="grid gap-2">
+                      <Label>Smoking Allowed</Label>
+                      <Select value={form.smoking_allowed ? "yes" : "no"} onValueChange={(val) => setForm({...form, smoking_allowed: val === "yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="smoking_allowed" checked={form.smoking_allowed} onCheckedChange={(checked) => setForm({...form, smoking_allowed: checked === true})} />
-                      <Label htmlFor="smoking_allowed" className="cursor-pointer">Smoking Allowed</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="drinking_allowed" checked={form.drinking_allowed} onCheckedChange={(checked) => setForm({...form, drinking_allowed: checked === true})} />
-                      <Label htmlFor="drinking_allowed" className="cursor-pointer">Drinking Allowed</Label>
+                    <div className="grid gap-2">
+                      <Label>Drinking Allowed</Label>
+                      <Select value={form.drinking_allowed ? "yes" : "no"} onValueChange={(val) => setForm({...form, drinking_allowed: val === "yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="col-span-2 grid gap-2">
                       <Label>Maximum Occupants</Label>
