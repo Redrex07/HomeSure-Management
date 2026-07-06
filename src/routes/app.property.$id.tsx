@@ -73,7 +73,8 @@ function PropertyDetailsPage() {
 
     const rentDetails = specs.rent_details || {};
     const amenities = (property as any)?.amenitiesData || {};
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities }));
+    const tenantPrefs = (property as any)?.tenantPreferencesData || {};
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs }));
 
     let images = [];
     try {
@@ -240,6 +241,16 @@ function PropertyDetailsPage() {
         furnished: editForm.furnished === true,
         semi_furnished: editForm.semi_furnished === true,
         air_conditioning: editForm.air_conditioning === true
+      },
+      tenant_preferences: {
+        preferred_tenant_type: editForm.preferred_tenant_type,
+        bachelors_allowed: editForm.bachelors_allowed === true,
+        family_allowed: editForm.family_allowed === true,
+        students_allowed: editForm.students_allowed === true,
+        pets_allowed: editForm.pets_allowed === true,
+        smoking_allowed: editForm.smoking_allowed === true,
+        drinking_allowed: editForm.drinking_allowed === true,
+        maximum_occupants: editForm.maximum_occupants
       }
     };
     
@@ -742,7 +753,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(6)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : (
+              ) : editStep === 6 ? (
                 <>
                   {/* Amenities */}
                   <div>
@@ -805,6 +816,52 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(5)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(7)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  {/* Tenant Preferences */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Tenant Preferences</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2 grid gap-2">
+                        <Label>Preferred Tenant Type</Label>
+                        <Input placeholder="e.g. Family" value={editForm.preferred_tenant_type || ""} onChange={(e) => setEditForm({...editForm, preferred_tenant_type: e.target.value})} />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_bachelors_allowed" checked={editForm.bachelors_allowed} onCheckedChange={(checked) => setEditForm({...editForm, bachelors_allowed: checked === true})} />
+                        <Label htmlFor="edit_bachelors_allowed" className="cursor-pointer">Bachelors Allowed</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_family_allowed" checked={editForm.family_allowed} onCheckedChange={(checked) => setEditForm({...editForm, family_allowed: checked === true})} />
+                        <Label htmlFor="edit_family_allowed" className="cursor-pointer">Family Allowed</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_students_allowed" checked={editForm.students_allowed} onCheckedChange={(checked) => setEditForm({...editForm, students_allowed: checked === true})} />
+                        <Label htmlFor="edit_students_allowed" className="cursor-pointer">Students Allowed</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_pets_allowed" checked={editForm.pets_allowed} onCheckedChange={(checked) => setEditForm({...editForm, pets_allowed: checked === true})} />
+                        <Label htmlFor="edit_pets_allowed" className="cursor-pointer">Pets Allowed</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_smoking_allowed" checked={editForm.smoking_allowed} onCheckedChange={(checked) => setEditForm({...editForm, smoking_allowed: checked === true})} />
+                        <Label htmlFor="edit_smoking_allowed" className="cursor-pointer">Smoking Allowed</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_drinking_allowed" checked={editForm.drinking_allowed} onCheckedChange={(checked) => setEditForm({...editForm, drinking_allowed: checked === true})} />
+                        <Label htmlFor="edit_drinking_allowed" className="cursor-pointer">Drinking Allowed</Label>
+                      </div>
+                      <div className="col-span-2 grid gap-2">
+                        <Label>Maximum Occupants</Label>
+                        <Input type="number" placeholder="e.g. 4" value={editForm.maximum_occupants || ""} onChange={(e) => setEditForm({...editForm, maximum_occupants: e.target.value})} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(6)}>Back</Button>
                     <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo}>
                       {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
                     </Button>
@@ -1179,6 +1236,75 @@ function PropertyDetailsPage() {
                         </div>
                       );
                     }
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Tenant Preferences Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="tenant_preferences" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Tenant Preferences
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const tpData = (property as any)?.tenantPreferencesData || {};
+                    const allowedList = [
+                      { id: "bachelors_allowed", label: "Bachelors Allowed" },
+                      { id: "family_allowed", label: "Family Allowed" },
+                      { id: "students_allowed", label: "Students Allowed" },
+                      { id: "pets_allowed", label: "Pets Allowed" },
+                      { id: "smoking_allowed", label: "Smoking Allowed" },
+                      { id: "drinking_allowed", label: "Drinking Allowed" },
+                    ];
+
+                    const presentAllowed = allowedList.filter(al => tpData[al.id] === true);
+
+                    let elements = [];
+
+                    if (tpData.preferred_tenant_type) {
+                      elements.push(
+                        <div key="preferred_tenant_type" className="col-span-2 sm:col-span-3 md:col-span-4 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Preferred Tenant Type</span>
+                          <span className="font-medium text-base">{tpData.preferred_tenant_type}</span>
+                        </div>
+                      );
+                    }
+
+                    if (tpData.maximum_occupants) {
+                      elements.push(
+                        <div key="maximum_occupants" className="col-span-2 sm:col-span-3 md:col-span-4 mb-4">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Maximum Occupants</span>
+                          <span className="font-medium text-base">{tpData.maximum_occupants}</span>
+                        </div>
+                      );
+                    }
+
+                    if (presentAllowed.length > 0) {
+                      elements.push(...presentAllowed.map(al => (
+                        <div key={al.id} className="flex items-center space-x-2 text-muted-foreground">
+                          <CheckCircle className="h-4 w-4 text-primary" />
+                          <span>{al.label}</span>
+                        </div>
+                      )));
+                    } else if (Object.keys(tpData).length > 0 && elements.length === 0) {
+                      elements.push(
+                        <div key="no_pref" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">No specific preferences marked</span>
+                        </div>
+                      );
+                    } else if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Tenant preferences not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
                   })()}
                 </div>
               </AccordionContent>

@@ -81,6 +81,9 @@ export async function createProperty(payload: any) {
     delete payload.rent_amount;
     const amenitiesObj = payload.amenities;
     delete payload.amenities;
+
+    const tenantPreferencesObj = payload.tenant_preferences;
+    delete payload.tenant_preferences;
     
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -148,6 +151,23 @@ export async function createProperty(payload: any) {
         const { error: amError } = await supabase.from("property_amenities").insert([amenitiesPayload]);
         if (amError) console.error("Error creating amenities:", amError);
       }
+
+      // Add Tenant Preferences
+      if (tenantPreferencesObj) {
+        const tenantPrefPayload = {
+          property_id: propertyId,
+          preferred_tenant_type: tenantPreferencesObj.preferred_tenant_type,
+          bachelors_allowed: tenantPreferencesObj.bachelors_allowed,
+          family_allowed: tenantPreferencesObj.family_allowed,
+          students_allowed: tenantPreferencesObj.students_allowed,
+          pets_allowed: tenantPreferencesObj.pets_allowed,
+          smoking_allowed: tenantPreferencesObj.smoking_allowed,
+          drinking_allowed: tenantPreferencesObj.drinking_allowed,
+          maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
+        };
+        const { error: tpError } = await supabase.from("tenant_preferences").insert([tenantPrefPayload]);
+        if (tpError) console.error("Error creating tenant preferences:", tpError);
+      }
     }
 
     return data;
@@ -163,6 +183,9 @@ export async function updateProperty(id: number, payload: any) {
     delete payload.rent_amount;
     const amenitiesObj = payload.amenities;
     delete payload.amenities;
+
+    const tenantPreferencesObj = payload.tenant_preferences;
+    delete payload.tenant_preferences;
 
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -243,6 +266,33 @@ export async function updateProperty(id: number, payload: any) {
       }
     }
 
+    // Handle Tenant Preferences
+    if (tenantPreferencesObj) {
+      const tenantPrefPayload = {
+        property_id: id,
+        preferred_tenant_type: tenantPreferencesObj.preferred_tenant_type,
+        bachelors_allowed: tenantPreferencesObj.bachelors_allowed,
+        family_allowed: tenantPreferencesObj.family_allowed,
+        students_allowed: tenantPreferencesObj.students_allowed,
+        pets_allowed: tenantPreferencesObj.pets_allowed,
+        smoking_allowed: tenantPreferencesObj.smoking_allowed,
+        drinking_allowed: tenantPreferencesObj.drinking_allowed,
+        maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
+      };
+
+      const { data: existingPref } = await supabase
+        .from("tenant_preferences")
+        .select("preference_id")
+        .eq("property_id", id)
+        .single();
+
+      if (existingPref) {
+        await supabase.from("tenant_preferences").update(tenantPrefPayload).eq("property_id", id);
+      } else {
+        await supabase.from("tenant_preferences").insert([tenantPrefPayload]);
+      }
+    }
+
     return data;
   } catch (err) {
     console.error("Error updating property:", err);
@@ -270,7 +320,7 @@ export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(*), property_amenities(*)")
+      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*)")
       .eq("property_id", id)
       .single();
 
@@ -286,6 +336,10 @@ export async function getPropertyById(id: string) {
       
       data.amenitiesData = data.property_amenities?.[0] || data.property_amenities || null;
       delete data.property_amenities;
+      
+      data.tenantPreferencesData = data.tenant_preferences?.[0] || data.tenant_preferences || null;
+      // We don't delete data.tenant_preferences since it might be useful or not, but we can delete it for consistency
+      delete data.tenant_preferences;
     }
     return data;
   } catch (err) {

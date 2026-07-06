@@ -176,6 +176,14 @@ function PropertiesPage() {
     furnished: false,
     semi_furnished: false,
     air_conditioning: false,
+    preferred_tenant_type: "",
+    bachelors_allowed: false,
+    family_allowed: false,
+    students_allowed: false,
+    pets_allowed: false,
+    smoking_allowed: false,
+    drinking_allowed: false,
+    maximum_occupants: "",
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -240,13 +248,21 @@ function PropertiesPage() {
     furnished: false,
     semi_furnished: false,
     air_conditioning: false,
+    preferred_tenant_type: "",
+    bachelors_allowed: false,
+    family_allowed: false,
+    students_allowed: false,
+    pets_allowed: false,
+    smoking_allowed: false,
+    drinking_allowed: false,
+    maximum_occupants: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 6) {
+    if (step < 7) {
       setStep(step + 1);
       return;
     }
@@ -397,6 +413,14 @@ function PropertiesPage() {
       furnished: false,
       semi_furnished: false,
       air_conditioning: false,
+      preferred_tenant_type: "",
+      bachelors_allowed: false,
+      family_allowed: false,
+      students_allowed: false,
+      pets_allowed: false,
+      smoking_allowed: false,
+      drinking_allowed: false,
+      maximum_occupants: "",
     });
     setStep(1);
     setUploadedImages([]);
@@ -591,6 +615,14 @@ function PropertiesPage() {
       furnished: false,
       semi_furnished: false,
       air_conditioning: false,
+      preferred_tenant_type: (p as any).tenantPreferencesData?.preferred_tenant_type || "",
+      bachelors_allowed: (p as any).tenantPreferencesData?.bachelors_allowed || false,
+      family_allowed: (p as any).tenantPreferencesData?.family_allowed || false,
+      students_allowed: (p as any).tenantPreferencesData?.students_allowed || false,
+      pets_allowed: (p as any).tenantPreferencesData?.pets_allowed || false,
+      smoking_allowed: (p as any).tenantPreferencesData?.smoking_allowed || false,
+      drinking_allowed: (p as any).tenantPreferencesData?.drinking_allowed || false,
+      maximum_occupants: (p as any).tenantPreferencesData?.maximum_occupants ? String((p as any).tenantPreferencesData?.maximum_occupants) : "",
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);
@@ -996,7 +1028,7 @@ function PropertiesPage() {
                     <Input placeholder="e.g. 11 Months" value={form.lease_duration} onChange={(e) => setForm({...form, lease_duration: e.target.value})} />
                   </div>
                 </>
-              ) : (
+              ) : step === 6 ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center space-x-2">
@@ -1053,6 +1085,43 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Preferred Tenant Type</Label>
+                      <Input placeholder="e.g. Family" value={form.preferred_tenant_type} onChange={(e) => setForm({...form, preferred_tenant_type: e.target.value})} />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="bachelors_allowed" checked={form.bachelors_allowed} onCheckedChange={(checked) => setForm({...form, bachelors_allowed: checked === true})} />
+                      <Label htmlFor="bachelors_allowed" className="cursor-pointer">Bachelors Allowed</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="family_allowed" checked={form.family_allowed} onCheckedChange={(checked) => setForm({...form, family_allowed: checked === true})} />
+                      <Label htmlFor="family_allowed" className="cursor-pointer">Family Allowed</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="students_allowed" checked={form.students_allowed} onCheckedChange={(checked) => setForm({...form, students_allowed: checked === true})} />
+                      <Label htmlFor="students_allowed" className="cursor-pointer">Students Allowed</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="pets_allowed" checked={form.pets_allowed} onCheckedChange={(checked) => setForm({...form, pets_allowed: checked === true})} />
+                      <Label htmlFor="pets_allowed" className="cursor-pointer">Pets Allowed</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="smoking_allowed" checked={form.smoking_allowed} onCheckedChange={(checked) => setForm({...form, smoking_allowed: checked === true})} />
+                      <Label htmlFor="smoking_allowed" className="cursor-pointer">Smoking Allowed</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="drinking_allowed" checked={form.drinking_allowed} onCheckedChange={(checked) => setForm({...form, drinking_allowed: checked === true})} />
+                      <Label htmlFor="drinking_allowed" className="cursor-pointer">Drinking Allowed</Label>
+                    </div>
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Maximum Occupants</Label>
+                      <Input type="number" placeholder="e.g. 4" value={form.maximum_occupants} onChange={(e) => setForm({...form, maximum_occupants: e.target.value})} />
+                    </div>
+                  </div>
+                </>
               )}
 
             <SheetFooter className="mt-4 pb-12">
@@ -1091,9 +1160,16 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(6)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 6 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(5)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(7)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(6)}>
                     Back
                   </Button>
                   <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo}>
