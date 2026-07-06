@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/core/db/supabase";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
@@ -7,7 +9,7 @@ import { Switch } from "@/shared/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
-import { useSession } from "@/features/auth/store/auth-store";
+import { useSession, setSession } from "@/features/auth/store/auth-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/settings")({
@@ -17,6 +19,101 @@ export const Route = createFileRoute("/app/settings")({
 
 function SettingsPage() {
   const s = useSession();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [timezone, setTimezone] = useState("America/Los_Angeles");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (s?.id) {
+      const loadProfile = async () => {
+        setIsLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from("users")
+            .select("name, email, phone")
+            .eq("auth_user_id", s.id)
+            .single();
+
+          if (error) {
+            const { data: altData } = await supabase
+              .from("users")
+              .select("name, email, phone")
+              .eq("email", s.email)
+              .single();
+
+            if (altData) {
+              setName(altData.name || "");
+              setEmail(altData.email || "");
+              setPhone(altData.phone || "");
+            }
+          } else if (data) {
+            setName(data.name || "");
+            setEmail(data.email || "");
+            setPhone(data.phone || "");
+          }
+
+          const savedTz = localStorage.getItem("homesure.timezone");
+          if (savedTz) {
+            setTimezone(savedTz);
+          }
+        } catch (err) {
+          console.error("Error loading profile details:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadProfile();
+    }
+  }, [s?.id, s?.email]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!s?.id) return;
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({
+          name,
+          email,
+          phone,
+        })
+        .eq("auth_user_id", s.id);
+
+      if (error) {
+        const { error: altError } = await supabase
+          .from("users")
+          .update({
+            name,
+            email,
+            phone,
+          })
+          .eq("email", s.email);
+
+        if (altError) throw altError;
+      }
+
+      localStorage.setItem("homesure.timezone", timezone);
+
+      if (s) {
+        setSession({
+          ...s,
+          name,
+          email,
+        });
+      }
+
+      toast.success("Profile updated successfully!");
+    } catch (err: any) {
+      toast.error("Failed to update profile: " + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -38,7 +135,9 @@ function SettingsPage() {
             <CardContent>
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarFallback className="bg-primary text-primary-foreground">AM</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {name ? name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() : "US"}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <Button variant="outline" size="sm">
@@ -47,33 +146,36 @@ function SettingsPage() {
                   <div className="mt-1 text-xs text-muted-foreground">PNG or JPG, max 2MB.</div>
                 </div>
               </div>
-              <form
-                className="mt-6 grid gap-4 sm:grid-cols-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  toast.success("Profile updated");
-                }}
-              >
-                <div className="space-y-1.5">
-                  <Label>Full name</Label>
-                  <Input defaultValue={s?.name ?? ""} />
+              
+              {isLoading ? (
+                <div className="flex h-48 items-center justify-center">
+                  <p className="text-xs text-muted-foreground animate-pulse">Loading profile...</p>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Email</Label>
-                  <Input defaultValue={s?.email ?? ""} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Phone</Label>
-                  <Input placeholder="(555) 555-0100" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Timezone</Label>
-                  <Input defaultValue="America/Los_Angeles" />
-                </div>
-                <div className="sm:col-span-2">
-                  <Button type="submit">Save changes</Button>
-                </div>
-              </form>
+              ) : (
+                <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
+                  <div className="space-y-1.5">
+                    <Label>Full name</Label>
+                    <Input value={name} onChange={(e) => setName(e.target.value)} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Email</Label>
+                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Phone</Label>
+                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-0100" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Timezone</Label>
+                    <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Button type="submit" disabled={isSaving}>
+                      {isSaving ? "Saving..." : "Save changes"}
+                    </Button>
+                  </div>
+                </form>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

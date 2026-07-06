@@ -42,7 +42,7 @@ export function ChartCard({
   className?: string;
 }) {
   return (
-    <Card className={`border-border/70 shadow-card ${className}`}>
+    <Card className={`border border-slate-200 shadow-sm rounded-xl bg-white ${className}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-semibold">{title}</CardTitle>
         {action}
