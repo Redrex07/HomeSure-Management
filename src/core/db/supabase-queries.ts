@@ -657,34 +657,7 @@ function nextRealtorId() {
 }
 
 export async function getContractors() {
-<<<<<<< HEAD
-  try {
-    const { data, error } = await supabase
-      .from("users")
-      .select("user_id, name, phone, status")
-      .eq("role_id", 4);
-
-    if (error) {
-      console.error("Error fetching contractors:", error);
-      return [];
-    }
-
-    return (data || []).map((c: any) => ({
-      id: `C-${c.user_id}`,
-      name: c.name || "Unknown",
-      trade: "—",
-      rating: "—",
-      jobs: 0,
-      available: c.status === "Active",
-      phone: c.phone || "—",
-    }));
-  } catch (err) {
-    console.error("Exception fetching contractors:", err);
-    return [];
-  }
-=======
   return mockContractors.map(normalizeContractor);
->>>>>>> 922bb74 (Added Realtor route and dashboard updates)
 }
 
 // ================= APPOINTMENTS =================
@@ -947,7 +920,6 @@ export async function createContractor(payload: {
   }
 }
 
-<<<<<<< HEAD
 export async function createAppointment(payload: {
   service_request_id: number;
   contractor_id: number;
@@ -969,7 +941,18 @@ export async function createAppointment(payload: {
         },
       ])
       .select();
-=======
+
+    if (error) {
+      console.error("Error creating appointment:", error);
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception creating appointment:", err);
+    throw err;
+  }
+}
+
 // ================= REALTORS =================
 
 export async function getRealtors() {
@@ -996,21 +979,6 @@ export async function createRealtor(payload: {
     return normalizeRealtor(realtor);
   } catch (err) {
     console.error("Exception creating realtor:", err);
-    throw err;
-  }
-}
-
-export async function createAppointment(payload: any) {
-  console.log("New Appointment:", payload);
->>>>>>> 922bb74 (Added Realtor route and dashboard updates)
-
-    if (error) {
-      console.error("Error creating appointment:", error);
-      throw error;
-    }
-    return data;
-  } catch (err) {
-    console.error("Exception creating appointment:", err);
     throw err;
   }
 }
