@@ -285,7 +285,7 @@ export async function updateProperty(id: number, payload: any) {
         .from("tenant_preferences")
         .select("preference_id")
         .eq("property_id", id)
-        .single();
+        .maybeSingle();
 
       if (existingPref) {
         await supabase.from("tenant_preferences").update(tenantPrefPayload).eq("property_id", id);
