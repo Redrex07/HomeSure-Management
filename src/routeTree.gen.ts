@@ -24,6 +24,7 @@ import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as AppSubscriptionsRouteImport } from './routes/app.subscriptions'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppServiceRequestsRouteImport } from './routes/app.service-requests'
+import { Route as AppRealtorsRouteImport } from './routes/app.realtors'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppLeasesRouteImport } from './routes/app.leases'
@@ -112,6 +113,11 @@ const AppServiceRequestsRoute = AppServiceRequestsRouteImport.update({
   path: '/service-requests',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRealtorsRoute = AppRealtorsRouteImport.update({
+  id: '/realtors',
+  path: '/realtors',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPropertiesRoute = AppPropertiesRouteImport.update({
   id: '/properties',
   path: '/properties',
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRoute
+  '/app/realtors': typeof AppRealtorsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -221,6 +228,7 @@ export interface FileRoutesByTo {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRoute
+  '/app/realtors': typeof AppRealtorsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -251,6 +259,7 @@ export interface FileRoutesById {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRoute
+  '/app/realtors': typeof AppRealtorsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -282,6 +291,7 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtors'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtors'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtors'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -471,6 +483,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServiceRequestsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/realtors': {
+      id: '/app/realtors'
+      path: '/realtors'
+      fullPath: '/app/realtors'
+      preLoaderRoute: typeof AppRealtorsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/properties': {
       id: '/app/properties'
       path: '/properties'
@@ -569,6 +588,7 @@ interface AppRouteChildren {
   AppLeasesRoute: typeof AppLeasesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppPropertiesRoute: typeof AppPropertiesRoute
+  AppRealtorsRoute: typeof AppRealtorsRoute
   AppServiceRequestsRoute: typeof AppServiceRequestsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionsRoute: typeof AppSubscriptionsRoute
@@ -589,6 +609,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeasesRoute: AppLeasesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppPropertiesRoute: AppPropertiesRoute,
+  AppRealtorsRoute: AppRealtorsRoute,
   AppServiceRequestsRoute: AppServiceRequestsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionsRoute: AppSubscriptionsRoute,

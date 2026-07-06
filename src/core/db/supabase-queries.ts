@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { useSession } from "@/features/auth/store/auth-store";
+import { contractors as mockContractors, realtors as mockRealtors } from "@/lib/mock-data";
 
 /**
  * DEBUG: Test Supabase connection
@@ -687,31 +688,30 @@ export async function deleteServiceRequest(id: string) {
 
 // ================= CONTRACTORS =================
 
+function normalizeContractor(contractor: (typeof mockContractors)[number]) {
+  return {
+    ...contractor,
+    name: contractor.contractorName,
+  };
+}
+
+function normalizeRealtor(realtor: (typeof mockRealtors)[number]) {
+  return {
+    ...realtor,
+    name: realtor.realtorName,
+  };
+}
+
+function nextContractorId() {
+  return `C-${301 + mockContractors.length}`;
+}
+
+function nextRealtorId() {
+  return `R-${401 + mockRealtors.length}`;
+}
+
 export async function getContractors() {
-  try {
-    const { data, error } = await supabase
-      .from("users")
-      .select("user_id, name, phone, status")
-      .eq("role_id", 4);
-
-    if (error) {
-      console.error("Error fetching contractors:", error);
-      return [];
-    }
-
-    return (data || []).map((c: any) => ({
-      id: `C-${c.user_id}`,
-      name: c.name || "Unknown",
-      trade: "—",
-      rating: "—",
-      jobs: 0,
-      available: c.status === "Active",
-      phone: c.phone || "—",
-    }));
-  } catch (err) {
-    console.error("Exception fetching contractors:", err);
-    return [];
-  }
+  return mockContractors.map(normalizeContractor);
 }
 
 // ================= APPOINTMENTS =================
@@ -945,26 +945,29 @@ export async function createContractor(payload: {
   name: string;
   email: string;
   phone: string;
+  companyName?: string;
+  trade?: string;
+  specialization?: string;
+  available?: boolean;
 }) {
   try {
-    const { data, error } = await supabase
-      .from("users")
-      .insert([
-        {
-          name: payload.name,
-          email: payload.email,
-          phone: payload.phone,
-          role_id: 4, // Contractor
-          status: "Invited",
-        },
-      ])
-      .select();
+    const contractor = {
+      id: nextContractorId(),
+      contractorId: nextContractorId(),
+      contractorName: payload.name,
+      companyName: payload.companyName || payload.name,
+      trade: payload.trade || "General",
+      specialization: payload.specialization || payload.trade || "General",
+      rating: 0,
+      jobs: 0,
+      available: payload.available ?? true,
+      availabilityStatus: payload.available ?? true ? "Available" : "Busy",
+      email: payload.email,
+      phone: payload.phone,
+    };
 
-    if (error) {
-      console.error("Error creating contractor:", error);
-      throw error;
-    }
-    return data;
+    mockContractors.unshift(contractor);
+    return normalizeContractor(contractor);
   } catch (err) {
     console.error("Exception creating contractor:", err);
     throw err;
@@ -1000,6 +1003,36 @@ export async function createAppointment(payload: {
     return data;
   } catch (err) {
     console.error("Exception creating appointment:", err);
+    throw err;
+  }
+}
+
+// ================= REALTORS =================
+
+export async function getRealtors() {
+  return mockRealtors.map(normalizeRealtor);
+}
+
+export async function createRealtor(payload: {
+  name: string;
+  email: string;
+  phone: string;
+  agencyName?: string;
+}) {
+  try {
+    const realtor = {
+      id: nextRealtorId(),
+      realtorId: nextRealtorId(),
+      realtorName: payload.name,
+      agencyName: payload.agencyName || payload.name,
+      email: payload.email,
+      phone: payload.phone,
+    };
+
+    mockRealtors.unshift(realtor);
+    return normalizeRealtor(realtor);
+  } catch (err) {
+    console.error("Exception creating realtor:", err);
     throw err;
   }
 }
