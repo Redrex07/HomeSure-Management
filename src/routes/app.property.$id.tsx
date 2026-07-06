@@ -449,7 +449,7 @@ function PropertyDetailsPage() {
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 5`}</DialogTitle>
+              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 7`}</DialogTitle>
             </DialogHeader>
             
             <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
