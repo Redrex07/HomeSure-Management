@@ -16,7 +16,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AppUsersRouteImport } from './routes/app.users'
 import { Route as AppTenantsRouteImport } from './routes/app.tenants'
@@ -24,6 +23,7 @@ import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as AppSubscriptionsRouteImport } from './routes/app.subscriptions'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppServiceRequestsRouteImport } from './routes/app.service-requests'
+import { Route as AppRealtorsRouteImport } from './routes/app.realtors'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppLeasesRouteImport } from './routes/app.leases'
@@ -34,8 +34,6 @@ import { Route as AppContractorsRouteImport } from './routes/app.contractors'
 import { Route as AppAuditLogsRouteImport } from './routes/app.audit-logs'
 import { Route as AppAppointmentsRouteImport } from './routes/app.appointments'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
-import { Route as ApiTestEmailRouteImport } from './routes/api.test-email'
-import { Route as AppPropertyIdRouteImport } from './routes/app.property.$id'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -72,11 +70,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthVerifyRoute = AuthVerifyRouteImport.update({
-  id: '/auth/verify',
-  path: '/auth/verify',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthConfirmRoute = AuthConfirmRouteImport.update({
   id: '/auth/confirm',
   path: '/auth/confirm',
@@ -110,6 +103,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppServiceRequestsRoute = AppServiceRequestsRouteImport.update({
   id: '/service-requests',
   path: '/service-requests',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRealtorsRoute = AppRealtorsRouteImport.update({
+  id: '/realtors',
+  path: '/realtors',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPropertiesRoute = AppPropertiesRouteImport.update({
@@ -162,16 +160,6 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AppRoute,
 } as any)
-const ApiTestEmailRoute = ApiTestEmailRouteImport.update({
-  id: '/api/test-email',
-  path: '/api/test-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppPropertyIdRoute = AppPropertyIdRouteImport.update({
-  id: '/property/$id',
-  path: '/property/$id',
-  getParentRoute: () => AppRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -181,7 +169,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/api/test-email': typeof ApiTestEmailRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/appointments': typeof AppAppointmentsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
@@ -192,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRoute
+  '/app/realtors': typeof AppRealtorsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -199,8 +187,6 @@ export interface FileRoutesByFullPath {
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
-  '/auth/verify': typeof AuthVerifyRoute
-  '/app/property/$id': typeof AppPropertyIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -210,7 +196,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/api/test-email': typeof ApiTestEmailRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/appointments': typeof AppAppointmentsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
@@ -221,6 +206,7 @@ export interface FileRoutesByTo {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRoute
+  '/app/realtors': typeof AppRealtorsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -228,8 +214,6 @@ export interface FileRoutesByTo {
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
-  '/auth/verify': typeof AuthVerifyRoute
-  '/app/property/$id': typeof AppPropertyIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -240,7 +224,6 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/api/test-email': typeof ApiTestEmailRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/appointments': typeof AppAppointmentsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
@@ -251,6 +234,7 @@ export interface FileRoutesById {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRoute
+  '/app/realtors': typeof AppRealtorsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -258,8 +242,6 @@ export interface FileRoutesById {
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
-  '/auth/verify': typeof AuthVerifyRoute
-  '/app/property/$id': typeof AppPropertyIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -271,7 +253,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/verify-email'
-    | '/api/test-email'
     | '/app/analytics'
     | '/app/appointments'
     | '/app/audit-logs'
@@ -282,6 +263,7 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtors'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -289,8 +271,6 @@ export interface FileRouteTypes {
     | '/app/tenants'
     | '/app/users'
     | '/auth/confirm'
-    | '/auth/verify'
-    | '/app/property/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -300,7 +280,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/verify-email'
-    | '/api/test-email'
     | '/app/analytics'
     | '/app/appointments'
     | '/app/audit-logs'
@@ -311,6 +290,7 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtors'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -318,8 +298,6 @@ export interface FileRouteTypes {
     | '/app/tenants'
     | '/app/users'
     | '/auth/confirm'
-    | '/auth/verify'
-    | '/app/property/$id'
   id:
     | '__root__'
     | '/'
@@ -329,7 +307,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/verify-email'
-    | '/api/test-email'
     | '/app/analytics'
     | '/app/appointments'
     | '/app/audit-logs'
@@ -340,6 +317,7 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtors'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -347,8 +325,6 @@ export interface FileRouteTypes {
     | '/app/tenants'
     | '/app/users'
     | '/auth/confirm'
-    | '/auth/verify'
-    | '/app/property/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -359,9 +335,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
-  ApiTestEmailRoute: typeof ApiTestEmailRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
-  AuthVerifyRoute: typeof AuthVerifyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -415,13 +389,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/verify': {
-      id: '/auth/verify'
-      path: '/auth/verify'
-      fullPath: '/auth/verify'
-      preLoaderRoute: typeof AuthVerifyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth/confirm': {
       id: '/auth/confirm'
       path: '/auth/confirm'
@@ -469,6 +436,13 @@ declare module '@tanstack/react-router' {
       path: '/service-requests'
       fullPath: '/app/service-requests'
       preLoaderRoute: typeof AppServiceRequestsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/realtors': {
+      id: '/app/realtors'
+      path: '/realtors'
+      fullPath: '/app/realtors'
+      preLoaderRoute: typeof AppRealtorsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/properties': {
@@ -541,20 +515,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/api/test-email': {
-      id: '/api/test-email'
-      path: '/api/test-email'
-      fullPath: '/api/test-email'
-      preLoaderRoute: typeof ApiTestEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app/property/$id': {
-      id: '/app/property/$id'
-      path: '/property/$id'
-      fullPath: '/app/property/$id'
-      preLoaderRoute: typeof AppPropertyIdRouteImport
-      parentRoute: typeof AppRoute
-    }
   }
 }
 
@@ -569,13 +529,13 @@ interface AppRouteChildren {
   AppLeasesRoute: typeof AppLeasesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppPropertiesRoute: typeof AppPropertiesRoute
+  AppRealtorsRoute: typeof AppRealtorsRoute
   AppServiceRequestsRoute: typeof AppServiceRequestsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionsRoute: typeof AppSubscriptionsRoute
   AppSupportRoute: typeof AppSupportRoute
   AppTenantsRoute: typeof AppTenantsRoute
   AppUsersRoute: typeof AppUsersRoute
-  AppPropertyIdRoute: typeof AppPropertyIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -589,13 +549,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeasesRoute: AppLeasesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppPropertiesRoute: AppPropertiesRoute,
+  AppRealtorsRoute: AppRealtorsRoute,
   AppServiceRequestsRoute: AppServiceRequestsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionsRoute: AppSubscriptionsRoute,
   AppSupportRoute: AppSupportRoute,
   AppTenantsRoute: AppTenantsRoute,
   AppUsersRoute: AppUsersRoute,
-  AppPropertyIdRoute: AppPropertyIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -608,9 +568,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   VerifyEmailRoute: VerifyEmailRoute,
-  ApiTestEmailRoute: ApiTestEmailRoute,
   AuthConfirmRoute: AuthConfirmRoute,
-  AuthVerifyRoute: AuthVerifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
