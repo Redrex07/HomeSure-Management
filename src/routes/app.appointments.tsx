@@ -342,42 +342,52 @@ function AppointmentsPage() {
             </CardContent>
           </Card>
 
-          <div className="grid gap-3">
-            {appointmentList.map((a) => (
-              <Card key={a.id} className="border-border/70 shadow-card">
-                <CardContent className="flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-primary-soft text-primary">
-                      <CalIcon className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{a.title}</div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                          <CalIcon className="h-3 w-3" />
-                          {a.date}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {a.time}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {a.property}
-                        </span>
+          {appointmentList.length === 0 ? (
+            <div className="flex h-48 flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-white p-6 text-center shadow-sm">
+              <CalIcon className="h-8 w-8 stroke-1 text-slate-400 mb-2" />
+              <p className="text-sm font-semibold text-slate-800 mb-1">No appointments scheduled</p>
+              <p className="text-xs text-muted-foreground">
+                There are no active inspections or maintenance dispatches scheduled. Click "New appointment" to get started.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {appointmentList.map((a) => (
+                <Card key={a.id} className="border-border/70 shadow-card">
+                  <CardContent className="flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-primary-soft text-primary">
+                        <CalIcon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{a.title}</div>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          <span className="inline-flex items-center gap-1">
+                            <CalIcon className="h-3 w-3" />
+                            {a.date}
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {a.time}
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {a.property}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <StatusBadge value={a.status} />
-                    <Button variant="outline" size="sm" onClick={() => openRescheduleDialog(a)}>
-                      Reschedule
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge value={a.status} />
+                      <Button variant="outline" size="sm" onClick={() => openRescheduleDialog(a)}>
+                        Reschedule
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </>
       )}
 

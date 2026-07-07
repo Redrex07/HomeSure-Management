@@ -23,7 +23,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatCard } from "@/shared/components/common/StatCard";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
-import { useInvoices, updateInvoice as updateLocalInvoice } from "@/shared/utils/invoices-store";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getInvoices, updateInvoiceStatus as updateSupabaseInvoice } from "@/core/db/supabase-queries";
 import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -47,22 +47,26 @@ function InvoicesPage() {
   const formatCurrency = (amount: number) =>
     isContractor ? formatUsd.format(amount) : formatINR(amount);
 
-  const localInvoices = useInvoices();
-  const [supabaseInvoices, setSupabaseInvoices] = useState<UnifiedInvoice[]>([]);
+  const queryClient = useQueryClient();
 
-  const fetchSupabaseInvoices = async () => {
-    const data = await getInvoices();
-    setSupabaseInvoices(data as UnifiedInvoice[]);
-  };
+  const { data: invoices = [], isLoading } = useQuery({
+    queryKey: ["invoices"],
+    queryFn: getInvoices,
+  });
 
-  useEffect(() => {
-    fetchSupabaseInvoices();
-  }, []);
+  const updateMutation = useMutation({
+    mutationFn: ({ id, status, reason }: { id: string; status: string; reason?: string }) =>
+      updateSupabaseInvoice(id.replace("INV-", ""), { status, reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success("Invoice status updated successfully!");
+      setEditingInvoice(null);
+    },
+    onError: (err: any) => {
+      toast.error("Error updating invoice: " + (err.message || String(err)));
+    },
+  });
 
-  const invoices: UnifiedInvoice[] = [
-    ...localInvoices.map(i => ({ ...i, isLocal: true })),
-    ...supabaseInvoices
-  ];
   const paid = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
   const pending = invoices.filter((i) => i.status === "Pending").reduce((s, i) => s + i.amount, 0);
   const overdue = invoices.filter((i) => i.status === "Overdue").reduce((s, i) => s + i.amount, 0);
@@ -71,25 +75,16 @@ function InvoicesPage() {
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!editingInvoice) return;
     const formData = new FormData(e.currentTarget);
     const newStatus = formData.get("status") as string;
     const newReason = formData.get("reason") as string;
     
-    if (editingInvoice.isLocal) {
-      updateLocalInvoice(editingInvoice.id, { status: newStatus, reason: newReason });
-      toast.success("Local invoice updated successfully!");
-      setEditingInvoice(null);
-    } else {
-      try {
-        const rawId = editingInvoice.id.replace("INV-", "");
-        await updateSupabaseInvoice(rawId, { status: newStatus, reason: newReason });
-        toast.success("Cloud invoice updated successfully!");
-        setEditingInvoice(null);
-        fetchSupabaseInvoices();
-      } catch (error) {
-        toast.error("Failed to update cloud invoice");
-      }
-    }
+    updateMutation.mutate({
+      id: editingInvoice.id,
+      status: newStatus,
+      reason: newReason,
+    });
   };
 
   const getInvoiceHTML = (invoice: any) => {
@@ -261,81 +256,88 @@ function InvoicesPage() {
           tone="destructive"
         />
       </div>
-      <DataTable
-        rows={invoices}
-        filterKeys={["id", "request"]}
-        columns={[
-          {
-            key: "id",
-            header: "Invoice",
-            render: (i) => <span className="font-mono text-xs">{i.id}</span>,
-          },
-          {
-            key: "request",
-            header: "Request",
-            render: (i) => (
-              <span className="font-mono text-xs text-muted-foreground">{i.request}</span>
-            ),
-          },
-          { key: "issued", header: "Issued" },
-          { key: "due", header: "Due" },
-          {
-            key: "amount",
-            header: "Amount",
-            sortable: true,
-            render: (i) => <span className="font-medium">{formatCurrency(i.amount)}</span>,
-          },
-          { 
-            key: "status", 
-            header: "Status", 
-            render: (i) => (
-              <div className="flex flex-col items-start gap-1">
-                <StatusBadge value={i.status} />
-                {i.reason && (
-                  <span className="text-[10px] text-muted-foreground max-w-[120px] truncate" title={i.reason}>
-                    {i.reason}
-                  </span>
-                )}
-              </div>
-            )
-          },
-          {
-            key: "actions",
-            header: "",
-            render: (i) => (
-              <div className="flex items-center gap-1 justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                  onClick={() => setEditingInvoice(i)}
-                  title="Edit"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                  onClick={() => handlePrintInvoice(i)}
-                  title="Print"
-                >
-                  <Printer className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                  onClick={() => handleDownloadInvoice(i)}
-                  title="Download"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ),
-          },
-        ]}
-      />
+      {isLoading ? (
+        <div className="flex h-64 items-center justify-center border border-border/60 rounded-md bg-background/50">
+          <p className="text-sm text-muted-foreground animate-pulse">Loading invoices...</p>
+        </div>
+      ) : (
+        <DataTable
+          rows={invoices}
+          filterKeys={["id", "request"]}
+          empty="No Invoices Found"
+          columns={[
+            {
+              key: "id",
+              header: "Invoice",
+              render: (i) => <span className="font-mono text-xs">{i.id}</span>,
+            },
+            {
+              key: "request",
+              header: "Request",
+              render: (i) => (
+                <span className="font-mono text-xs text-muted-foreground">{i.request}</span>
+              ),
+            },
+            { key: "issued", header: "Issued" },
+            { key: "due", header: "Due" },
+            {
+              key: "amount",
+              header: "Amount",
+              sortable: true,
+              render: (i) => <span className="font-medium">{formatCurrency(i.amount)}</span>,
+            },
+            { 
+              key: "status", 
+              header: "Status", 
+              render: (i) => (
+                <div className="flex flex-col items-start gap-1">
+                  <StatusBadge value={i.status} />
+                  {i.reason && (
+                    <span className="text-[10px] text-muted-foreground max-w-[120px] truncate" title={i.reason}>
+                      {i.reason}
+                    </span>
+                  )}
+                </div>
+              )
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (i) => (
+                <div className="flex items-center gap-1 justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                    onClick={() => setEditingInvoice(i)}
+                    title="Edit"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                    onClick={() => handlePrintInvoice(i)}
+                    title="Print"
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                    onClick={() => handleDownloadInvoice(i)}
+                    title="Download"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ),
+            },
+          ]}
+        />
+      )}
 
 
       <Dialog open={!!editingInvoice} onOpenChange={(open) => !open && setEditingInvoice(null)}>
@@ -373,7 +375,9 @@ function InvoicesPage() {
               <Button type="button" variant="outline" onClick={() => setEditingInvoice(null)}>
                 Cancel
               </Button>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

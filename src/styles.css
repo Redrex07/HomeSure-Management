@@ -210,3 +210,45 @@
   }
   h1, h2, h3, h4, h5 { font-family: var(--font-display); letter-spacing: -0.02em; }
 }
+
+/* Custom Enterprise UI Polishes */
+
+/* 1. Button Hover Lifting and Shadows */
+button,
+.btn,
+a > button {
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+button:hover:not(:disabled),
+.btn:hover:not(:disabled),
+a > button:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* 2. Sidebar Active item styling with left border and transitions */
+.peer\/menu-button {
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+}
+
+.peer\/menu-button:hover {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+[data-active="true"].peer\/menu-button {
+  background-color: #EFF6FF !important;
+  color: #2563EB !important;
+  font-weight: 600 !important;
+  border-left: 3px solid #2563EB !important;
+  border-top-left-radius: 0px !important;
+  border-bottom-left-radius: 0px !important;
+  padding-left: 0.625rem !important;
+}
+
+[data-active="true"].peer\/menu-button svg {
+  color: #2563EB !important;
+}
