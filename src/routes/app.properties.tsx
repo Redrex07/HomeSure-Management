@@ -338,6 +338,14 @@ function PropertiesPage() {
           furnished: form.furnished,
           semi_furnished: form.semi_furnished,
           air_conditioning: form.air_conditioning
+        },
+        tenant_preferences: {
+          preferred_tenant_type: form.preferred_tenant_type,
+          bachelors_allowed: form.bachelors_allowed === true,
+          students_allowed: form.students_allowed === true,
+          pets_allowed: form.pets_allowed === true,
+          smoking_allowed: form.smoking_allowed === true,
+          drinking_allowed: form.drinking_allowed === true
         }
       };
       if (uploadedVideo) {
