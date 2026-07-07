@@ -163,8 +163,9 @@ export async function createProperty(payload: any) {
           students_allowed: tenantPreferencesObj.students_allowed,
           pets_allowed: tenantPreferencesObj.pets_allowed,
           smoking_allowed: tenantPreferencesObj.smoking_allowed,
-          drinking_allowed: tenantPreferencesObj.drinking_allowed,
-          maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
+          drinking_allowed: tenantPreferencesObj.drinking_allowed
+          // maximum_occupants column does not exist in schema
+          // maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
         };
         const { error: tpError } = await supabase.from("tenant_preferences").insert([tenantPrefPayload]);
         if (tpError) console.error("Error creating tenant preferences:", tpError);
@@ -277,8 +278,9 @@ export async function updateProperty(id: number, payload: any) {
         students_allowed: tenantPreferencesObj.students_allowed,
         pets_allowed: tenantPreferencesObj.pets_allowed,
         smoking_allowed: tenantPreferencesObj.smoking_allowed,
-        drinking_allowed: tenantPreferencesObj.drinking_allowed,
-        maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
+        drinking_allowed: tenantPreferencesObj.drinking_allowed
+        // maximum_occupants column does not exist in schema
+        // maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
       };
 
       const { data: existingPref } = await supabase
@@ -288,9 +290,11 @@ export async function updateProperty(id: number, payload: any) {
         .maybeSingle();
 
       if (existingPref) {
-        await supabase.from("tenant_preferences").update(tenantPrefPayload).eq("property_id", id);
+        const { error: upError } = await supabase.from("tenant_preferences").update(tenantPrefPayload).eq("property_id", id);
+        if (upError) throw upError;
       } else {
-        await supabase.from("tenant_preferences").insert([tenantPrefPayload]);
+        const { error: insError } = await supabase.from("tenant_preferences").insert([tenantPrefPayload]);
+        if (insError) throw insError;
       }
     }
 
