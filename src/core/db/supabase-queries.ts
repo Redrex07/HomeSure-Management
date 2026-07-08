@@ -75,7 +75,7 @@ export async function getLandlordProperties(landlordId: string) {
 
 export async function createProperty(payload: any) {
   try {
-<<<<<<< HEAD
+
     const rentAmount = payload.rent_amount;
     delete payload.rent_amount;
     const amenitiesObj = payload.amenities;
@@ -94,15 +94,14 @@ export async function createProperty(payload: any) {
       } catch (e) {}
     }
 
-=======
->>>>>>> 3f04893 (Updated Realtor dashboard)
+
     const { data, error } = await supabase
       .from("properties")
       .insert([payload])
       .select();
 
     if (error) throw error;
-<<<<<<< HEAD
+
     
     if (data && data.length > 0) {
       const propertyId = data[0].property_id;
@@ -173,8 +172,6 @@ export async function createProperty(payload: any) {
       }
     }
 
-=======
->>>>>>> 3f04893 (Updated Realtor dashboard)
     return data;
   } catch (err) {
     console.error("Error creating property:", err);
@@ -184,7 +181,7 @@ export async function createProperty(payload: any) {
 
 export async function updateProperty(id: number, payload: any) {
   try {
-<<<<<<< HEAD
+
     const rentAmount = payload.rent_amount;
     delete payload.rent_amount;
     const amenitiesObj = payload.amenities;
@@ -203,8 +200,7 @@ export async function updateProperty(id: number, payload: any) {
       } catch (e) {}
     }
 
-=======
->>>>>>> 3f04893 (Updated Realtor dashboard)
+
     const { data, error } = await supabase
       .from("properties")
       .update(payload)
@@ -212,7 +208,6 @@ export async function updateProperty(id: number, payload: any) {
       .select();
 
     if (error) throw error;
-<<<<<<< HEAD
     
     const parseNumeric = (val: any) => {
       if (!val) return null;
@@ -304,9 +299,6 @@ export async function updateProperty(id: number, payload: any) {
         if (insError) throw insError;
       }
     }
-
-=======
->>>>>>> 3f04893 (Updated Realtor dashboard)
     return data;
   } catch (err) {
     console.error("Error updating property:", err);
@@ -330,7 +322,7 @@ export async function deleteProperty(id: number) {
   }
 }
 
-<<<<<<< HEAD
+
 export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
@@ -363,8 +355,7 @@ export async function getPropertyById(id: string) {
   }
 }
 
-=======
->>>>>>> 3f04893 (Updated Realtor dashboard)
+
 /**
  * STEP 2: Get all tenants for the landlord's properties
  */
