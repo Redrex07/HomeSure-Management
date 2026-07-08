@@ -1,6 +1,12 @@
 import { supabase } from "./supabase";
 import { useSession } from "@/features/auth/store/auth-store";
-import { contractors as mockContractors, realtors as mockRealtors } from "@/lib/mock-data";
+import {
+  contractors as mockContractors,
+  realtors as mockRealtors,
+  serviceRequests as mockServiceRequests,
+  appointments as mockAppointments,
+  requestsSeries as mockRequestsSeries,
+} from "@/lib/mock-data";
 
 /**
  * DEBUG: Test Supabase connection
@@ -32,7 +38,7 @@ export async function getAllProperties() {
   try {
     console.log("🔍 Fetching ALL properties...");
 
-    const { data, error } = await supabase.from("properties").select("*, property_rent_details(monthly_rent)");
+    const { data, error } = await supabase.from("properties").select("*");
 
     console.log("📊 DATA:", data);
     console.log("❌ ERROR:", error);
@@ -42,11 +48,7 @@ export async function getAllProperties() {
       return [];
     }
 
-    return (data || []).map((p: any) => ({
-      ...p,
-      rent_amount: p.property_rent_details?.[0]?.monthly_rent || p.property_rent_details?.monthly_rent || "",
-      property_rent_details: undefined
-    }));
+    return data || [];
   } catch (err) {
     console.error("Exception:", err);
     return [];
@@ -56,7 +58,7 @@ export async function getLandlordProperties(landlordId: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(monthly_rent)")
+      .select("*")
       .eq("landlord_id", landlordId)
       .order("property_id", { ascending: false });
 
@@ -64,12 +66,7 @@ export async function getLandlordProperties(landlordId: string) {
       console.error("Error fetching properties:", error);
       return [];
     }
-    
-    return (data || []).map((p: any) => ({
-      ...p,
-      rent_amount: p.property_rent_details?.[0]?.monthly_rent || p.property_rent_details?.monthly_rent || "",
-      property_rent_details: undefined
-    }));
+    return data || [];
   } catch (err) {
     console.error("Exception fetching properties:", err);
     return [];
@@ -78,6 +75,7 @@ export async function getLandlordProperties(landlordId: string) {
 
 export async function createProperty(payload: any) {
   try {
+<<<<<<< HEAD
     const rentAmount = payload.rent_amount;
     delete payload.rent_amount;
     const amenitiesObj = payload.amenities;
@@ -96,12 +94,15 @@ export async function createProperty(payload: any) {
       } catch (e) {}
     }
 
+=======
+>>>>>>> 3f04893 (Updated Realtor dashboard)
     const { data, error } = await supabase
       .from("properties")
       .insert([payload])
       .select();
 
     if (error) throw error;
+<<<<<<< HEAD
     
     if (data && data.length > 0) {
       const propertyId = data[0].property_id;
@@ -172,6 +173,8 @@ export async function createProperty(payload: any) {
       }
     }
 
+=======
+>>>>>>> 3f04893 (Updated Realtor dashboard)
     return data;
   } catch (err) {
     console.error("Error creating property:", err);
@@ -181,6 +184,7 @@ export async function createProperty(payload: any) {
 
 export async function updateProperty(id: number, payload: any) {
   try {
+<<<<<<< HEAD
     const rentAmount = payload.rent_amount;
     delete payload.rent_amount;
     const amenitiesObj = payload.amenities;
@@ -199,6 +203,8 @@ export async function updateProperty(id: number, payload: any) {
       } catch (e) {}
     }
 
+=======
+>>>>>>> 3f04893 (Updated Realtor dashboard)
     const { data, error } = await supabase
       .from("properties")
       .update(payload)
@@ -206,6 +212,7 @@ export async function updateProperty(id: number, payload: any) {
       .select();
 
     if (error) throw error;
+<<<<<<< HEAD
     
     const parseNumeric = (val: any) => {
       if (!val) return null;
@@ -298,6 +305,8 @@ export async function updateProperty(id: number, payload: any) {
       }
     }
 
+=======
+>>>>>>> 3f04893 (Updated Realtor dashboard)
     return data;
   } catch (err) {
     console.error("Error updating property:", err);
@@ -321,6 +330,7 @@ export async function deleteProperty(id: number) {
   }
 }
 
+<<<<<<< HEAD
 export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
@@ -353,11 +363,14 @@ export async function getPropertyById(id: string) {
   }
 }
 
+=======
+>>>>>>> 3f04893 (Updated Realtor dashboard)
 /**
  * STEP 2: Get all tenants for the landlord's properties
  */
 export async function getLandlordTenants(landlordId: string) {
   try {
+    // Ideally this filters by properties owned by landlordId, but for now we fetch all
     const { data, error } = await supabase
       .from("tenant_onboarding")
       .select("*")
@@ -421,7 +434,6 @@ export async function deleteTenant(id: string) {
     throw err;
   }
 }
-
 /**
  * STEP 3: Get invoices/rent data for the landlord
  */
@@ -430,6 +442,7 @@ export async function getLandlordInvoices(landlordId: string) {
     const { data, error } = await supabase
       .from("invoices")
       .select("*")
+      // .eq("landlord_id", landlordId) // Uncomment if landlord_id exists on invoices
       .order("invoice_id", { ascending: false });
 
     if (error) {
@@ -491,7 +504,6 @@ export async function updateInvoice(id: string, payload: any) {
     throw err;
   }
 }
-
 
 /**
  * STEP 4: Get service requests for the landlord's properties
@@ -561,49 +573,59 @@ export async function getLandlordRentCollection(landlordId: string) {
 
 // ================= SERVICE REQUESTS =================
 
-export async function getServiceRequests() {
-  try {
-    const { data, error } = await supabase
-      .from("service_requests")
-      .select(`
-        service_request_id,
-        title,
-        description,
-        category,
-        priority,
-        status,
-        created_at,
-        properties (
-          property_name
-        ),
-        tenant:users!tenant_id (
-          name
-        )
-      `)
-      .order("service_request_id", { ascending: false });
+function mapServiceRequestRow(r: {
+  service_request_id: number;
+  title?: string | null;
+  description?: string | null;
+  category?: string | null;
+  priority?: string | null;
+  status?: string | null;
+  created_at?: string | null;
+  properties?: { property_name?: string | null } | { property_name?: string | null }[] | null;
+}) {
+  const propertyRecord = Array.isArray(r.properties) ? r.properties[0] : r.properties;
 
-    if (error) {
-      console.error("Error fetching service requests:", error);
-      return [];
-    }
-
-    return (data || []).map((r: any) => ({
-      id: `SR-${r.service_request_id}`,
-      title: r.title,
-      property: r.properties?.property_name || "Unassigned Property",
-      tenant: r.tenant?.name || "Unassigned Tenant",
-      category: r.category,
-      priority: r.priority,
-      status: r.status,
-      contractor: null,
-      created: r.created_at ? new Date(r.created_at).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-    }));
-  } catch (err) {
-    console.error("Exception fetching service requests:", err);
-    return [];
-  }
+  return {
+    id: `SR-${r.service_request_id}`,
+    title: r.title || "Untitled Request",
+    property: propertyRecord?.property_name || "Unassigned Property",
+    tenant: "Unassigned Tenant",
+    category: r.category || "General",
+    priority: r.priority || "Medium",
+    status: r.status || "Pending",
+    contractor: null,
+    created: r.created_at
+      ? new Date(r.created_at).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0],
+  };
 }
 
+export async function getServiceRequests() {
+  return [
+    {
+      id: "SR-101",
+      title: "Water Leakage",
+      property: "Sunrise Apartments",
+    },
+    {
+      id: "SR-102",
+      title: "Electrical Fault",
+      property: "Green Villa",
+    },
+    {
+      id: "SR-103",
+      title: "AC Repair",
+      property: "Palm Residency",
+    },
+    {
+      id: "SR-104",
+      title: "Plumbing Issue",
+      property: "Lake View House",
+    },
+  ];
+}
+
+ 
 export async function createServiceRequest(payload: {
   title: string;
   category: string;
@@ -721,44 +743,26 @@ export async function getContractors() {
 // ================= APPOINTMENTS =================
 
 export async function getAppointments() {
-  try {
-    const { data, error } = await supabase
-      .from("appointments")
-      .select(`
-        appointment_id,
-        appointment_date,
-        appointment_time,
-        status,
-        service_requests (
-          title,
-          properties (
-            property_name
-          )
-        ),
-        contractor:users!contractor_id (
-          name
-        )
-      `)
-      .order("appointment_date", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching appointments:", error);
-      return [];
-    }
-
-    return (data || []).map((a: any) => ({
-      id: `A-${a.appointment_id}`,
-      title: a.service_requests?.title || "Maintenance Visit",
-      date: a.appointment_date || new Date().toISOString().split("T")[0],
-      time: a.appointment_time ? a.appointment_time.slice(0, 5) : "12:00",
-      property: a.service_requests?.properties?.property_name || "Unassigned Property",
-      contractor: a.contractor?.name || "Unassigned",
-      status: a.status || "Scheduled",
-    }));
-  } catch (err) {
-    console.error("Exception fetching appointments:", err);
-    return [];
-  }
+  return [
+    {
+      id: "A-1",
+      title: "Leak Repair",
+      date: "2026-06-24",
+      time: "10:00",
+      property: "Sunrise Apartments",
+      contractor: "Mike Plumbing",
+      status: "Scheduled",
+    },
+    {
+      id: "A-2",
+      title: "Electrical Inspection",
+      date: "2026-06-25",
+      time: "14:30",
+      property: "Green Villa",
+      contractor: "John Electric",
+      status: "Scheduled",
+    },
+  ];
 }
 
 // ================= ESTIMATES =================
@@ -978,39 +982,6 @@ export async function createContractor(payload: {
   }
 }
 
-export async function createAppointment(payload: {
-  service_request_id: number;
-  contractor_id: number;
-  title: string;
-  appointment_date: string;
-  appointment_time: string;
-}) {
-  try {
-    const { data, error } = await supabase
-      .from("appointments")
-      .insert([
-        {
-          service_request_id: payload.service_request_id,
-          contractor_id: payload.contractor_id,
-          title: payload.title,
-          appointment_date: payload.appointment_date,
-          appointment_time: payload.appointment_time,
-          status: "Scheduled",
-        },
-      ])
-      .select();
-
-    if (error) {
-      console.error("Error creating appointment:", error);
-      throw error;
-    }
-    return data;
-  } catch (err) {
-    console.error("Exception creating appointment:", err);
-    throw err;
-  }
-}
-
 // ================= REALTORS =================
 
 export async function getRealtors() {
@@ -1041,6 +1012,155 @@ export async function createRealtor(payload: {
   }
 }
 
+function normalizeAiListingKeywords(keywords: unknown) {
+  if (Array.isArray(keywords)) {
+    return keywords.filter(Boolean).map((keyword) => String(keyword).trim()).filter(Boolean);
+  }
+
+  if (typeof keywords === "string") {
+    return keywords
+      .split(",")
+      .map((keyword) => keyword.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function normalizeAiListing(row: {
+  id?: number | string;
+  ai_listing_id?: number;
+  listing_id?: number;
+  property_id?: number;
+  propertyId?: number;
+  realtor_id?: number | null;
+  realtorId?: number | null;
+  name?: string | null;
+  price?: number | string | null;
+  status?: string | null;
+  listing_type?: string | null;
+  listingType?: string | null;
+  listing_status?: string | null;
+  listingStatus?: string | null;
+  listing_date?: string | null;
+  listingDate?: string | null;
+  title?: string | null;
+  description?: string | null;
+  keywords?: unknown;
+  landlord_id?: number | null;
+  description_text?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}) {
+  const listingId = row.id ?? row.ai_listing_id ?? row.listing_id ?? row.property_id ?? row.propertyId ?? Date.now();
+  const title = row.title || row.name || "Untitled Listing";
+  const listingType = row.listing_type || row.listingType || "Draft";
+  const listingStatus = row.listing_status || row.listingStatus || row.status || "Draft";
+  const price = Number(row.price || 0);
+  const description =
+    row.description ||
+    row.description_text ||
+    `${title} is a ${listingType.toLowerCase()} listing with ${listingStatus.toLowerCase()} status and pricing of ${price > 0 ? `₹${price.toLocaleString()}` : "competitive pricing"}.`;
+
+  return {
+    id: String(listingId).startsWith("L-") || String(listingId).startsWith("AI-") ? String(listingId) : `L-${listingId}`,
+    propertyId: `P-${row.property_id ?? row.propertyId ?? listingId}`,
+    title,
+    description,
+    keywords: normalizeAiListingKeywords(
+      row.keywords || [listingType, listingStatus, row.status || "Listed"]
+    ),
+    price,
+    landlordId: row.landlord_id ?? row.realtor_id ?? row.realtorId ?? null,
+    createdAt: row.listing_date || row.listingDate || row.created_at || row.updated_at || new Date().toISOString(),
+  };
+}
+
+export async function getAiListings(landlordId?: string) {
+  try {
+    let query = supabase.from("listings").select("*").order("listing_date", { ascending: false });
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching AI listings:", error);
+      return [];
+    }
+
+    const normalizedListings = (data || []).map(normalizeAiListing);
+
+    if (!landlordId) {
+      return normalizedListings;
+    }
+
+    return normalizedListings.filter((listing) => {
+      const listingLandlordId = String(listing.landlordId ?? "");
+      return listingLandlordId === String(landlordId) || listing.id.startsWith("L-");
+    });
+  } catch (err) {
+    console.error("Exception fetching AI listings:", err);
+    return [];
+  }
+}
+
+export async function createAiListing(payload: {
+  propertyId: number;
+  title: string;
+  description: string;
+  keywords: string[];
+  price?: number;
+  landlordId?: string | number;
+}) {
+  try {
+    const normalizedLandlordId = payload.landlordId ? Number(payload.landlordId) : 2;
+    const today = new Date().toISOString().split("T")[0];
+
+    const preferredPayload = {
+      property_id: payload.propertyId,
+      realtor_id: normalizedLandlordId,
+      title: payload.title,
+      status: "Draft",
+      listing_type: "AI",
+      listing_status: "Draft",
+      listing_date: today,
+    };
+
+    const fallbackPayload = {
+      property_id: payload.propertyId,
+      realtor_id: normalizedLandlordId,
+      title: payload.title,
+      status: "Draft",
+      listing_type: "AI",
+      listing_status: "Draft",
+      listing_date: today,
+    };
+
+    let result = await supabase.from("listings").insert([preferredPayload]).select();
+
+    if (result.error) {
+      result = await supabase.from("listings").insert([fallbackPayload]).select();
+    }
+
+    if (result.error) {
+      console.error("Error creating AI listing:", result.error);
+      throw result.error;
+    }
+
+    return (result.data || []).map(normalizeAiListing);
+  } catch (err) {
+    console.error("Exception creating AI listing:", err);
+    throw err;
+  }
+}
+
+export async function createAppointment(payload: any) {
+  console.log("New Appointment:", payload);
+
+  return {
+    success: true,
+    id: `A-${Date.now()}`,
+  };
+}
 export async function updateAppointmentDateTime(
   id: string,
   payload: {
@@ -1048,28 +1168,10 @@ export async function updateAppointmentDateTime(
     appointment_time: string;
   }
 ) {
-  try {
-    const numericId = parseInt(id.replace("A-", ""), 10);
-    const { data, error } = await supabase
-      .from("appointments")
-      .update({
-        appointment_date: payload.appointment_date,
-        appointment_time: payload.appointment_time,
-      })
-      .eq("appointment_id", numericId)
-      .select();
+  console.log("Reschedule:", id, payload);
 
-    if (error) {
-      console.error("Error updating appointment date/time:", error);
-      throw error;
-    }
-    return data;
-  } catch (err) {
-    console.error("Exception updating appointment date/time:", err);
-    throw err;
-  }
+  return { success: true };
 }
-
 export async function createEstimate(payload: {
   service_request_id: number;
   contractor_id: number;
@@ -1119,165 +1221,46 @@ export async function getUsers() {
 }
 
 export async function getServiceAdminDashboard() {
-  console.log("🔌 getServiceAdminDashboard executing in queries layer...");
-  const todayStr = new Date().toISOString().split("T")[0];
+  const activeRequests = mockServiceRequests.filter((request) => request.status !== "Completed");
+  const completedRequests = mockServiceRequests.filter((request) => request.status === "Completed");
+  const pendingRequests = mockServiceRequests.filter((request) => request.status === "Pending");
+  const assignedRequests = mockServiceRequests.filter(
+    (request) => request.status === "Assigned" || request.status === "In Progress"
+  );
 
-  try {
-    const [requestsRes, contractorsRes, activeRequestsRes, appointmentsRes] = await Promise.all([
-      supabase.from("service_requests").select("status, created_at"),
-      supabase.from("users").select("user_id, name, email, status").eq("role_id", 4).limit(5),
-      supabase.from("service_requests").select(`
-        service_request_id,
-        title,
-        priority,
-        status,
-        created_at,
-        properties (
-          property_name
-        ),
-        tenant:users!tenant_id (
-          name
-        )
-      `).order("service_request_id", { ascending: false }).limit(5),
-      supabase.from("appointments").select(`
-        appointment_id,
-        title,
-        appointment_date,
-        appointment_time,
-        status,
-        service_requests (
-          properties (
-            property_name
-          )
-        ),
-        contractor:users!contractor_id (
-          name
-        )
-      `).eq("appointment_date", todayStr)
-    ]);
-
-    // Logging Query 1: service_requests (stats)
-    console.log("📊 [SQL Query 1] Table: service_requests (for stats metrics)");
-    console.log("   - Rows returned:", requestsRes.data ? requestsRes.data.length : 0);
-    console.log("   - Error:", requestsRes.error ? JSON.stringify(requestsRes.error) : "None");
-    if (requestsRes.error) {
-      throw new Error(`[SQL Query 1: service_requests stats] Failed: ${requestsRes.error.message}`);
-    }
-
-    // Logging Query 2: users (contractors)
-    console.log("📊 [SQL Query 2] Table: users (for contractors list)");
-    console.log("   - Rows returned:", contractorsRes.data ? contractorsRes.data.length : 0);
-    console.log("   - Error:", contractorsRes.error ? JSON.stringify(contractorsRes.error) : "None");
-    if (contractorsRes.error) {
-      throw new Error(`[SQL Query 2: users contractors] Failed: ${contractorsRes.error.message}`);
-    }
-
-    // Logging Query 3: service_requests (active requests)
-    console.log("📊 [SQL Query 3] Table: service_requests (for active requests list)");
-    console.log("   - Rows returned:", activeRequestsRes.data ? activeRequestsRes.data.length : 0);
-    console.log("   - Error:", activeRequestsRes.error ? JSON.stringify(activeRequestsRes.error) : "None");
-    if (activeRequestsRes.error) {
-      throw new Error(`[SQL Query 3: service_requests active list] Failed: ${activeRequestsRes.error.message}`);
-    }
-
-    // Logging Query 4: appointments
-    console.log("📊 [SQL Query 4] Table: appointments (for today's schedule)");
-    console.log("   - Rows returned:", appointmentsRes.data ? appointmentsRes.data.length : 0);
-    console.log("   - Error:", appointmentsRes.error ? JSON.stringify(appointmentsRes.error) : "None");
-    if (appointmentsRes.error) {
-      throw new Error(`[SQL Query 4: appointments] Failed: ${appointmentsRes.error.message}`);
-    }
-
-    const allRequests = requestsRes.data || [];
-    const dbContractors = contractorsRes.data || [];
-    const activeRequests = activeRequestsRes.data || [];
-    const dbAppointments = appointmentsRes.data || [];
-
-    // Calculate Stat Cards
-    const totalRequests = allRequests.length;
-    const pending = allRequests.filter(r => r.status === "Pending").length;
-    const assigned = allRequests.filter(r => r.status === "Assigned" || r.status === "In Progress").length;
-    const completed = allRequests.filter(r => r.status === "Completed").length;
-
-    // Calculate last 7 days chart
-    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const requestsSeries = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dayName = daysOfWeek[d.getDay()];
-      const dateStr = d.toISOString().split("T")[0];
-      
-      const createdCount = allRequests.filter(r => {
-        if (!r.created_at) return false;
-        return r.created_at.startsWith(dateStr);
-      }).length;
-
-      const completedCount = allRequests.filter(r => {
-        if (!r.created_at) return false;
-        return r.created_at.startsWith(dateStr) && r.status === "Completed";
-      }).length;
-
-      requestsSeries.push({
-        day: dayName,
-        created: createdCount,
-        completed: completedCount
-      });
-    }
-
-    // Format Top Contractors
-    const formattedContractors = dbContractors.map(c => ({
-      id: `C-${c.user_id}`,
-      name: c.name,
-      email: c.email,
-      status: c.status,
-      trade: "—", // No fake trade
-      rating: "—", // No fake rating
-      available: c.status === "Active" // Active status maps to availability
-    }));
-
-    // Format Active Service Requests
-    const formattedActiveRequests = activeRequests.map((r: any) => ({
-      id: `SR-${r.service_request_id}`,
-      title: r.title,
-      priority: r.priority,
-      status: r.status,
-      property: r.properties?.property_name || "—",
-      tenant: r.tenant?.name || "—",
-      contractor: null
-    }));
-
-    // Format Appointments
-    const formattedAppointments = dbAppointments.map((a: any) => ({
-      id: `A-${a.appointment_id}`,
-      title: a.title,
-      date: a.appointment_date,
-      time: a.appointment_time ? a.appointment_time.slice(0, 5) : "12:00",
-      property: a.service_requests?.properties?.property_name || "—",
-      contractor: a.contractor?.name || "—",
-      status: a.status
-    }));
-
-    const result = {
-      stats: {
-        total: totalRequests,
-        pending,
-        assigned,
-        completed
-      },
-      requestsSeries,
-      contractors: formattedContractors,
-      activeRequests: formattedActiveRequests,
-      appointments: formattedAppointments
-    };
-
-    console.log("📊 [Final Mapped Object]:", JSON.stringify(result, null, 2));
-
-    return result;
-  } catch (err) {
-    console.error("Error in getServiceAdminDashboard:", err);
-    throw err;
-  }
+  return {
+    stats: {
+      total: mockServiceRequests.length,
+      pending: pendingRequests.length,
+      assigned: assignedRequests.length,
+      completed: completedRequests.length,
+    },
+    requestsSeries: mockRequestsSeries,
+    contractors: mockContractors.map((contractor) => ({
+      id: contractor.id,
+      name: contractor.contractorName,
+      trade: contractor.trade,
+      rating: contractor.rating,
+      available: contractor.available,
+    })),
+    activeRequests: activeRequests.slice(0, 5).map((request) => ({
+      id: request.id,
+      title: request.title,
+      priority: request.priority,
+      status: request.status,
+      property: request.property,
+      contractor: request.contractor,
+    })),
+    appointments: mockAppointments.slice(0, 5).map((appointment) => ({
+      id: appointment.id,
+      title: appointment.title,
+      date: appointment.date,
+      time: appointment.time,
+      property: appointment.property,
+      contractor: appointment.contractor,
+      status: appointment.status,
+    })),
+  };
 }
 
 export interface PlatformUser {
@@ -1327,80 +1310,5 @@ export async function getPlatformUsers(): Promise<PlatformUser[]> {
   } catch (err) {
     console.error("Exception fetching platform users:", err);
     return [];
-  }
-}
-// ================= SUBSCRIPTIONS =================
-
-export async function getSubscriptionsData() {
-  try {
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .order("id", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching subscriptions:", error);
-      return [];
-    }
-
-    return (data || []).map((s: any) => ({
-      id: s.id, // Assuming it's already SUB-XXXX or we can map it
-      customer: s.customer,
-      plan: s.plan,
-      seats: s.seats,
-      mrr: s.mrr,
-      status: s.status,
-      renews: s.renews,
-    }));
-  } catch (err) {
-    console.error("Exception fetching subscriptions:", err);
-    return [];
-  }
-}
-
-export async function createSubscriptionData(payload: any) {
-  try {
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .insert([payload])
-      .select();
-
-    if (error) throw error;
-    return data;
-  } catch (err) {
-    console.error("Error creating subscription:", err);
-    throw err;
-  }
-}
-
-export async function updateSubscriptionData(id: string, payload: any) {
-  try {
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .update(payload)
-      .eq("id", id)
-      .select();
-
-    if (error) throw error;
-    return data;
-  } catch (err) {
-    console.error("Error updating subscription:", err);
-    throw err;
-  }
-}
-
-export async function deleteSubscriptionData(id: string) {
-  try {
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .delete()
-      .eq("id", id)
-      .select();
-
-    if (error) throw error;
-    return data;
-  } catch (err) {
-    console.error("Error deleting subscription:", err);
-    throw err;
   }
 }

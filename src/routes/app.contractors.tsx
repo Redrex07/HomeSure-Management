@@ -259,10 +259,24 @@ function ContractorsPage() {
       />
 
       {isLoading ? (
+<<<<<<< HEAD
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
             <Card key={i} className="border border-slate-200 shadow-sm rounded-xl animate-pulse">
               <CardContent className="p-5 flex flex-col justify-between h-72">
+=======
+        <div className="flex h-64 items-center justify-center border border-border/60 rounded-md bg-background/50">
+          <p className="text-sm text-muted-foreground animate-pulse">Loading contractor list...</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {contractorList.map((c) => (
+            <Card
+              key={c.id}
+              className="border-border/70 shadow-card transition-shadow hover:shadow-elegant"
+            >
+              <CardContent className="p-5">
+>>>>>>> 3f04893 (Updated Realtor dashboard)
                 <div className="flex items-start gap-3">
                   <div className="h-12 w-12 rounded-full bg-slate-100" />
                   <div className="flex-1 space-y-2">
