@@ -1303,3 +1303,57 @@ export async function getPlatformUsers(): Promise<PlatformUser[]> {
     return [];
   }
 }
+// ================= SUBSCRIPTIONS =================
+
+export async function getSubscriptionsData() {
+  try {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return [];
+    }
+
+    return (data || []).map((s: any) => ({
+      id: s.subscription_id || s.id,
+      customer: s.customer,
+      plan: s.plan,
+      seats: Number(s.seats),
+      mrr: Number(s.mrr),
+      status: s.status,
+      renews: s.renews,
+    }));
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}
+
+export async function createSubscriptionData(payload: any) {
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .insert([payload])
+    .select();
+
+  if (error) throw error;
+
+  return data;
+}
+
+export async function updateSubscriptionData(
+  id: string,
+  payload: any
+) {
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .update(payload)
+    .eq("subscription_id", id)
+    .select();
+
+  if (error) throw error;
+
+  return data;
+}
