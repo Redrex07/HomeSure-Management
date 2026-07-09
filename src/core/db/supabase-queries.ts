@@ -592,30 +592,28 @@ function mapServiceRequestRow(r: {
 }
 
 export async function getServiceRequests() {
-  return [
-    {
-      id: "SR-101",
-      title: "Water Leakage",
-      property: "Sunrise Apartments",
-    },
-    {
-      id: "SR-102",
-      title: "Electrical Fault",
-      property: "Green Villa",
-    },
-    {
-      id: "SR-103",
-      title: "AC Repair",
-      property: "Palm Residency",
-    },
-    {
-      id: "SR-104",
-      title: "Plumbing Issue",
-      property: "Lake View House",
-    },
-  ];
-}
+  try {
+    const { data, error } = await supabase
+      .from("service_requests")
+      .select(`
+        *,
+        properties (
+          property_name
+        )
+      `)
+      .order("created_at", { ascending: false });
 
+    if (error) {
+      console.error(error);
+      return [];
+    }
+
+    return (data || []).map(mapServiceRequestRow);
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}
  
 export async function createServiceRequest(payload: {
   title: string;
