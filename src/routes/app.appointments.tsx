@@ -1,5 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+﻿import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import {
+  addDays,
+  addMonths,
+  addWeeks,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameMonth,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { PageHeader } from "@/shared/components/common/PageHeader";
@@ -12,8 +24,9 @@ import {
   getServiceRequests,
   getContractors,
 } from "@/core/db/supabase-queries";
-import { Plus, Calendar as CalIcon, Clock, MapPin } from "lucide-react";
+import { Plus, Calendar as CalIcon, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "@/features/auth/store/auth-store";
 import {
   Dialog,
   DialogContent,
@@ -34,18 +47,19 @@ import {
 } from "@/shared/components/ui/select";
 
 export const Route = createFileRoute("/app/appointments")({
-  head: () => ({ meta: [{ title: "Appointments — HomeSure" }] }),
+  head: () => ({ meta: [{ title: "Appointments â€” HomeSure" }] }),
   component: AppointmentsPage,
 });
 
-function AppointmentsPage() {
-  // Mock calendar: week strip
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const dates = [1, 2, 3, 4, 5, 6, 7];
+type CalendarView = "today" | "week" | "month";
 
+function AppointmentsPage() {
+  const session = useSession();
   const queryClient = useQueryClient();
 
   const [openCreate, setOpenCreate] = useState(false);
+  const [calendarView, setCalendarView] = useState<CalendarView>("week");
+  const [calendarDate, setCalendarDate] = useState(() => new Date());
   const [createTitle, setCreateTitle] = useState("");
   const [createRequestId, setCreateRequestId] = useState("");
   const [createContractorId, setCreateContractorId] = useState("");
@@ -60,6 +74,41 @@ function AppointmentsPage() {
     queryKey: ["appointments"],
     queryFn: getAppointments,
   });
+
+  const visibleDays = useMemo(() => {
+    if (calendarView === "today") return [calendarDate];
+    if (calendarView === "week") {
+      return eachDayOfInterval({
+        start: startOfWeek(calendarDate, { weekStartsOn: 1 }),
+        end: endOfWeek(calendarDate, { weekStartsOn: 1 }),
+      });
+    }
+
+    const monthStart = startOfMonth(calendarDate);
+    const monthEnd = endOfMonth(calendarDate);
+    return eachDayOfInterval({
+      start: startOfWeek(monthStart, { weekStartsOn: 1 }),
+      end: endOfWeek(monthEnd, { weekStartsOn: 1 }),
+    });
+  }, [calendarDate, calendarView]);
+
+  const calendarTitle = useMemo(() => {
+    if (calendarView === "today") return format(calendarDate, "EEEE, MMM d, yyyy");
+    if (calendarView === "week") {
+      const first = visibleDays[0];
+      const last = visibleDays[visibleDays.length - 1];
+      return `${format(first, "MMM d")} - ${format(last, "MMM d, yyyy")}`;
+    }
+    return format(calendarDate, "MMMM yyyy");
+  }, [calendarDate, calendarView, visibleDays]);
+
+  const moveCalendar = (direction: -1 | 1) => {
+    setCalendarDate((current) => {
+      if (calendarView === "today") return addDays(current, direction);
+      if (calendarView === "week") return addWeeks(current, direction);
+      return addMonths(current, direction);
+    });
+  };
 
   const {
     data: serviceRequests = [],
@@ -129,23 +178,18 @@ function AppointmentsPage() {
       toast.error("Please select a service request and contractor.");
       return;
     }
-    console.log("Request ID:", createRequestId, typeof createRequestId);
-console.log("Contractor ID:", createContractorId, typeof createContractorId);
-
-console.log({
-  title: createTitle,
-  service_request_id: parseInt(createRequestId, 10),
-contractor_id: parseInt(createContractorId, 10),
-  appointment_date: createDate,
-  appointment_time: createTime,
-});
+    const selectedRequest = serviceRequests.find(
+      (request: any) => String(request.id).replace("SR-", "") === createRequestId,
+    );
     createMutation.mutate({
-  title: createTitle,
-  service_request_id: Number(createRequestId),
-  contractor_id: Number(createContractorId),
-  appointment_date: createDate,
-  appointment_time: createTime,
-});
+      title: createTitle,
+      tenant_id: Number(session?.id) || selectedRequest?.tenantId || undefined,
+      property_id: selectedRequest?.propertyId || undefined,
+      service_request_id: Number(createRequestId),
+      contractor_id: Number(createContractorId),
+      appointment_date: createDate,
+      appointment_time: createTime,
+    });
   };
 
   const handleRescheduleSubmit = (e: React.FormEvent) => {
@@ -318,42 +362,70 @@ contractor_id: parseInt(createContractorId, 10),
       ) : (
         <>
           <Card className="border-border/70 shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-semibold">June 2026 · This week</CardTitle>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => moveCalendar(-1)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <CardTitle className="min-w-52 text-center text-sm font-semibold sm:text-left">
+                  {calendarTitle}
+                </CardTitle>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => moveCalendar(1)}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
               <div className="flex gap-1">
-                <Button variant="outline" size="sm">
-                  Today
-                </Button>
-                <Button variant="outline" size="sm">
-                  Week
-                </Button>
-                <Button variant="outline" size="sm">
-                  Month
-                </Button>
+                {(["today", "week", "month"] as CalendarView[]).map((view) => (
+                  <Button
+                    key={view}
+                    variant={calendarView === view ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setCalendarView(view);
+                      if (view === "today") setCalendarDate(new Date());
+                    }}
+                  >
+                    {view[0].toUpperCase() + view.slice(1)}
+                  </Button>
+                ))}
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-7 gap-2">
-                {days.map((d, i) => (
-                  <div key={d} className="rounded-lg border border-border bg-background p-3">
-                    <div className="text-xs font-medium text-muted-foreground">{d}</div>
-                    <div className="mt-1 text-2xl font-bold tracking-tight">{dates[i]}</div>
+              <div className={calendarView === "today" ? "grid gap-2" : "grid grid-cols-1 gap-2 sm:grid-cols-7"}>
+                {visibleDays.map((day) => {
+                  const dayAppointments = appointmentList.filter((appointment: any) => {
+                    if (!appointment.date) return false;
+                    return format(new Date(`${appointment.date}T00:00:00`), "yyyy-MM-dd") === format(day, "yyyy-MM-dd");
+                  });
+                  const outsideMonth = calendarView === "month" && !isSameMonth(day, calendarDate);
+
+                  return (
+                  <div
+                    key={day.toISOString()}
+                    className={`min-h-32 rounded-lg border border-border bg-background p-3 ${outsideMonth ? "opacity-45" : ""}`}
+                  >
+                    <div className="text-xs font-medium text-muted-foreground">{format(day, "EEE")}</div>
+                    <div className="mt-1 text-2xl font-bold tracking-tight">{format(day, "d")}</div>
                     <div className="mt-3 space-y-1">
-                      {appointmentList
-                        .filter((_, idx) => idx % 7 === i % Math.max(1, appointmentList.length))
-                        .slice(0, 2)
+                      {dayAppointments
                         .map((a, aIdx) => (
                           <div
-                            key={a.id + "-" + i + "-" + aIdx}
+                            key={a.id + "-" + aIdx}
                             className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-1 text-[10px] text-primary"
                           >
                             <div className="truncate font-medium">{a.time}</div>
                             <div className="truncate">{a.title}</div>
                           </div>
                         ))}
+                      {dayAppointments.length === 0 && (
+                        <div className="rounded-md border border-dashed border-border px-1.5 py-2 text-[10px] text-muted-foreground">
+                          No visits
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -458,5 +530,3 @@ contractor_id: parseInt(createContractorId, 10),
     </>
   );
 }
-
-
