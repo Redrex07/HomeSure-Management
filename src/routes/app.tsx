@@ -45,6 +45,7 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
   ],
   tenant: [
     "/app/dashboard",
+    "/app/properties",
     "/app/invoices",
     "/app/service-requests",
     "/app/appointments",

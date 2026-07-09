@@ -2041,3 +2041,95 @@ export async function getTenantDashboardSummary(tenantId: number) {
     lease,
   };
 }
+
+export async function createFavoriteProperty(payload: {
+  tenant_id: number;
+  property_id: number;
+}) {
+  const { data, error } = await supabase
+    .from("favorite_property")
+    .insert([{
+      tenant_id: payload.tenant_id,
+      property_id: payload.property_id,
+      added_on: new Date().toISOString(),
+    }])
+    .select();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createPropertyInquiry(payload: {
+  tenant_id: number;
+  property_id: number;
+  landlord_id?: number | null;
+  inquiry_message: string;
+}) {
+  const { data, error } = await supabase
+    .from("property_inquiry")
+    .insert([{
+      tenant_id: payload.tenant_id,
+      property_id: payload.property_id,
+      landlord_id: payload.landlord_id || null,
+      inquiry_message: payload.inquiry_message,
+      inquiry_status: "Pending",
+      inquiry_date: new Date().toISOString(),
+    }])
+    .select();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createRentalApplication(payload: {
+  tenant_id: number;
+  property_id: number;
+  landlord_id?: number | null;
+  expected_move_in?: string | null;
+  occupation?: string | null;
+  monthly_income?: number | null;
+  remarks?: string | null;
+}) {
+  const { data, error } = await supabase
+    .from("rental_application")
+    .insert([{
+      tenant_id: payload.tenant_id,
+      property_id: payload.property_id,
+      landlord_id: payload.landlord_id || null,
+      application_date: todayIsoDate(),
+      expected_move_in: payload.expected_move_in || null,
+      occupation: payload.occupation || null,
+      monthly_income: payload.monthly_income || null,
+      application_status: "Pending",
+      remarks: payload.remarks || null,
+    }])
+    .select();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createReviewRating(payload: {
+  tenant_id: number;
+  property_id: number;
+  landlord_id?: number | null;
+  rating: number;
+  review_title: string;
+  review_description?: string | null;
+}) {
+  const { data, error } = await supabase
+    .from("review_rating")
+    .insert([{
+      tenant_id: payload.tenant_id,
+      property_id: payload.property_id,
+      landlord_id: payload.landlord_id || null,
+      rating: payload.rating,
+      review_title: payload.review_title,
+      review_description: payload.review_description || null,
+      review_date: todayIsoDate(),
+    }])
+    .select();
+
+  if (error) throw error;
+  return data;
+}
