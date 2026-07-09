@@ -53,13 +53,16 @@ function ServiceRequestsPage() {
   const tenantContext = useTenantContext();
   const isTenant = tenantContext.isTenant;
   const tenantId = tenantContext.tenantId;
+  const serviceTenantId = tenantContext.serviceTenantId;
 
   // Load service requests from Supabase
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["service-requests", isTenant ? tenantId : "all"],
+    queryKey: ["service-requests", isTenant ? `${tenantId}:${serviceTenantId}` : "all"],
     queryFn: () =>
-      isTenant && tenantId ? getTenantServiceRequests(tenantId) : getServiceRequests(),
-    enabled: !isTenant || !!tenantId,
+      isTenant && tenantId
+        ? getTenantServiceRequests(tenantId, serviceTenantId)
+        : getServiceRequests(),
+    enabled: !isTenant || (!!tenantId && !!serviceTenantId),
   });
 
   // Create request mutation
@@ -67,7 +70,7 @@ function ServiceRequestsPage() {
     mutationFn: createServiceRequest,
     onSuccess: (created) => {
       queryClient.setQueryData(
-        ["service-requests", isTenant ? tenantId : "all"],
+        ["service-requests", isTenant ? `${tenantId}:${serviceTenantId}` : "all"],
         (current: any[] | undefined) => [...(created || []), ...(current || [])],
       );
       queryClient.invalidateQueries({ queryKey: ["service-requests"] });
@@ -91,9 +94,9 @@ function ServiceRequestsPage() {
       category: newCategory,
       priority: newPriority,
       description: newDesc,
-      tenant_id: tenantId || undefined,
+      tenant_id: serviceTenantId || tenantId || undefined,
       property_id: tenantContext.propertyId || undefined,
-      created_by: tenantId || undefined,
+      created_by: serviceTenantId || tenantId || undefined,
     });
   };
 

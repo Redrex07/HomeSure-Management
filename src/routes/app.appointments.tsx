@@ -19,6 +19,7 @@ import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getAppointments,
+  getTenantAppointments,
   createAppointment,
   updateAppointmentDateTime,
   getServiceRequests,
@@ -72,8 +73,16 @@ function AppointmentsPage() {
   const [rescheduleTime, setRescheduleTime] = useState("");
 
   const { data: appointmentList = [], isLoading } = useQuery({
-    queryKey: ["appointments"],
-    queryFn: getAppointments,
+    queryKey: [
+      "appointments",
+      tenantContext.isTenant ? `${tenantContext.tenantId}:${tenantContext.serviceTenantId}` : "all",
+    ],
+    queryFn: () =>
+      tenantContext.isTenant && tenantContext.tenantId
+        ? getTenantAppointments(tenantContext.tenantId, tenantContext.serviceTenantId)
+        : getAppointments(),
+    enabled:
+      !tenantContext.isTenant || (!!tenantContext.tenantId && !!tenantContext.serviceTenantId),
   });
 
   const visibleDays = useMemo(() => {
@@ -117,12 +126,16 @@ function AppointmentsPage() {
     isError: isServiceRequestsError,
     error: serviceRequestsError,
   } = useQuery({
-    queryKey: ["service-requests", tenantContext.isTenant ? tenantContext.tenantId : "all"],
+    queryKey: [
+      "service-requests",
+      tenantContext.isTenant ? `${tenantContext.tenantId}:${tenantContext.serviceTenantId}` : "all",
+    ],
     queryFn: () =>
       tenantContext.isTenant && tenantContext.tenantId
-        ? getTenantServiceRequests(tenantContext.tenantId)
+        ? getTenantServiceRequests(tenantContext.tenantId, tenantContext.serviceTenantId)
         : getServiceRequests(),
-    enabled: !tenantContext.isTenant || !!tenantContext.tenantId,
+    enabled:
+      !tenantContext.isTenant || (!!tenantContext.tenantId && !!tenantContext.serviceTenantId),
   });
 
   useEffect(() => {

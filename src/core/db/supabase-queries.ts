@@ -660,7 +660,7 @@ function mapMaintenanceRequestRow(r: any) {
   };
 }
 
-export async function getServiceRequests(filters?: { tenantId?: number }) {
+export async function getServiceRequests(filters?: { tenantId?: number; legacyTenantId?: number }) {
   try {
     let maintenanceQuery = supabase
       .from("maintenance_request")
@@ -684,7 +684,9 @@ export async function getServiceRequests(filters?: { tenantId?: number }) {
       `,
       )
       .order("created_at", { ascending: false });
-    if (filters?.tenantId) legacyQuery = legacyQuery.eq("tenant_id", filters.tenantId);
+    if (filters?.legacyTenantId || filters?.tenantId) {
+      legacyQuery = legacyQuery.eq("tenant_id", filters.legacyTenantId || filters.tenantId);
+    }
     const { data, error } = await legacyQuery;
 
     if (error && !isSupabaseSchemaError(error)) {
@@ -929,13 +931,34 @@ export async function getAppointments() {
 
   if (error) throw error;
 
+  const serviceRequestIds = [
+    ...new Set((data || []).map((a) => a.service_request_id).filter(Boolean)),
+  ];
+  const requestMap = new Map<number, { tenant_id?: number | null; property_id?: number | null }>();
+
+  if (serviceRequestIds.length > 0) {
+    const { data: linkedRequests } = await supabase
+      .from("service_requests")
+      .select("service_request_id, tenant_id, property_id")
+      .in("service_request_id", serviceRequestIds);
+
+    for (const request of linkedRequests || []) {
+      requestMap.set(request.service_request_id, request);
+    }
+  }
+
   return (data || []).map((a: any) => ({
     id: `A-${a.appointment_id}`,
     appointmentId: a.appointment_id,
+    serviceRequestId: a.service_request_id ?? null,
+    tenantId: requestMap.get(a.service_request_id)?.tenant_id ?? null,
+    propertyId: requestMap.get(a.service_request_id)?.property_id ?? null,
     title: a.title,
     date: a.appointment_date,
     time: a.appointment_time,
-    property: a.property_id ? `Property #${a.property_id}` : "",
+    property: requestMap.get(a.service_request_id)?.property_id
+      ? `Property #${requestMap.get(a.service_request_id)?.property_id}`
+      : "",
     contractor: a.contractor_id ? `Contractor #${a.contractor_id}` : "",
     status: a.status,
     source: "appointments",
@@ -1516,7 +1539,6 @@ export async function createAppointment(payload: any) {
         title: payload.title,
         service_request_id: payload.service_request_id,
         contractor_id: payload.contractor_id,
-        property_id: payload.property_id,
         appointment_date: payload.appointment_date,
         appointment_time: payload.appointment_time,
         status: "Scheduled",
@@ -1566,7 +1588,6 @@ export async function createAppointment(payload: any) {
       title: payload.title,
       service_request_id: payload.service_request_id,
       contractor_id: payload.contractor_id,
-      property_id: payload.property_id,
       appointment_date: payload.appointment_date,
       appointment_time: payload.appointment_time,
       status: "Scheduled",
@@ -1807,6 +1828,8 @@ export async function updateSubscriptionData(id: string, payload: any) {
 
 export interface TenantRecord {
   tenant_id: number;
+  user_id?: number | null;
+  auth_user_id?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   email?: string | null;
@@ -1830,6 +1853,78 @@ export interface TenantLeaseRecord {
   property_name?: string | null;
   property_address?: string | null;
   landlord_name?: string | null;
+}
+
+async function getTenantUserProfile(email: string, authUserId?: string) {
+  let userQuery = supabase
+    .from("users")
+    .select("user_id, name, email, phone, auth_user_id")
+    .eq("email", email)
+    .eq("role_id", 3);
+  if (authUserId) userQuery = userQuery.eq("auth_user_id", authUserId);
+
+  const { data, error } = await userQuery.maybeSingle();
+  if (!error && data) return data;
+
+  const fallback = await supabase
+    .from("users")
+    .select("user_id, name, email, phone, auth_user_id")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (fallback.error && !isSupabaseSchemaError(fallback.error)) {
+    console.error("Error fetching tenant user profile:", fallback.error);
+  }
+
+  return fallback.data || null;
+}
+
+async function ensureTenantRecordForUser(userData: {
+  user_id: number;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  auth_user_id?: string | null;
+}): Promise<TenantRecord | null> {
+  if (!userData.email) return null;
+
+  const [firstName, ...lastNameParts] = String(userData.name || "Tenant").split(" ");
+  const tenantPayload = {
+    first_name: firstName || "Tenant",
+    last_name: lastNameParts.join(" ") || null,
+    email: userData.email,
+    mobile_number: userData.phone || null,
+    account_status: "Active",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase.from("tenant").insert([tenantPayload]).select().single();
+
+  if (error) {
+    if (!isSupabaseSchemaError(error)) console.error("Error creating tenant profile:", error);
+    return {
+      tenant_id: userData.user_id,
+      user_id: userData.user_id,
+      auth_user_id: userData.auth_user_id,
+      first_name: tenantPayload.first_name,
+      last_name: tenantPayload.last_name,
+      email: userData.email,
+      mobile_number: userData.phone,
+      profile_photo: null,
+      activePropertyId: null,
+      activeLease: null,
+    };
+  }
+
+  const activeLease = await getTenantActiveLease(data.tenant_id);
+  return {
+    ...data,
+    user_id: userData.user_id,
+    auth_user_id: userData.auth_user_id,
+    activePropertyId: activeLease?.property_id ?? null,
+    activeLease,
+  };
 }
 
 export interface TenantNotificationRecord {
@@ -1856,6 +1951,7 @@ export async function getTenantByEmail(
   authUserId?: string,
 ): Promise<TenantRecord | null> {
   try {
+    const userProfile = await getTenantUserProfile(email, authUserId);
     let tenantQuery = supabase
       .from("tenant")
       .select("tenant_id, first_name, last_name, email, mobile_number, profile_photo")
@@ -1867,6 +1963,8 @@ export async function getTenantByEmail(
 
       return {
         ...data,
+        user_id: userProfile?.user_id ?? null,
+        auth_user_id: userProfile?.auth_user_id ?? authUserId ?? null,
         activePropertyId: activeLease?.property_id ?? null,
         activeLease,
       };
@@ -1876,55 +1974,8 @@ export async function getTenantByEmail(
       console.error("Error fetching tenant:", error);
     }
 
-    let userQuery = supabase
-      .from("users")
-      .select("user_id, name, email, phone, auth_user_id")
-      .eq("email", email)
-      .eq("role_id", 3);
-    if (authUserId) userQuery = userQuery.eq("auth_user_id", authUserId);
-    const { data: userData, error: userError } = await userQuery.maybeSingle();
-
-    if (userError || !userData) {
-      const fallbackQuery = supabase
-        .from("users")
-        .select("user_id, name, email, phone, auth_user_id")
-        .eq("email", email)
-        .maybeSingle();
-      const { data: fallbackUser, error: fallbackError } = await fallbackQuery;
-      if (fallbackError || !fallbackUser) {
-        if (fallbackError && !isSupabaseSchemaError(fallbackError)) {
-          console.error("Error fetching tenant user profile:", fallbackError);
-        }
-        return null;
-      }
-
-      const [first_name, ...rest] = String(fallbackUser.name || "Tenant").split(" ");
-      const activeLease = await getTenantActiveLease(fallbackUser.user_id);
-      return {
-        tenant_id: fallbackUser.user_id,
-        first_name,
-        last_name: rest.join(" ") || null,
-        email: fallbackUser.email,
-        mobile_number: fallbackUser.phone,
-        profile_photo: null,
-        activePropertyId: activeLease?.property_id ?? null,
-        activeLease,
-      };
-    }
-
-    const [first_name, ...rest] = String(userData.name || "Tenant").split(" ");
-    const activeLease = await getTenantActiveLease(userData.user_id);
-
-    return {
-      tenant_id: userData.user_id,
-      first_name,
-      last_name: rest.join(" ") || null,
-      email: userData.email,
-      mobile_number: userData.phone,
-      profile_photo: null,
-      activePropertyId: activeLease?.property_id ?? null,
-      activeLease,
-    };
+    if (!userProfile) return null;
+    return ensureTenantRecordForUser(userProfile);
   } catch (err) {
     console.error("Exception fetching tenant:", err);
     return null;
@@ -2060,18 +2111,20 @@ export async function getTenantDocuments(tenantId: number) {
   }
 }
 
-export async function getTenantServiceRequests(tenantId: number) {
-  return getServiceRequests({ tenantId });
+export async function getTenantServiceRequests(tenantId: number, legacyTenantId?: number | null) {
+  return getServiceRequests({ tenantId, legacyTenantId: legacyTenantId || tenantId });
 }
 
-export async function getTenantAppointments(tenantId: number) {
+export async function getTenantAppointments(tenantId: number, legacyTenantId?: number | null) {
   const all = await getAppointments();
-  return all.filter((appointment) => appointment.tenantId === tenantId);
+  const allowedTenantIds = new Set([tenantId, legacyTenantId || tenantId]);
+  return all.filter((appointment) => allowedTenantIds.has(appointment.tenantId));
 }
 
-export async function getTenantInvoices(tenantId: number) {
+export async function getTenantInvoices(tenantId: number, legacyTenantId?: number | null) {
   const all = await getInvoices();
-  return all.filter((invoice) => invoice.tenantId === tenantId);
+  const allowedTenantIds = new Set([tenantId, legacyTenantId || tenantId]);
+  return all.filter((invoice) => allowedTenantIds.has(invoice.tenantId));
 }
 
 export async function getTenantNotifications(
@@ -2138,12 +2191,12 @@ export async function updateTenantProfilePhoto(tenantId: number, photoUrl: strin
   return data;
 }
 
-export async function getTenantDashboardSummary(tenantId: number) {
+export async function getTenantDashboardSummary(tenantId: number, legacyTenantId?: number | null) {
   const [requests, appointments, documents, invoices, lease] = await Promise.all([
-    getTenantServiceRequests(tenantId),
-    getTenantAppointments(tenantId),
+    getTenantServiceRequests(tenantId, legacyTenantId),
+    getTenantAppointments(tenantId, legacyTenantId),
     getTenantDocuments(tenantId),
-    getTenantInvoices(tenantId),
+    getTenantInvoices(tenantId, legacyTenantId),
     getTenantActiveLease(tenantId),
   ]);
 

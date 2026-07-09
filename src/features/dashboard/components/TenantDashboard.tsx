@@ -55,25 +55,34 @@ import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
 import { formatINR } from "@/shared/utils/utils";
 import { useQuery } from "@tanstack/react-query";
-import { getAppointments, getInvoices, getServiceRequests } from "@/core/db/supabase-queries";
+import {
+  getTenantAppointments,
+  getTenantInvoices,
+  getTenantServiceRequests,
+} from "@/core/db/supabase-queries";
+import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 
 const fmt = (n: number) => formatINR(n);
 
 /* ---------------- TENANT ---------------- */
 export function TenantDashboard() {
   const session = useSession();
+  const tenantContext = useTenantContext();
   const tenantName = session?.name?.split(" ")[0] || "Sarah";
   const { data: dbRequests = [] } = useQuery({
-    queryKey: ["service-requests"],
-    queryFn: getServiceRequests,
+    queryKey: ["service-requests", tenantContext.tenantId, tenantContext.serviceTenantId],
+    queryFn: () => getTenantServiceRequests(tenantContext.tenantId!, tenantContext.serviceTenantId),
+    enabled: !!tenantContext.tenantId && !!tenantContext.serviceTenantId,
   });
   const { data: dbAppointments = [] } = useQuery({
-    queryKey: ["appointments"],
-    queryFn: getAppointments,
+    queryKey: ["appointments", tenantContext.tenantId, tenantContext.serviceTenantId],
+    queryFn: () => getTenantAppointments(tenantContext.tenantId!, tenantContext.serviceTenantId),
+    enabled: !!tenantContext.tenantId && !!tenantContext.serviceTenantId,
   });
   const { data: dbInvoices = [] } = useQuery({
-    queryKey: ["invoices"],
-    queryFn: getInvoices,
+    queryKey: ["invoices", tenantContext.tenantId],
+    queryFn: () => getTenantInvoices(tenantContext.tenantId!, tenantContext.serviceTenantId),
+    enabled: !!tenantContext.tenantId,
   });
 
   const visibleRequests = dbRequests.length > 0 ? dbRequests : serviceRequests;
@@ -137,7 +146,9 @@ export function TenantDashboard() {
             <div className="text-xs font-semibold uppercase tracking-wide text-primary">
               Next rent
             </div>
-            <div className="mt-2 text-3xl font-bold text-foreground">{fmt(next?.amount ?? myUnit.rent)}</div>
+            <div className="mt-2 text-3xl font-bold text-foreground">
+              {fmt(next?.amount ?? myUnit.rent)}
+            </div>
             <div className="text-sm text-muted-foreground">Due {next?.due ?? "This month"}</div>
             <Button asChild className="mt-4 w-full">
               <Link to="/app/invoices">Pay rent</Link>
@@ -148,10 +159,19 @@ export function TenantDashboard() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Link to="/app/service-requests" className="block">
-          <StatCard label="Open requests" value={String(openRequests.length)} icon={Wrench} tone="info" />
+          <StatCard
+            label="Open requests"
+            value={String(openRequests.length)}
+            icon={Wrench}
+            tone="info"
+          />
         </Link>
         <Link to="/app/appointments" className="block">
-          <StatCard label="Upcoming appointments" value={String(upcomingAppointments.length)} icon={Calendar} />
+          <StatCard
+            label="Upcoming appointments"
+            value={String(upcomingAppointments.length)}
+            icon={Calendar}
+          />
         </Link>
         <Link to="/app/leases" className="block">
           <StatCard
@@ -169,22 +189,20 @@ export function TenantDashboard() {
             <CardTitle className="text-sm font-semibold">My maintenance requests</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {visibleRequests
-              .slice(0, 5)
-              .map((r) => (
-                <div
-                  key={r.id}
-                  className="flex items-center justify-between gap-3 rounded-md border border-border/60 p-2.5"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{r.title}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {r.category} · {r.contractor ?? "Awaiting assignment"}
-                    </div>
+            {visibleRequests.slice(0, 5).map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between gap-3 rounded-md border border-border/60 p-2.5"
+              >
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium">{r.title}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {r.category} · {r.contractor ?? "Awaiting assignment"}
                   </div>
-                  <StatusBadge value={r.status} />
                 </div>
-              ))}
+                <StatusBadge value={r.status} />
+              </div>
+            ))}
           </CardContent>
         </Card>
 

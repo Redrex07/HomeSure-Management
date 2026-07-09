@@ -20,6 +20,8 @@ export function useTenantContext() {
     isTenant,
     tenant,
     tenantId: tenant?.tenant_id ?? null,
+    userId: tenant?.user_id ?? null,
+    serviceTenantId: tenant?.user_id ?? tenant?.tenant_id ?? null,
     propertyId: tenant?.activePropertyId ?? null,
     isLoading: isTenant && isLoading,
     error,
