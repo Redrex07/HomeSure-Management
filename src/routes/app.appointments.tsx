@@ -22,11 +22,12 @@ import {
   createAppointment,
   updateAppointmentDateTime,
   getServiceRequests,
+  getTenantServiceRequests,
   getContractors,
 } from "@/core/db/supabase-queries";
 import { Plus, Calendar as CalIcon, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { useSession } from "@/features/auth/store/auth-store";
+import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 import {
   Dialog,
   DialogContent,
@@ -54,7 +55,7 @@ export const Route = createFileRoute("/app/appointments")({
 type CalendarView = "today" | "week" | "month";
 
 function AppointmentsPage() {
-  const session = useSession();
+  const tenantContext = useTenantContext();
   const queryClient = useQueryClient();
 
   const [openCreate, setOpenCreate] = useState(false);
@@ -116,8 +117,12 @@ function AppointmentsPage() {
     isError: isServiceRequestsError,
     error: serviceRequestsError,
   } = useQuery({
-    queryKey: ["service-requests"],
-    queryFn: getServiceRequests,
+    queryKey: ["service-requests", tenantContext.isTenant ? tenantContext.tenantId : "all"],
+    queryFn: () =>
+      tenantContext.isTenant && tenantContext.tenantId
+        ? getTenantServiceRequests(tenantContext.tenantId)
+        : getServiceRequests(),
+    enabled: !tenantContext.isTenant || !!tenantContext.tenantId,
   });
 
   useEffect(() => {
@@ -144,6 +149,7 @@ function AppointmentsPage() {
     mutationFn: createAppointment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["service-requests"] });
       toast.success("Appointment scheduled successfully!");
       setOpenCreate(false);
       setCreateTitle("");
@@ -159,7 +165,10 @@ function AppointmentsPage() {
 
   const rescheduleMutation = useMutation({
     mutationFn: (payload: { id: string; date: string; time: string }) =>
-      updateAppointmentDateTime(payload.id, { appointment_date: payload.date, appointment_time: payload.time }),
+      updateAppointmentDateTime(payload.id, {
+        appointment_date: payload.date,
+        appointment_time: payload.time,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast.success("Appointment rescheduled successfully!");
@@ -179,13 +188,18 @@ function AppointmentsPage() {
       return;
     }
     const selectedRequest = serviceRequests.find(
-      (request: any) => String(request.id).replace("SR-", "") === createRequestId,
+      (request: any) => `${request.source}:${request.requestId}` === createRequestId,
     );
+    if (!selectedRequest) {
+      toast.error("Selected service request is no longer available.");
+      return;
+    }
     createMutation.mutate({
       title: createTitle,
-      tenant_id: Number(session?.id) || selectedRequest?.tenantId || undefined,
+      tenant_id: tenantContext.tenantId || selectedRequest?.tenantId || undefined,
       property_id: selectedRequest?.propertyId || undefined,
-      service_request_id: Number(createRequestId),
+      service_request_id: selectedRequest?.requestId,
+      service_request_source: selectedRequest?.source,
       contractor_id: Number(createContractorId),
       appointment_date: createDate,
       appointment_time: createTime,
@@ -282,12 +296,9 @@ function AppointmentsPage() {
                       {!isLoadingServiceRequests &&
                         !isServiceRequestsError &&
                         serviceRequests.map((sr) => (
-                         <SelectItem
-  key={sr.id}
-  value={String(sr.id).replace("SR-", "")}
->
-  {formatServiceRequestLabel(sr)}
-</SelectItem>
+                          <SelectItem key={sr.id} value={`${sr.source}:${sr.requestId}`}>
+                            {formatServiceRequestLabel(sr)}
+                          </SelectItem>
                         ))}
                     </SelectContent>
                   </Select>
@@ -300,12 +311,9 @@ function AppointmentsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {contractors.map((c) => (
-                        <SelectItem
-  key={String(c.id)}
-  value={String(c.id)}
->
-  {c.name} ({c.trade})
-</SelectItem>
+                        <SelectItem key={String(c.id)} value={String(c.id)}>
+                          {c.name} ({c.trade})
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -364,13 +372,23 @@ function AppointmentsPage() {
           <Card className="border-border/70 shadow-card">
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => moveCalendar(-1)}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => moveCalendar(-1)}
+                >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <CardTitle className="min-w-52 text-center text-sm font-semibold sm:text-left">
                   {calendarTitle}
                 </CardTitle>
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => moveCalendar(1)}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => moveCalendar(1)}
+                >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -391,24 +409,34 @@ function AppointmentsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className={calendarView === "today" ? "grid gap-2" : "grid grid-cols-1 gap-2 sm:grid-cols-7"}>
+              <div
+                className={
+                  calendarView === "today" ? "grid gap-2" : "grid grid-cols-1 gap-2 sm:grid-cols-7"
+                }
+              >
                 {visibleDays.map((day) => {
                   const dayAppointments = appointmentList.filter((appointment: any) => {
                     if (!appointment.date) return false;
-                    return format(new Date(`${appointment.date}T00:00:00`), "yyyy-MM-dd") === format(day, "yyyy-MM-dd");
+                    return (
+                      format(new Date(`${appointment.date}T00:00:00`), "yyyy-MM-dd") ===
+                      format(day, "yyyy-MM-dd")
+                    );
                   });
                   const outsideMonth = calendarView === "month" && !isSameMonth(day, calendarDate);
 
                   return (
-                  <div
-                    key={day.toISOString()}
-                    className={`min-h-32 rounded-lg border border-border bg-background p-3 ${outsideMonth ? "opacity-45" : ""}`}
-                  >
-                    <div className="text-xs font-medium text-muted-foreground">{format(day, "EEE")}</div>
-                    <div className="mt-1 text-2xl font-bold tracking-tight">{format(day, "d")}</div>
-                    <div className="mt-3 space-y-1">
-                      {dayAppointments
-                        .map((a, aIdx) => (
+                    <div
+                      key={day.toISOString()}
+                      className={`min-h-32 rounded-lg border border-border bg-background p-3 ${outsideMonth ? "opacity-45" : ""}`}
+                    >
+                      <div className="text-xs font-medium text-muted-foreground">
+                        {format(day, "EEE")}
+                      </div>
+                      <div className="mt-1 text-2xl font-bold tracking-tight">
+                        {format(day, "d")}
+                      </div>
+                      <div className="mt-3 space-y-1">
+                        {dayAppointments.map((a, aIdx) => (
                           <div
                             key={a.id + "-" + aIdx}
                             className="rounded-md border border-primary/30 bg-primary-soft px-1.5 py-1 text-[10px] text-primary"
@@ -417,13 +445,13 @@ function AppointmentsPage() {
                             <div className="truncate">{a.title}</div>
                           </div>
                         ))}
-                      {dayAppointments.length === 0 && (
-                        <div className="rounded-md border border-dashed border-border px-1.5 py-2 text-[10px] text-muted-foreground">
-                          No visits
-                        </div>
-                      )}
+                        {dayAppointments.length === 0 && (
+                          <div className="rounded-md border border-dashed border-border px-1.5 py-2 text-[10px] text-muted-foreground">
+                            No visits
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
                   );
                 })}
               </div>
@@ -435,7 +463,8 @@ function AppointmentsPage() {
               <CalIcon className="h-8 w-8 stroke-1 text-slate-400 mb-2" />
               <p className="text-sm font-semibold text-slate-800 mb-1">No appointments scheduled</p>
               <p className="text-xs text-muted-foreground">
-                There are no active inspections or maintenance dispatches scheduled. Click "New appointment" to get started.
+                There are no active inspections or maintenance dispatches scheduled. Click "New
+                appointment" to get started.
               </p>
             </div>
           ) : (
@@ -479,7 +508,10 @@ function AppointmentsPage() {
         </>
       )}
 
-      <Dialog open={!!reschedulingAppointment} onOpenChange={(open) => !open && setReschedulingAppointment(null)}>
+      <Dialog
+        open={!!reschedulingAppointment}
+        onOpenChange={(open) => !open && setReschedulingAppointment(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reschedule Appointment</DialogTitle>

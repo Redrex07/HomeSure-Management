@@ -6,9 +6,13 @@ export function useTenantContext() {
   const session = useSession();
   const isTenant = session?.role === "tenant";
 
-  const { data: tenant, isLoading, error } = useQuery({
-    queryKey: ["tenant-context", session?.email],
-    queryFn: () => getTenantByEmail(session!.email),
+  const {
+    data: tenant,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["tenant-context", session?.email, session?.id],
+    queryFn: () => getTenantByEmail(session!.email, session?.id),
     enabled: isTenant && !!session?.email,
   });
 

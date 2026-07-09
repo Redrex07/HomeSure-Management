@@ -110,7 +110,6 @@ export async function getLandlordProperties(landlordId: string) {
 
 export async function createProperty(payload: any) {
   try {
-
     const rentAmount = payload.rent_amount;
     delete payload.rent_amount;
     const amenitiesObj = payload.amenities;
@@ -118,7 +117,7 @@ export async function createProperty(payload: any) {
 
     const tenantPreferencesObj = payload.tenant_preferences;
     delete payload.tenant_preferences;
-    
+
     let rentDetailsObj: any = null;
     if (payload.specifications) {
       try {
@@ -129,21 +128,16 @@ export async function createProperty(payload: any) {
       } catch (e) {}
     }
 
-
-    const { data, error } = await supabase
-      .from("properties")
-      .insert([payload])
-      .select();
+    const { data, error } = await supabase.from("properties").insert([payload]).select();
 
     if (error) throw error;
 
-    
     if (data && data.length > 0) {
       const propertyId = data[0].property_id;
-      
+
       const parseNumeric = (val: any) => {
         if (!val) return null;
-        const num = Number(String(val).replace(/[^0-9.-]/g, ''));
+        const num = Number(String(val).replace(/[^0-9.-]/g, ""));
         return isNaN(num) ? null : num;
       };
 
@@ -151,12 +145,19 @@ export async function createProperty(payload: any) {
         property_id: propertyId,
         monthly_rent: parseNumeric(rentAmount),
         security_deposit: rentDetailsObj ? parseNumeric(rentDetailsObj.security_deposit) : null,
-        maintenance_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.maintenance_charges) : null,
-        electricity_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.electricity_charges) : null,
+        maintenance_charges: rentDetailsObj
+          ? parseNumeric(rentDetailsObj.maintenance_charges)
+          : null,
+        electricity_charges: rentDetailsObj
+          ? parseNumeric(rentDetailsObj.electricity_charges)
+          : null,
         water_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.water_charges) : null,
         parking_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.parking_charges) : null,
         lease_duration: rentDetailsObj?.lease_duration || null,
-        available_from: (rentDetailsObj?.available_from && rentDetailsObj.available_from !== "") ? rentDetailsObj.available_from : null
+        available_from:
+          rentDetailsObj?.available_from && rentDetailsObj.available_from !== ""
+            ? rentDetailsObj.available_from
+            : null,
       };
 
       const { error: rentError } = await supabase
@@ -182,9 +183,11 @@ export async function createProperty(payload: any) {
           childrens_play_area: amenitiesObj.childrens_play_area,
           furnished: amenitiesObj.furnished,
           semi_furnished: amenitiesObj.semi_furnished,
-          air_conditioning: amenitiesObj.air_conditioning
+          air_conditioning: amenitiesObj.air_conditioning,
         };
-        const { error: amError } = await supabase.from("property_amenities").insert([amenitiesPayload]);
+        const { error: amError } = await supabase
+          .from("property_amenities")
+          .insert([amenitiesPayload]);
         if (amError) console.error("Error creating amenities:", amError);
       }
 
@@ -198,11 +201,13 @@ export async function createProperty(payload: any) {
           students_allowed: tenantPreferencesObj.students_allowed,
           pets_allowed: tenantPreferencesObj.pets_allowed,
           smoking_allowed: tenantPreferencesObj.smoking_allowed,
-          drinking_allowed: tenantPreferencesObj.drinking_allowed
+          drinking_allowed: tenantPreferencesObj.drinking_allowed,
           // maximum_occupants column does not exist in schema
           // maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
         };
-        const { error: tpError } = await supabase.from("tenant_preferences").insert([tenantPrefPayload]);
+        const { error: tpError } = await supabase
+          .from("tenant_preferences")
+          .insert([tenantPrefPayload]);
         if (tpError) console.error("Error creating tenant preferences:", tpError);
       }
     }
@@ -216,7 +221,6 @@ export async function createProperty(payload: any) {
 
 export async function updateProperty(id: number, payload: any) {
   try {
-
     const rentAmount = payload.rent_amount;
     delete payload.rent_amount;
     const amenitiesObj = payload.amenities;
@@ -235,7 +239,6 @@ export async function updateProperty(id: number, payload: any) {
       } catch (e) {}
     }
 
-
     const { data, error } = await supabase
       .from("properties")
       .update(payload)
@@ -243,10 +246,10 @@ export async function updateProperty(id: number, payload: any) {
       .select();
 
     if (error) throw error;
-    
+
     const parseNumeric = (val: any) => {
       if (!val) return null;
-      const num = Number(String(val).replace(/[^0-9.-]/g, ''));
+      const num = Number(String(val).replace(/[^0-9.-]/g, ""));
       return isNaN(num) ? null : num;
     };
 
@@ -259,7 +262,10 @@ export async function updateProperty(id: number, payload: any) {
       water_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.water_charges) : null,
       parking_charges: rentDetailsObj ? parseNumeric(rentDetailsObj.parking_charges) : null,
       lease_duration: rentDetailsObj?.lease_duration || null,
-      available_from: (rentDetailsObj?.available_from && rentDetailsObj.available_from !== "") ? rentDetailsObj.available_from : null
+      available_from:
+        rentDetailsObj?.available_from && rentDetailsObj.available_from !== ""
+          ? rentDetailsObj.available_from
+          : null,
     };
 
     const { data: existingRent } = await supabase
@@ -289,9 +295,9 @@ export async function updateProperty(id: number, payload: any) {
         childrens_play_area: amenitiesObj.childrens_play_area,
         furnished: amenitiesObj.furnished,
         semi_furnished: amenitiesObj.semi_furnished,
-        air_conditioning: amenitiesObj.air_conditioning
+        air_conditioning: amenitiesObj.air_conditioning,
       };
-      
+
       const { data: existingAm } = await supabase
         .from("property_amenities")
         .select("amenity_id")
@@ -315,7 +321,7 @@ export async function updateProperty(id: number, payload: any) {
         students_allowed: tenantPreferencesObj.students_allowed,
         pets_allowed: tenantPreferencesObj.pets_allowed,
         smoking_allowed: tenantPreferencesObj.smoking_allowed,
-        drinking_allowed: tenantPreferencesObj.drinking_allowed
+        drinking_allowed: tenantPreferencesObj.drinking_allowed,
         // maximum_occupants column does not exist in schema
         // maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
       };
@@ -327,10 +333,15 @@ export async function updateProperty(id: number, payload: any) {
         .maybeSingle();
 
       if (existingPref) {
-        const { error: upError } = await supabase.from("tenant_preferences").update(tenantPrefPayload).eq("property_id", id);
+        const { error: upError } = await supabase
+          .from("tenant_preferences")
+          .update(tenantPrefPayload)
+          .eq("property_id", id);
         if (upError) throw upError;
       } else {
-        const { error: insError } = await supabase.from("tenant_preferences").insert([tenantPrefPayload]);
+        const { error: insError } = await supabase
+          .from("tenant_preferences")
+          .insert([tenantPrefPayload]);
         if (insError) throw insError;
       }
     }
@@ -357,7 +368,6 @@ export async function deleteProperty(id: number) {
   }
 }
 
-
 export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
@@ -370,15 +380,18 @@ export async function getPropertyById(id: string) {
       console.error("Error fetching property:", error);
       return null;
     }
-    
+
     if (data) {
-      data.rent_amount = data.property_rent_details?.[0]?.monthly_rent || data.property_rent_details?.monthly_rent || "";
+      data.rent_amount =
+        data.property_rent_details?.[0]?.monthly_rent ||
+        data.property_rent_details?.monthly_rent ||
+        "";
       data.rentDetailsData = data.property_rent_details?.[0] || data.property_rent_details || null;
       delete data.property_rent_details;
-      
+
       data.amenitiesData = data.property_amenities?.[0] || data.property_amenities || null;
       delete data.property_amenities;
-      
+
       data.tenantPreferencesData = data.tenant_preferences?.[0] || data.tenant_preferences || null;
       // We don't delete data.tenant_preferences since it might be useful or not, but we can delete it for consistency
       delete data.tenant_preferences;
@@ -389,7 +402,6 @@ export async function getPropertyById(id: string) {
     return null;
   }
 }
-
 
 /**
  * STEP 2: Get all tenants for the landlord's properties
@@ -416,10 +428,7 @@ export async function getLandlordTenants(landlordId: string) {
 
 export async function createTenant(payload: any) {
   try {
-    const { data, error } = await supabase
-      .from("tenant_onboarding")
-      .insert([payload])
-      .select();
+    const { data, error } = await supabase.from("tenant_onboarding").insert([payload]).select();
 
     if (error) throw error;
     return data;
@@ -484,10 +493,7 @@ export async function getLandlordInvoices(landlordId: string) {
 
 export async function createInvoice(payload: any) {
   try {
-    const { data, error } = await supabase
-      .from("invoices")
-      .insert([payload])
-      .select();
+    const { data, error } = await supabase.from("invoices").insert([payload]).select();
 
     if (error) throw error;
     return data;
@@ -616,78 +622,91 @@ function mapLegacyServiceRequestRow(r: {
   return {
     id: `SR-${r.service_request_id}`,
     requestId: r.service_request_id,
+    source: "service_requests",
     propertyId: r.property_id ?? null,
     tenantId: r.tenant_id ?? null,
     title: r.title || "Untitled Request",
     description: r.description || "",
-    property: propertyRecord?.property_name || (r.property_id ? `Property #${r.property_id}` : "Unassigned Property"),
+    property:
+      propertyRecord?.property_name ||
+      (r.property_id ? `Property #${r.property_id}` : "Unassigned Property"),
     tenant: r.tenant_id ? `Tenant #${r.tenant_id}` : "Unassigned Tenant",
     category: r.category || "General",
     priority: r.priority || "Medium",
     status: r.status || "Pending",
     contractor: null,
-    created: r.created_at
-      ? new Date(r.created_at).toISOString().split("T")[0]
-      : todayIsoDate(),
+    created: r.created_at ? new Date(r.created_at).toISOString().split("T")[0] : todayIsoDate(),
   };
 }
 
-export async function getServiceRequests() {
+function mapMaintenanceRequestRow(r: any) {
+  return {
+    id: `MR-${r.request_id}`,
+    requestId: r.request_id,
+    source: "maintenance_request",
+    propertyId: r.property_id ?? null,
+    tenantId: r.tenant_id ?? null,
+    title:
+      String(r.issue_description || "").split("\n")[0] || r.issue_category || "Maintenance request",
+    description: r.issue_description || "",
+    property: r.property_id ? `Property #${r.property_id}` : "Unassigned Property",
+    tenant: r.tenant_id ? `Tenant #${r.tenant_id}` : "Unassigned Tenant",
+    category: r.issue_category || "General",
+    priority: r.priority || "Medium",
+    status: r.request_status || "Pending",
+    contractor: r.assigned_to || null,
+    created: r.request_date || todayIsoDate(),
+    resolutionNotes: r.resolution_notes || "",
+  };
+}
+
+export async function getServiceRequests(filters?: { tenantId?: number }) {
   try {
-    const tenantTable = await supabase
+    let maintenanceQuery = supabase
       .from("maintenance_request")
       .select("*")
       .order("request_date", { ascending: false });
+    if (filters?.tenantId) maintenanceQuery = maintenanceQuery.eq("tenant_id", filters.tenantId);
+    const tenantTable = await maintenanceQuery;
 
-    if (!tenantTable.error) {
-      return (tenantTable.data || []).map((r: any) => ({
-        id: `SR-${r.request_id}`,
-        requestId: r.request_id,
-        propertyId: r.property_id ?? null,
-        tenantId: r.tenant_id ?? null,
-        title: String(r.issue_description || "").split("\n")[0] || r.issue_category || "Maintenance request",
-        description: r.issue_description || "",
-        property: r.property_id ? `Property #${r.property_id}` : "Unassigned Property",
-        tenant: r.tenant_id ? `Tenant #${r.tenant_id}` : "Unassigned Tenant",
-        category: r.issue_category || "General",
-        priority: r.priority || "Medium",
-        status: r.request_status || "Pending",
-        contractor: r.assigned_to || null,
-        created: r.request_date || todayIsoDate(),
-        resolutionNotes: r.resolution_notes || "",
-        source: "maintenance_request",
-      }));
-    }
-
-    if (!isSupabaseSchemaError(tenantTable.error)) {
+    if (tenantTable.error && !isSupabaseSchemaError(tenantTable.error)) {
       console.error("Error fetching maintenance requests:", tenantTable.error);
     }
 
-    const { data, error } = await supabase
+    let legacyQuery = supabase
       .from("service_requests")
-      .select(`
+      .select(
+        `
         *,
         properties (
           property_name
         )
-      `)
+      `,
+      )
       .order("created_at", { ascending: false });
+    if (filters?.tenantId) legacyQuery = legacyQuery.eq("tenant_id", filters.tenantId);
+    const { data, error } = await legacyQuery;
 
-    if (error) {
+    if (error && !isSupabaseSchemaError(error)) {
       console.error(error);
-      return [];
     }
 
-    return (data || []).map((row: any) => ({
-      ...mapLegacyServiceRequestRow(row),
-      source: "service_requests",
-    }));
+    const maintenanceRows = tenantTable.error
+      ? []
+      : (tenantTable.data || []).map(mapMaintenanceRequestRow);
+    const legacyRows = error ? [] : (data || []).map(mapLegacyServiceRequestRow);
+
+    return [...maintenanceRows, ...legacyRows].sort((a, b) => {
+      const aDate = a.created || "";
+      const bDate = b.created || "";
+      return bDate.localeCompare(aDate);
+    });
   } catch (err) {
     console.error(err);
     return [];
   }
 }
- 
+
 export async function createServiceRequest(payload: {
   title: string;
   category: string;
@@ -698,6 +717,27 @@ export async function createServiceRequest(payload: {
   created_by?: number;
 }) {
   try {
+    const legacyPayload = {
+      title: payload.title,
+      category: payload.category,
+      priority: payload.priority,
+      description: payload.description,
+      status: "Pending",
+      property_id: payload.property_id || DEFAULT_PROPERTY_ID,
+      tenant_id: payload.tenant_id || DEFAULT_TENANT_ID,
+      created_by: payload.created_by || payload.tenant_id || DEFAULT_TENANT_ID,
+    };
+
+    const legacyResult = await supabase.from("service_requests").insert([legacyPayload]).select();
+
+    if (!legacyResult.error) {
+      return (legacyResult.data || []).map(mapLegacyServiceRequestRow);
+    }
+
+    if (!isSupabaseSchemaError(legacyResult.error)) {
+      console.error("Error creating service request:", legacyResult.error);
+    }
+
     const tenantTablePayload = {
       tenant_id: payload.tenant_id || DEFAULT_TENANT_ID,
       property_id: payload.property_id || DEFAULT_PROPERTY_ID,
@@ -714,35 +754,12 @@ export async function createServiceRequest(payload: {
       .insert([tenantTablePayload])
       .select();
 
-    if (!tenantTableResult.error) {
-      return tenantTableResult.data;
-    }
-
-    if (!isSupabaseSchemaError(tenantTableResult.error)) {
+    if (tenantTableResult.error) {
       console.error("Error creating maintenance request:", tenantTableResult.error);
+      throw tenantTableResult.error;
     }
 
-    const { data, error } = await supabase
-      .from("service_requests")
-      .insert([
-        {
-          title: payload.title,
-          category: payload.category,
-          priority: payload.priority,
-          description: payload.description,
-          status: "Pending",
-          property_id: payload.property_id || 1,
-          tenant_id: payload.tenant_id || 3,
-          created_by: payload.created_by || 6,
-        },
-      ])
-      .select();
-
-    if (error) {
-      console.error("Error creating service request:", error);
-      throw error;
-    }
-    return data;
+    return (tenantTableResult.data || []).map(mapMaintenanceRequestRow);
   } catch (err) {
     console.error("Exception creating service request:", err);
     throw err;
@@ -757,7 +774,7 @@ export async function updateServiceRequest(
     priority?: string;
     status?: string;
     description?: string;
-  }
+  },
 ) {
   try {
     const numericId = parseInt(id.replace("SR-", ""), 10);
@@ -859,9 +876,7 @@ function nextRealtorId() {
 }
 
 export async function getContractors() {
-  const { data, error } = await supabase
-    .from("contractors")
-    .select("*");
+  const { data, error } = await supabase.from("contractors").select("*");
 
   if (error) throw error;
 
@@ -933,7 +948,8 @@ export async function getEstimates() {
   try {
     const { data, error } = await supabase
       .from("estimates")
-      .select(`
+      .select(
+        `
         estimate_id,
         service_request_id,
         estimated_cost,
@@ -943,7 +959,8 @@ export async function getEstimates() {
   name
 )
         )
-      `)
+      `,
+      )
       .order("submitted_date", { ascending: false });
 
     if (error) {
@@ -954,7 +971,7 @@ export async function getEstimates() {
     return (data || []).map((e: any) => ({
       id: `E-${e.estimate_id}`,
       request: `SR-${e.service_request_id}`,
-     contractor: e.users?.name || "Unknown Contractor",
+      contractor: e.users?.name || "Unknown Contractor",
       amount: Number(e.estimated_cost || 0),
       status: e.status || "Pending",
       submitted: e.submitted_date || new Date().toISOString().split("T")[0],
@@ -1029,13 +1046,18 @@ function mapInvoiceRow(i: any) {
     status: i.payment_status || "Pending",
     issued: i.invoice_date || todayIsoDate(),
     due: i.invoice_date
-      ? new Date(new Date(i.invoice_date).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      ? new Date(new Date(i.invoice_date).getTime() + 14 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0]
       : todayIsoDate(),
     reason: "",
   };
 }
 
-async function updateRentPaymentById(rawId: string | number | null | undefined, payload: Record<string, unknown>) {
+async function updateRentPaymentById(
+  rawId: string | number | null | undefined,
+  payload: Record<string, unknown>,
+) {
   if (rawId == null || rawId === "") {
     throw new Error("Missing rent payment id.");
   }
@@ -1091,13 +1113,15 @@ export async function getInvoices() {
 
     const { data, error } = await supabase
       .from("invoices")
-      .select(`
+      .select(
+        `
         invoice_id,
         service_request_id,
         invoice_amount,
         invoice_date,
         payment_status
-      `)
+      `,
+      )
       .order("invoice_id", { ascending: false });
 
     if (error) {
@@ -1112,7 +1136,10 @@ export async function getInvoices() {
   }
 }
 
-export async function updateInvoiceStatus(id: string, payload: { status: string; reason?: string }) {
+export async function updateInvoiceStatus(
+  id: string,
+  payload: { status: string; reason?: string },
+) {
   try {
     const rentPaymentId = parsePrefixedId(id, "RP-");
     if (String(id).startsWith("RP-") && rentPaymentId) {
@@ -1159,16 +1186,18 @@ export async function recordRentPaymentSuccess(
   const source = invoice.source || (invoice.id.startsWith("RP-") ? "rent_payments" : "invoices");
   const rawId =
     invoice.rawId ??
-    (source === "rent_payments" ? parsePrefixedId(invoice.id, "RP-") : parsePrefixedId(invoice.id, "INV-"));
+    (source === "rent_payments"
+      ? parsePrefixedId(invoice.id, "RP-")
+      : parsePrefixedId(invoice.id, "INV-"));
 
   if (source === "rent_payments") {
     return updateRentPaymentById(rawId, {
-        payment_status: "Successful",
-        payment_method: payload.payment_method || "Razorpay",
-        payment_reference: payload.payment_reference,
-        receipt_url: payload.receipt_url || null,
-        payment_date: todayIsoDate(),
-      });
+      payment_status: "Successful",
+      payment_method: payload.payment_method || "Razorpay",
+      payment_reference: payload.payment_reference,
+      receipt_url: payload.receipt_url || null,
+      payment_date: todayIsoDate(),
+    });
   }
 
   const { data, error } = await supabase
@@ -1187,7 +1216,8 @@ export async function getSupportTickets() {
   try {
     const { data, error } = await supabase
       .from("support_tickets")
-      .select(`
+      .select(
+        `
         ticket_id,
         subject,
         status,
@@ -1199,7 +1229,8 @@ export async function getSupportTickets() {
             role_name
           )
         )
-      `)
+      `,
+      )
       .order("ticket_id", { ascending: false });
 
     if (error) {
@@ -1212,9 +1243,12 @@ export async function getSupportTickets() {
       subject: t.subject,
       user: t.user?.name || "Unknown User",
       role: t.user?.roles?.role_name || "Reporter",
-      priority: t.priority || (t.ticket_id % 3 === 0 ? "High" : t.ticket_id % 2 === 0 ? "Low" : "Medium"),
+      priority:
+        t.priority || (t.ticket_id % 3 === 0 ? "High" : t.ticket_id % 2 === 0 ? "Low" : "Medium"),
       status: t.status || "Open",
-      created: t.created_at ? new Date(t.created_at).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      created: t.created_at
+        ? new Date(t.created_at).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
     }));
   } catch (err) {
     console.error("Exception fetching support tickets:", err);
@@ -1273,7 +1307,7 @@ export async function createContractor(payload: {
       rating: 0,
       jobs: 0,
       available: payload.available ?? true,
-      availabilityStatus: payload.available ?? true ? "Available" : "Busy",
+      availabilityStatus: (payload.available ?? true) ? "Available" : "Busy",
       email: payload.email,
       phone: payload.phone,
     };
@@ -1318,7 +1352,10 @@ export async function createRealtor(payload: {
 
 function normalizeAiListingKeywords(keywords: unknown) {
   if (Array.isArray(keywords)) {
-    return keywords.filter(Boolean).map((keyword) => String(keyword).trim()).filter(Boolean);
+    return keywords
+      .filter(Boolean)
+      .map((keyword) => String(keyword).trim())
+      .filter(Boolean);
   }
 
   if (typeof keywords === "string") {
@@ -1356,7 +1393,13 @@ function normalizeAiListing(row: {
   created_at?: string | null;
   updated_at?: string | null;
 }) {
-  const listingId = row.id ?? row.ai_listing_id ?? row.listing_id ?? row.property_id ?? row.propertyId ?? Date.now();
+  const listingId =
+    row.id ??
+    row.ai_listing_id ??
+    row.listing_id ??
+    row.property_id ??
+    row.propertyId ??
+    Date.now();
   const title = row.title || row.name || "Untitled Listing";
   const listingType = row.listing_type || row.listingType || "Draft";
   const listingStatus = row.listing_status || row.listingStatus || row.status || "Draft";
@@ -1367,16 +1410,24 @@ function normalizeAiListing(row: {
     `${title} is a ${listingType.toLowerCase()} listing with ${listingStatus.toLowerCase()} status and pricing of ${price > 0 ? `₹${price.toLocaleString()}` : "competitive pricing"}.`;
 
   return {
-    id: String(listingId).startsWith("L-") || String(listingId).startsWith("AI-") ? String(listingId) : `L-${listingId}`,
+    id:
+      String(listingId).startsWith("L-") || String(listingId).startsWith("AI-")
+        ? String(listingId)
+        : `L-${listingId}`,
     propertyId: `P-${row.property_id ?? row.propertyId ?? listingId}`,
     title,
     description,
     keywords: normalizeAiListingKeywords(
-      row.keywords || [listingType, listingStatus, row.status || "Listed"]
+      row.keywords || [listingType, listingStatus, row.status || "Listed"],
     ),
     price,
     landlordId: row.landlord_id ?? row.realtor_id ?? row.realtorId ?? null,
-    createdAt: row.listing_date || row.listingDate || row.created_at || row.updated_at || new Date().toISOString(),
+    createdAt:
+      row.listing_date ||
+      row.listingDate ||
+      row.created_at ||
+      row.updated_at ||
+      new Date().toISOString(),
   };
 }
 
@@ -1458,10 +1509,30 @@ export async function createAiListing(payload: {
 }
 
 export async function createAppointment(payload: any) {
+  if (payload.service_request_source !== "maintenance_request" && payload.service_request_id) {
+    const { data, error } = await supabase
+      .from("appointments")
+      .insert({
+        title: payload.title,
+        service_request_id: payload.service_request_id,
+        contractor_id: payload.contractor_id,
+        property_id: payload.property_id,
+        appointment_date: payload.appointment_date,
+        appointment_time: payload.appointment_time,
+        status: "Scheduled",
+      })
+      .select()
+      .single();
+
+    if (!error) return data;
+    if (!isSupabaseSchemaError(error)) throw error;
+  }
+
   const visitSchedulePayload = {
     tenant_id: payload.tenant_id || DEFAULT_TENANT_ID,
     property_id: payload.property_id || DEFAULT_PROPERTY_ID,
     landlord_id: payload.landlord_id || null,
+    service_request_id: payload.service_request_id || null,
     visit_date: payload.appointment_date,
     visit_time: payload.appointment_time,
     visit_status: payload.status || "Pending",
@@ -1476,6 +1547,13 @@ export async function createAppointment(payload: any) {
 
   if (!tenantTableResult.error) {
     return tenantTableResult.data;
+  }
+
+  if (isSupabaseSchemaError(tenantTableResult.error) && payload.service_request_id) {
+    const retryPayload = { ...visitSchedulePayload };
+    delete (retryPayload as any).service_request_id;
+    const retry = await supabase.from("visit_schedule").insert([retryPayload]).select().single();
+    if (!retry.error) return retry.data;
   }
 
   if (!isSupabaseSchemaError(tenantTableResult.error)) {
@@ -1505,7 +1583,7 @@ export async function updateAppointmentDateTime(
   payload: {
     appointment_date: string;
     appointment_time: string;
-  }
+  },
 ) {
   const numericId = parsePrefixedId(id, "A-");
   const tenantTableResult = await supabase
@@ -1545,7 +1623,6 @@ export async function createEstimate(payload: {
   contractor_id: number;
   estimated_cost: number;
 }) {
-
   console.log("PAYLOAD RECEIVED:", payload);
 
   const { data, error } = await supabase
@@ -1590,7 +1667,7 @@ export async function getServiceAdminDashboard() {
   const completedRequests = mockServiceRequests.filter((request) => request.status === "Completed");
   const pendingRequests = mockServiceRequests.filter((request) => request.status === "Pending");
   const assignedRequests = mockServiceRequests.filter(
-    (request) => request.status === "Assigned" || request.status === "In Progress"
+    (request) => request.status === "Assigned" || request.status === "In Progress",
   );
 
   return {
@@ -1707,20 +1784,14 @@ export async function getSubscriptionsData() {
 }
 
 export async function createSubscriptionData(payload: any) {
-  const { data, error } = await supabase
-    .from("subscriptions")
-    .insert([payload])
-    .select();
+  const { data, error } = await supabase.from("subscriptions").insert([payload]).select();
 
   if (error) throw error;
 
   return data;
 }
 
-export async function updateSubscriptionData(
-  id: string,
-  payload: any
-) {
+export async function updateSubscriptionData(id: string, payload: any) {
   const { data, error } = await supabase
     .from("subscriptions")
     .update(payload)
@@ -1780,25 +1851,77 @@ function tenantDisplayName(row: {
   return full || row.email || "Tenant";
 }
 
-export async function getTenantByEmail(email: string): Promise<TenantRecord | null> {
+export async function getTenantByEmail(
+  email: string,
+  authUserId?: string,
+): Promise<TenantRecord | null> {
   try {
-    const { data, error } = await supabase
+    let tenantQuery = supabase
       .from("tenant")
       .select("tenant_id, first_name, last_name, email, mobile_number, profile_photo")
-      .eq("email", email)
-      .maybeSingle();
+      .eq("email", email);
+    const { data, error } = await tenantQuery.maybeSingle();
 
-    if (error || !data) {
-      if (error && !isSupabaseSchemaError(error)) {
-        console.error("Error fetching tenant:", error);
-      }
-      return null;
+    if (!error && data) {
+      const activeLease = await getTenantActiveLease(data.tenant_id);
+
+      return {
+        ...data,
+        activePropertyId: activeLease?.property_id ?? null,
+        activeLease,
+      };
     }
 
-    const activeLease = await getTenantActiveLease(data.tenant_id);
+    if (error && !isSupabaseSchemaError(error)) {
+      console.error("Error fetching tenant:", error);
+    }
+
+    let userQuery = supabase
+      .from("users")
+      .select("user_id, name, email, phone, auth_user_id")
+      .eq("email", email)
+      .eq("role_id", 3);
+    if (authUserId) userQuery = userQuery.eq("auth_user_id", authUserId);
+    const { data: userData, error: userError } = await userQuery.maybeSingle();
+
+    if (userError || !userData) {
+      const fallbackQuery = supabase
+        .from("users")
+        .select("user_id, name, email, phone, auth_user_id")
+        .eq("email", email)
+        .maybeSingle();
+      const { data: fallbackUser, error: fallbackError } = await fallbackQuery;
+      if (fallbackError || !fallbackUser) {
+        if (fallbackError && !isSupabaseSchemaError(fallbackError)) {
+          console.error("Error fetching tenant user profile:", fallbackError);
+        }
+        return null;
+      }
+
+      const [first_name, ...rest] = String(fallbackUser.name || "Tenant").split(" ");
+      const activeLease = await getTenantActiveLease(fallbackUser.user_id);
+      return {
+        tenant_id: fallbackUser.user_id,
+        first_name,
+        last_name: rest.join(" ") || null,
+        email: fallbackUser.email,
+        mobile_number: fallbackUser.phone,
+        profile_photo: null,
+        activePropertyId: activeLease?.property_id ?? null,
+        activeLease,
+      };
+    }
+
+    const [first_name, ...rest] = String(userData.name || "Tenant").split(" ");
+    const activeLease = await getTenantActiveLease(userData.user_id);
 
     return {
-      ...data,
+      tenant_id: userData.user_id,
+      first_name,
+      last_name: rest.join(" ") || null,
+      email: userData.email,
+      mobile_number: userData.phone,
+      profile_photo: null,
       activePropertyId: activeLease?.property_id ?? null,
       activeLease,
     };
@@ -1834,7 +1957,8 @@ export async function getTenantActiveLease(tenantId: number): Promise<TenantLeas
 
       if (property) {
         property_name = property.property_name || null;
-        property_address = [property.address, property.city, property.state].filter(Boolean).join(", ") || null;
+        property_address =
+          [property.address, property.city, property.state].filter(Boolean).join(", ") || null;
       }
     }
 
@@ -1882,9 +2006,12 @@ export async function getTenantLeaseAgreements(tenantId: number) {
       return {
         id: `LA-${lease.agreement_id ?? lease.lease_id ?? lease.id}`,
         agreementId: lease.agreement_id ?? lease.lease_id ?? lease.id,
-        agreementNumber: lease.agreement_number || `LA-${lease.agreement_id ?? lease.lease_id ?? lease.id}`,
+        agreementNumber:
+          lease.agreement_number || `LA-${lease.agreement_id ?? lease.lease_id ?? lease.id}`,
         propertyId: lease.property_id,
-        property: property?.property_name || (lease.property_id ? `Property #${lease.property_id}` : "Unknown"),
+        property:
+          property?.property_name ||
+          (lease.property_id ? `Property #${lease.property_id}` : "Unknown"),
         propertyAddress: property
           ? [property.address, property.city, property.state].filter(Boolean).join(", ")
           : "",
@@ -1934,8 +2061,7 @@ export async function getTenantDocuments(tenantId: number) {
 }
 
 export async function getTenantServiceRequests(tenantId: number) {
-  const all = await getServiceRequests();
-  return all.filter((request) => request.tenantId === tenantId);
+  return getServiceRequests({ tenantId });
 }
 
 export async function getTenantAppointments(tenantId: number) {
@@ -1948,7 +2074,9 @@ export async function getTenantInvoices(tenantId: number) {
   return all.filter((invoice) => invoice.tenantId === tenantId);
 }
 
-export async function getTenantNotifications(tenantId: number): Promise<TenantNotificationRecord[]> {
+export async function getTenantNotifications(
+  tenantId: number,
+): Promise<TenantNotificationRecord[]> {
   try {
     const { data, error } = await supabase
       .from("notifications")
@@ -2042,17 +2170,16 @@ export async function getTenantDashboardSummary(tenantId: number) {
   };
 }
 
-export async function createFavoriteProperty(payload: {
-  tenant_id: number;
-  property_id: number;
-}) {
+export async function createFavoriteProperty(payload: { tenant_id: number; property_id: number }) {
   const { data, error } = await supabase
     .from("favorite_property")
-    .insert([{
-      tenant_id: payload.tenant_id,
-      property_id: payload.property_id,
-      added_on: new Date().toISOString(),
-    }])
+    .insert([
+      {
+        tenant_id: payload.tenant_id,
+        property_id: payload.property_id,
+        added_on: new Date().toISOString(),
+      },
+    ])
     .select();
 
   if (error) throw error;
@@ -2067,14 +2194,16 @@ export async function createPropertyInquiry(payload: {
 }) {
   const { data, error } = await supabase
     .from("property_inquiry")
-    .insert([{
-      tenant_id: payload.tenant_id,
-      property_id: payload.property_id,
-      landlord_id: payload.landlord_id || null,
-      inquiry_message: payload.inquiry_message,
-      inquiry_status: "Pending",
-      inquiry_date: new Date().toISOString(),
-    }])
+    .insert([
+      {
+        tenant_id: payload.tenant_id,
+        property_id: payload.property_id,
+        landlord_id: payload.landlord_id || null,
+        inquiry_message: payload.inquiry_message,
+        inquiry_status: "Pending",
+        inquiry_date: new Date().toISOString(),
+      },
+    ])
     .select();
 
   if (error) throw error;
@@ -2092,17 +2221,19 @@ export async function createRentalApplication(payload: {
 }) {
   const { data, error } = await supabase
     .from("rental_application")
-    .insert([{
-      tenant_id: payload.tenant_id,
-      property_id: payload.property_id,
-      landlord_id: payload.landlord_id || null,
-      application_date: todayIsoDate(),
-      expected_move_in: payload.expected_move_in || null,
-      occupation: payload.occupation || null,
-      monthly_income: payload.monthly_income || null,
-      application_status: "Pending",
-      remarks: payload.remarks || null,
-    }])
+    .insert([
+      {
+        tenant_id: payload.tenant_id,
+        property_id: payload.property_id,
+        landlord_id: payload.landlord_id || null,
+        application_date: todayIsoDate(),
+        expected_move_in: payload.expected_move_in || null,
+        occupation: payload.occupation || null,
+        monthly_income: payload.monthly_income || null,
+        application_status: "Pending",
+        remarks: payload.remarks || null,
+      },
+    ])
     .select();
 
   if (error) throw error;
@@ -2119,15 +2250,17 @@ export async function createReviewRating(payload: {
 }) {
   const { data, error } = await supabase
     .from("review_rating")
-    .insert([{
-      tenant_id: payload.tenant_id,
-      property_id: payload.property_id,
-      landlord_id: payload.landlord_id || null,
-      rating: payload.rating,
-      review_title: payload.review_title,
-      review_description: payload.review_description || null,
-      review_date: todayIsoDate(),
-    }])
+    .insert([
+      {
+        tenant_id: payload.tenant_id,
+        property_id: payload.property_id,
+        landlord_id: payload.landlord_id || null,
+        rating: payload.rating,
+        review_title: payload.review_title,
+        review_description: payload.review_description || null,
+        review_date: todayIsoDate(),
+      },
+    ])
     .select();
 
   if (error) throw error;
