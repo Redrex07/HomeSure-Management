@@ -726,32 +726,47 @@ function nextRealtorId() {
 }
 
 export async function getContractors() {
-  return mockContractors.map(normalizeContractor);
-}
+  const { data, error } = await supabase
+    .from("contractors")
+    .select("*");
 
+  if (error) throw error;
+
+  return (data || []).map((c: any) => ({
+    id: c.contractor_id,
+    name: c.name,
+    companyName: c.company_name,
+    trade: c.trade,
+    specialization: c.specialization,
+    email: c.email,
+    phone: c.phone,
+    available: c.available,
+    rating: c.rating,
+    jobs: c.jobs_completed,
+  }));
+}
 // ================= APPOINTMENTS =================
 
 export async function getAppointments() {
-  return [
-    {
-      id: "A-1",
-      title: "Leak Repair",
-      date: "2026-06-24",
-      time: "10:00",
-      property: "Sunrise Apartments",
-      contractor: "Mike Plumbing",
-      status: "Scheduled",
-    },
-    {
-      id: "A-2",
-      title: "Electrical Inspection",
-      date: "2026-06-25",
-      time: "14:30",
-      property: "Green Villa",
-      contractor: "John Electric",
-      status: "Scheduled",
-    },
-  ];
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("*")
+    .order("appointment_date", { ascending: false });
+
+  console.log("Appointments:", data);
+  console.log("Appointments Error:", error);
+
+  if (error) throw error;
+
+  return (data || []).map((a: any) => ({
+    id: `A-${a.appointment_id}`,
+    title: a.title,
+    date: a.appointment_date,
+    time: a.appointment_time,
+    property: "",
+    contractor: "",
+    status: a.status,
+  }));
 }
 
 // ================= ESTIMATES =================
@@ -766,8 +781,9 @@ export async function getEstimates() {
         estimated_cost,
         status,
         submitted_date,
-        contractor:users!contractor_id (
-          name
+        users!contractor_id (
+  name
+)
         )
       `)
       .order("submitted_date", { ascending: false });
@@ -780,7 +796,7 @@ export async function getEstimates() {
     return (data || []).map((e: any) => ({
       id: `E-${e.estimate_id}`,
       request: `SR-${e.service_request_id}`,
-      contractor: e.contractor?.name || "Unknown Contractor",
+     contractor: e.users?.name || "Unknown Contractor",
       amount: Number(e.estimated_cost || 0),
       status: e.status || "Pending",
       submitted: e.submitted_date || new Date().toISOString().split("T")[0],
@@ -825,6 +841,8 @@ export async function getInvoices() {
         payment_status
       `)
       .order("invoice_id", { ascending: false });
+      console.log("Invoices:", data);
+console.log("Invoice Error:", error);
 
     if (error) {
       console.error("Error fetching invoices:", error);
@@ -1143,12 +1161,22 @@ export async function createAiListing(payload: {
 }
 
 export async function createAppointment(payload: any) {
-  console.log("New Appointment:", payload);
+  const { data, error } = await supabase
+    .from("appointments")
+    .insert({
+      title: payload.title,
+      service_request_id: payload.service_request_id,
+      contractor_id: payload.contractor_id,
+      appointment_date: payload.appointment_date,
+      appointment_time: payload.appointment_time,
+      status: "Scheduled",
+    })
+    .select()
+    .single();
 
-  return {
-    success: true,
-    id: `A-${Date.now()}`,
-  };
+  if (error) throw error;
+
+  return data;
 }
 export async function updateAppointmentDateTime(
   id: string,
@@ -1166,29 +1194,26 @@ export async function createEstimate(payload: {
   contractor_id: number;
   estimated_cost: number;
 }) {
-  try {
-    const { data, error } = await supabase
-      .from("estimates")
-      .insert([
-        {
-          service_request_id: payload.service_request_id,
-          contractor_id: payload.contractor_id,
-          estimated_cost: payload.estimated_cost,
-          status: "Pending",
-          submitted_date: new Date().toISOString().split("T")[0],
-        },
-      ])
-      .select();
 
-    if (error) {
-      console.error("Error creating estimate:", error);
-      throw error;
-    }
-    return data;
-  } catch (err) {
-    console.error("Exception creating estimate:", err);
-    throw err;
-  }
+  console.log("PAYLOAD RECEIVED:", payload);
+
+  const { data, error } = await supabase
+    .from("estimates")
+    .insert({
+      service_request_id: payload.service_request_id,
+      contractor_id: payload.contractor_id,
+      estimated_cost: payload.estimated_cost,
+      status: "Pending",
+      submitted_date: new Date().toISOString().split("T")[0],
+    })
+    .select();
+
+  console.log("DATA:", data);
+  console.log("ERROR:", error);
+
+  if (error) throw error;
+
+  return data;
 }
 
 export async function getUsers() {

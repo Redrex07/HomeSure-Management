@@ -129,13 +129,23 @@ function AppointmentsPage() {
       toast.error("Please select a service request and contractor.");
       return;
     }
+    console.log("Request ID:", createRequestId, typeof createRequestId);
+console.log("Contractor ID:", createContractorId, typeof createContractorId);
+
+console.log({
+  title: createTitle,
+  service_request_id: parseInt(createRequestId, 10),
+contractor_id: parseInt(createContractorId, 10),
+  appointment_date: createDate,
+  appointment_time: createTime,
+});
     createMutation.mutate({
-      title: createTitle,
-      service_request_id: parseInt(createRequestId.replace("SR-", ""), 10),
-      contractor_id: parseInt(createContractorId.replace("C-", ""), 10),
-      appointment_date: createDate,
-      appointment_time: createTime,
-    });
+  title: createTitle,
+  service_request_id: Number(createRequestId),
+  contractor_id: Number(createContractorId),
+  appointment_date: createDate,
+  appointment_time: createTime,
+});
   };
 
   const handleRescheduleSubmit = (e: React.FormEvent) => {
@@ -228,9 +238,12 @@ function AppointmentsPage() {
                       {!isLoadingServiceRequests &&
                         !isServiceRequestsError &&
                         serviceRequests.map((sr) => (
-                          <SelectItem key={sr.id} value={sr.id}>
-                            {formatServiceRequestLabel(sr)}
-                          </SelectItem>
+                         <SelectItem
+  key={sr.id}
+  value={String(sr.id).replace("SR-", "")}
+>
+  {formatServiceRequestLabel(sr)}
+</SelectItem>
                         ))}
                     </SelectContent>
                   </Select>
@@ -243,9 +256,12 @@ function AppointmentsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {contractors.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name} ({c.trade})
-                        </SelectItem>
+                        <SelectItem
+  key={String(c.id)}
+  value={String(c.id)}
+>
+  {c.name} ({c.trade})
+</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
