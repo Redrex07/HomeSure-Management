@@ -903,24 +903,7 @@ export async function getAppointments() {
     .select("*")
     .order("visit_date", { ascending: false });
 
-  if (!tenantTable.error) {
-    return (tenantTable.data || []).map((a: any) => ({
-      id: `A-${a.visit_id}`,
-      visitId: a.visit_id,
-      tenantId: a.tenant_id ?? null,
-      propertyId: a.property_id ?? null,
-      landlordId: a.landlord_id ?? null,
-      title: a.remarks || "Property visit",
-      date: a.visit_date,
-      time: a.visit_time,
-      property: a.property_id ? `Property #${a.property_id}` : "Unassigned Property",
-      contractor: a.landlord_id ? `Landlord #${a.landlord_id}` : "",
-      status: a.visit_status || "Pending",
-      source: "visit_schedule",
-    }));
-  }
-
-  if (!isSupabaseSchemaError(tenantTable.error)) {
+  if (tenantTable.error && !isSupabaseSchemaError(tenantTable.error)) {
     console.error("Error fetching visit schedule:", tenantTable.error);
   }
 
@@ -947,7 +930,24 @@ export async function getAppointments() {
     }
   }
 
-  return (data || []).map((a: any) => ({
+  const visitScheduleRows = tenantTable.error
+    ? []
+    : (tenantTable.data || []).map((a: any) => ({
+        id: `VS-${a.visit_id}`,
+        visitId: a.visit_id,
+        tenantId: a.tenant_id ?? null,
+        propertyId: a.property_id ?? null,
+        landlordId: a.landlord_id ?? null,
+        title: a.remarks || "Property visit",
+        date: a.visit_date,
+        time: a.visit_time,
+        property: a.property_id ? `Property #${a.property_id}` : "Unassigned Property",
+        contractor: a.landlord_id ? `Landlord #${a.landlord_id}` : "",
+        status: a.visit_status || "Pending",
+        source: "visit_schedule",
+      }));
+
+  const appointmentRows = (data || []).map((a: any) => ({
     id: `A-${a.appointment_id}`,
     appointmentId: a.appointment_id,
     serviceRequestId: a.service_request_id ?? null,
@@ -963,6 +963,12 @@ export async function getAppointments() {
     status: a.status,
     source: "appointments",
   }));
+
+  return [...visitScheduleRows, ...appointmentRows].sort((a, b) => {
+    const aDate = `${a.date || ""} ${a.time || ""}`;
+    const bDate = `${b.date || ""} ${b.time || ""}`;
+    return bDate.localeCompare(aDate);
+  });
 }
 
 // ================= ESTIMATES =================
