@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
@@ -7,8 +7,16 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Switch } from "@/shared/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 import { PageHeader } from "@/shared/components/common/PageHeader";
-import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { useSession, setSession } from "@/features/auth/store/auth-store";
 import { toast } from "sonner";
 
@@ -23,8 +31,13 @@ function SettingsPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [timezone, setTimezone] = useState("America/Los_Angeles");
+  const [profilePhoto, setProfilePhoto] = useState("");
+  const [currentPlan, setCurrentPlan] = useState("Pro");
+  const [showPlanDialog, setShowPlanDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (s?.id) {
@@ -33,14 +46,14 @@ function SettingsPage() {
         try {
           const { data, error } = await supabase
             .from("users")
-            .select("name, email, phone")
+            .select("name, email, phone, profile_photo")
             .eq("auth_user_id", s.id)
             .single();
 
           if (error) {
             const { data: altData } = await supabase
               .from("users")
-              .select("name, email, phone")
+              .select("name, email, phone, profile_photo")
               .eq("email", s.email)
               .single();
 
@@ -48,16 +61,22 @@ function SettingsPage() {
               setName(altData.name || "");
               setEmail(altData.email || "");
               setPhone(altData.phone || "");
+              setProfilePhoto(altData.profile_photo || localStorage.getItem("homesure.profile_photo") || "");
             }
           } else if (data) {
             setName(data.name || "");
             setEmail(data.email || "");
             setPhone(data.phone || "");
+            setProfilePhoto(data.profile_photo || localStorage.getItem("homesure.profile_photo") || "");
           }
 
           const savedTz = localStorage.getItem("homesure.timezone");
           if (savedTz) {
             setTimezone(savedTz);
+          }
+          const savedPlan = localStorage.getItem("homesure.plan");
+          if (savedPlan) {
+            setCurrentPlan(savedPlan);
           }
         } catch (err) {
           console.error("Error loading profile details:", err);
@@ -114,6 +133,60 @@ function SettingsPage() {
     }
   };
 
+  const handlePhotoSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !s?.id) return;
+
+    if (!["image/png", "image/jpeg"].includes(file.type)) {
+      toast.error("Please upload a PNG or JPG image.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Profile photo must be 2MB or smaller.");
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const ext = file.type === "image/png" ? "png" : "jpg";
+      const path = `${s.id}/profile.${ext}`;
+      const upload = await supabase.storage
+        .from("profile-photos")
+        .upload(path, file, { upsert: true, contentType: file.type });
+
+      let photoUrl = "";
+      if (!upload.error) {
+        const { data: publicUrl } = supabase.storage.from("profile-photos").getPublicUrl(path);
+        photoUrl = publicUrl.publicUrl;
+        await supabase.from("users").update({ profile_photo: photoUrl }).eq("auth_user_id", s.id);
+      } else {
+        photoUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      localStorage.setItem("homesure.profile_photo", photoUrl);
+      setProfilePhoto(photoUrl);
+      toast.success("Profile photo updated.");
+    } catch (err: any) {
+      toast.error("Failed to upload photo: " + (err.message || String(err)));
+    } finally {
+      setIsUploadingPhoto(false);
+      event.target.value = "";
+    }
+  };
+
+  const handlePlanChange = (plan: string) => {
+    setCurrentPlan(plan);
+    localStorage.setItem("homesure.plan", plan);
+    setShowPlanDialog(false);
+    toast.success(`Plan changed to ${plan}.`);
+  };
+
   return (
     <>
       <PageHeader
@@ -135,13 +208,26 @@ function SettingsPage() {
             <CardContent>
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
+                  {profilePhoto && <AvatarImage src={profilePhoto} alt={name || "Profile photo"} />}
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     {name ? name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() : "US"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <Button variant="outline" size="sm">
-                    Upload photo
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    className="hidden"
+                    onChange={handlePhotoSelected}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                  >
+                    {isUploadingPhoto ? "Uploading..." : "Upload photo"}
                   </Button>
                   <div className="mt-1 text-xs text-muted-foreground">PNG or JPG, max 2MB.</div>
                 </div>
@@ -230,7 +316,7 @@ function SettingsPage() {
                   <div className="text-base font-semibold">Pro · ₹149/month</div>
                   <div className="text-xs text-muted-foreground">Renews July 1, 2026</div>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => setShowPlanDialog(true)}>
                   Change plan
                 </Button>
               </div>
@@ -238,6 +324,36 @@ function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change plan</DialogTitle>
+            <DialogDescription>Current plan: {currentPlan}. Select a new plan for your HomeSure workspace.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            {[
+              { name: "Starter", price: "INR 49/month" },
+              { name: "Pro", price: "INR 149/month" },
+              { name: "Enterprise", price: "Custom" },
+            ].map((plan) => (
+              <button
+                key={plan.name}
+                type="button"
+                onClick={() => handlePlanChange(plan.name)}
+                className="flex items-center justify-between rounded-lg border border-border p-3 text-left hover:bg-muted"
+              >
+                <span className="font-medium">{plan.name}</span>
+                <span className="text-sm text-muted-foreground">{plan.price}</span>
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPlanDialog(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

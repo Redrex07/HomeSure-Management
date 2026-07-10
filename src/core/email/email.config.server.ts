@@ -1,7 +1,8 @@
 import process from "node:process";
 
 export interface EmailConfig {
-  resendApiKey: string;
+  emailUser: string;
+  emailPass: string;
   emailFrom: string;
   appUrl: string;
   supportEmail: string;
@@ -21,12 +22,17 @@ function normalizeSupportEmail(emailFrom: string): string {
 }
 
 export function getEmailConfig(): EmailConfig {
-  const resendApiKey = process.env.RESEND_API_KEY;
-  const emailFrom = process.env.EMAIL_FROM;
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+  const emailFrom = process.env.EMAIL_FROM || emailUser;
   const appUrl = process.env.APP_URL || process.env.VITE_SITE_URL || "http://localhost:3000";
 
-  if (!resendApiKey) {
-    throw new Error("Missing RESEND_API_KEY environment variable.");
+  if (!emailUser) {
+    throw new Error("Missing EMAIL_USER environment variable.");
+  }
+
+  if (!emailPass) {
+    throw new Error("Missing EMAIL_PASS environment variable.");
   }
 
   if (!emailFrom) {
@@ -34,7 +40,8 @@ export function getEmailConfig(): EmailConfig {
   }
 
   return {
-    resendApiKey,
+    emailUser,
+    emailPass,
     emailFrom: normalizeEmailFrom(emailFrom),
     appUrl: normalizeAppUrl(appUrl),
     supportEmail: process.env.SUPPORT_EMAIL || normalizeSupportEmail(emailFrom),

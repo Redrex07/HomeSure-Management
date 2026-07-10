@@ -15,7 +15,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { useSession, setSession } from "@/features/auth/store/auth-store";
-import { notifications, properties } from "@/shared/utils/mock-data";
+import { notifications, properties, serviceRequests, tenants } from "@/shared/utils/mock-data";
 import { NAV_BY_ROLE } from "./AppSidebar";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -110,6 +110,32 @@ export function AppTopbar() {
                 }}
               >
                 {property.name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandGroup heading="Tenants">
+            {tenants.slice(0, 5).map((tenant) => (
+              <CommandItem
+                key={tenant.id}
+                onSelect={() => {
+                  setOpen(false);
+                  navigate({ to: "/app/tenants" });
+                }}
+              >
+                {tenant.name} - {tenant.property}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandGroup heading="Service Requests">
+            {serviceRequests.slice(0, 5).map((request) => (
+              <CommandItem
+                key={request.id}
+                onSelect={() => {
+                  setOpen(false);
+                  navigate({ to: "/app/service-requests" });
+                }}
+              >
+                {request.id} - {request.title}
               </CommandItem>
             ))}
           </CommandGroup>

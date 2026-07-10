@@ -4,7 +4,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Card } from "@/shared/components/ui/card";
-import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video, CheckCircle, Search, Home } from "lucide-react";
+import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video, CheckCircle, Search, Home, Heart, MessageSquare, FileCheck, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "@/features/auth/store/auth-store";
@@ -16,9 +16,14 @@ import {
 } from "@/shared/utils/properties-store";
 import {
   getLandlordProperties,
+  getAllProperties,
   createProperty,
   updateProperty as updateSupabaseProperty,
-  deleteProperty as deleteSupabaseProperty
+  deleteProperty as deleteSupabaseProperty,
+  createFavoriteProperty,
+  createPropertyInquiry,
+  createRentalApplication,
+  createReviewRating,
 } from "@/core/db/supabase-queries";
 import { supabase } from "@/core/db/supabase";
 import {
@@ -55,6 +60,7 @@ import { Label } from "@/shared/components/ui/label";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
+import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 
 export const Route = createFileRoute("/app/properties")({
   head: () => ({ meta: [{ title: "Properties — HomeSure" }] }),
@@ -81,6 +87,9 @@ const parseImageUrls = (urlData: any): string[] => {
 function PropertiesPage() {
   const localProps = useProperties();
   const navigate = useNavigate();
+  const session = useSession();
+  const tenantContext = useTenantContext();
+  const isTenant = session?.role === "tenant";
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -88,7 +97,7 @@ function PropertiesPage() {
     setIsLoading(true);
     try {
       const landlordId = "2"; // Force "2" to match Supabase mock data
-      const data = await getLandlordProperties(landlordId);
+      const data = isTenant ? await getAllProperties() : await getLandlordProperties(landlordId);
       setSupabaseProps(data as UnifiedProperty[]);
     } finally {
       setIsLoading(false);
@@ -145,6 +154,66 @@ function PropertiesPage() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [editingProperty, setEditingProperty] = useState<UnifiedProperty | null>(null);
   const [selectedPropertyForAmenities, setSelectedPropertyForAmenities] = useState<UnifiedProperty | null>(null);
+  const tenantId = tenantContext.tenantId || Number(session?.id) || 3;
+
+  const getPropertyNumericId = (property: UnifiedProperty) => Number(property.property_id);
+  const getLandlordId = (property: UnifiedProperty) => Number((property as any).landlord_id || 2);
+
+  const handleFavoriteProperty = async (property: UnifiedProperty) => {
+    try {
+      await createFavoriteProperty({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+      });
+      toast.success("Property added to favorites");
+    } catch (err: any) {
+      toast.error("Could not save favorite: " + (err.message || String(err)));
+    }
+  };
+
+  const handleInquiry = async (property: UnifiedProperty) => {
+    try {
+      await createPropertyInquiry({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+        landlord_id: getLandlordId(property),
+        inquiry_message: `I am interested in ${property.property_name}. Please share availability and visit details.`,
+      });
+      toast.success("Inquiry sent to landlord");
+    } catch (err: any) {
+      toast.error("Could not send inquiry: " + (err.message || String(err)));
+    }
+  };
+
+  const handleApply = async (property: UnifiedProperty) => {
+    try {
+      await createRentalApplication({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+        landlord_id: getLandlordId(property),
+        remarks: `Rental application submitted for ${property.property_name}.`,
+      });
+      toast.success("Rental application submitted");
+    } catch (err: any) {
+      toast.error("Could not submit application: " + (err.message || String(err)));
+    }
+  };
+
+  const handleReview = async (property: UnifiedProperty) => {
+    try {
+      await createReviewRating({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+        landlord_id: getLandlordId(property),
+        rating: 5,
+        review_title: "Interested tenant review",
+        review_description: `Saved tenant feedback for ${property.property_name}.`,
+      });
+      toast.success("Review saved");
+    } catch (err: any) {
+      toast.error("Could not save review: " + (err.message || String(err)));
+    }
+  };
   const [editForm, setEditForm] = useState({
     property_name: "",
     property_type: "",
@@ -1436,11 +1505,13 @@ function PropertiesPage() {
                             <StatusBadge value={p.availability_status} />
                           </div>
                           
+                          {!isTenant && (
                           <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0 z-20">
                             <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
+                          )}
                           
                           <div className="absolute bottom-3 left-4 right-4 pointer-events-none transform transition-transform duration-500 group-hover:-translate-y-1">
                             <h3 className="text-white font-bold text-xl truncate drop-shadow-md">{p.property_name}</h3>
@@ -1474,6 +1545,22 @@ function PropertiesPage() {
                               <ChevronRight className="ml-1 h-4 w-4 opacity-70 group-hover/btn:translate-x-1.5 transition-transform" />
                             </Link>
                           </Button>
+                          {isTenant && (
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                              <Button variant="outline" size="sm" onClick={() => handleFavoriteProperty(p)}>
+                                <Heart className="mr-1 h-3.5 w-3.5" /> Favorite
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleInquiry(p)}>
+                                <MessageSquare className="mr-1 h-3.5 w-3.5" /> Inquiry
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleApply(p)}>
+                                <FileCheck className="mr-1 h-3.5 w-3.5" /> Apply
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleReview(p)}>
+                                <Star className="mr-1 h-3.5 w-3.5" /> Review
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </Card>
                     </motion.div>

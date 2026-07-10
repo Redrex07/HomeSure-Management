@@ -4,7 +4,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { tenants as mockTenants, leaseDocs } from "@/shared/utils/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
-import { FileText, Download, Plus, Trash2, Printer, Pencil } from "lucide-react";
+import { FileText, Download, Plus, Trash2, Printer, Pencil, Eye } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -222,6 +222,18 @@ function LeasesPage() {
     toast.success(`Downloaded colorful lease for ${leaseName}`);
   };
 
+  const handleViewLease = (leaseName: string) => {
+    const htmlContent = getLeaseHTML(leaseName);
+    const viewWindow = window.open("", "_blank");
+    if (viewWindow) {
+      viewWindow.document.write(htmlContent);
+      viewWindow.document.close();
+      toast.success(`Opened lease for ${leaseName}`);
+    } else {
+      toast.error("Please allow popups to view the lease.");
+    }
+  };
+
   const handlePrintLease = (leaseName: string) => {
     const htmlContent = getLeaseHTML(leaseName);
     const printWindow = window.open("", "_blank");
@@ -362,6 +374,18 @@ function LeasesPage() {
               className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
               onClick={(e) => {
                 e.stopPropagation();
+                handleViewLease(t.name);
+              }}
+              title="View"
+            >
+              <Eye className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+              onClick={(e) => {
+                e.stopPropagation();
                 handlePrintLease(t.name);
               }}
               title="Print"
@@ -476,6 +500,14 @@ function LeasesPage() {
                 </div>
               </div>
               <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleViewLease(d.name)}
+                  title="View"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"

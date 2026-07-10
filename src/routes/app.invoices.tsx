@@ -24,8 +24,13 @@ import { StatCard } from "@/shared/components/common/StatCard";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getInvoices, updateInvoiceStatus as updateSupabaseInvoice } from "@/core/db/supabase-queries";
-import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil } from "lucide-react";
+import {
+  getInvoices,
+  recordRentPaymentSuccess,
+  updateInvoiceStatus as updateSupabaseInvoice,
+} from "@/core/db/supabase-queries";
+import { createRazorpayOrder, verifyRazorpayPayment } from "@/core/api/razorpay.functions";
+import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
 const formatUsd = new Intl.NumberFormat("en-US", {
@@ -41,6 +46,36 @@ export const Route = createFileRoute("/app/invoices")({
 
 export type UnifiedInvoice = any & { isLocal?: boolean };
 
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => {
+      open: () => void;
+      on: (event: string, callback: (response: any) => void) => void;
+    };
+  }
+}
+
+function loadRazorpayCheckout() {
+  return new Promise<void>((resolve, reject) => {
+    if (typeof window === "undefined") return reject(new Error("Payments are only available in the browser."));
+    if (window.Razorpay) return resolve();
+
+    const existing = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Unable to load Razorpay Checkout.")), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Unable to load Razorpay Checkout."));
+    document.body.appendChild(script);
+  });
+}
+
 function InvoicesPage() {
   const session = useSession();
   const isContractor = session?.role === "contractor";
@@ -54,6 +89,7 @@ function InvoicesPage() {
     queryFn: getInvoices,
   });
 
+  const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
   const updateMutation = useMutation({
     mutationFn: ({ id, status, reason }: { id: string; status: string; reason?: string }) =>
       updateSupabaseInvoice(id.replace("INV-", ""), { status, reason }),
@@ -233,6 +269,76 @@ function InvoicesPage() {
     }
   };
 
+  const handlePayInvoice = async (invoice: any) => {
+    if (!invoice?.amount || Number(invoice.amount) <= 0) {
+      toast.error("This invoice does not have a payable amount.");
+      return;
+    }
+
+    setPayingInvoiceId(invoice.id);
+    try {
+      await loadRazorpayCheckout();
+      const amountInPaise = Math.round(Number(invoice.amount) * 100);
+      const order = await createRazorpayOrder({
+        data: {
+          amount: amountInPaise,
+          currency: "INR",
+          receipt: String(invoice.id).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40),
+          notes: {
+            invoice_id: String(invoice.id),
+            user_email: session?.email || "",
+          },
+        },
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        const RazorpayCheckout = window.Razorpay;
+        if (!RazorpayCheckout) {
+          reject(new Error("Razorpay Checkout did not load."));
+          return;
+        }
+
+        const checkout = new RazorpayCheckout({
+          key: order.keyId,
+          amount: order.amount,
+          currency: order.currency,
+          name: "HomeSure",
+          description: `Rent payment ${invoice.id}`,
+          order_id: order.orderId,
+          prefill: {
+            name: session?.name || "",
+            email: session?.email || "",
+          },
+          theme: { color: "#4f46e5" },
+          handler: async (response: any) => {
+            try {
+              await verifyRazorpayPayment({ data: response });
+              await recordRentPaymentSuccess(invoice, {
+                payment_method: "Razorpay",
+                payment_reference: response.razorpay_payment_id,
+                receipt_url: `https://dashboard.razorpay.com/app/payments/${response.razorpay_payment_id}`,
+              });
+              queryClient.invalidateQueries({ queryKey: ["invoices"] });
+              toast.success("Rent payment completed successfully.");
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          },
+        });
+
+        checkout.on("payment.failed", (response: any) => {
+          reject(new Error(response?.error?.description || "Razorpay payment failed."));
+        });
+        checkout.open();
+      });
+    } catch (err: any) {
+      toast.error("Payment failed: " + (err.message || String(err)));
+    } finally {
+      setPayingInvoiceId(null);
+    }
+  };
+
   return (
     <>
       <PageHeader title="Invoices" description="Track billing, payments and overdue accounts." />
@@ -314,6 +420,18 @@ function InvoicesPage() {
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
+                  {session?.role === "tenant" && i.status !== "Paid" && i.status !== "Successful" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                      onClick={() => handlePayInvoice(i)}
+                      disabled={payingInvoiceId === i.id}
+                      title="Pay rent"
+                    >
+                      <CreditCard className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"

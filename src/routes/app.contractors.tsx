@@ -258,32 +258,12 @@ function ContractorsPage() {
         }
       />
 
-      {isLoading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="border border-slate-200 shadow-sm rounded-xl animate-pulse">
-              <CardContent className="p-5 flex flex-col justify-between h-72">
-                <div className="flex items-start gap-3">
-                  <div className="h-12 w-12 rounded-full bg-slate-100" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-slate-100 rounded w-3/4" />
-                    <div className="h-3 bg-slate-100 rounded w-1/2" />
-                    <div className="h-6 bg-slate-100 rounded w-1/3 mt-3" />
-                  </div>
-                </div>
-                <div className="space-y-1.5 mt-4 pt-3 border-t border-slate-100">
-                  <div className="h-3 bg-slate-100 rounded w-2/3" />
-                  <div className="h-3 bg-slate-100 rounded w-1/2" />
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <div className="h-8 bg-slate-100 rounded flex-1" />
-                  <div className="h-8 bg-slate-100 rounded flex-1" />
-                  <div className="h-8 bg-slate-100 rounded flex-1" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+     {isLoading ? (
+  <div className="flex h-64 items-center justify-center border border-border/60 rounded-md bg-background/50">
+    <p className="text-sm text-muted-foreground animate-pulse">
+      Loading contractor list...
+    </p>
+  </div>
       ) : contractorList.length === 0 ? (
         <div className="flex h-72 flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-white p-8 text-center shadow-sm">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 border border-slate-200 text-slate-500 mb-4 shadow-sm">
