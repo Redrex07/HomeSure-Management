@@ -1733,51 +1733,90 @@ export async function getServiceAdminDashboard() {
 }
 
 export interface PlatformUser {
-  id: string;
   userId: number;
   authUserId: string | null;
   name: string;
   email: string;
   role: string;
-  status: string;
   joined: string;
+  status: "Active" | "Pending" | "Invited" | "Expired";
+  /** true if this row came from invitations (not yet registered) */
+  isInvitation?: boolean;
+  invitationToken?: string;
 }
+
+const ROLE_BY_ID_MAP: Record<number, string> = {
+  1: "super_admin",
+  2: "landlord",
+  3: "tenant",
+  4: "contractor",
+  5: "realtor",
+  6: "service_admin",
+};
 
 export async function getPlatformUsers(): Promise<PlatformUser[]> {
   try {
-    const { data, error } = await supabase
+    // 1. Fetch all registered users
+    const { data: users, error: usersError } = await supabase
       .from("users")
       .select("user_id, auth_user_id, name, email, role_id, status, created_at")
-      .order("user_id", { ascending: false });
+      .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching platform users:", error);
-      return [];
+    if (usersError) {
+      console.error("[getPlatformUsers] Error fetching users:", usersError);
     }
 
-    const roleMap: Record<number, string> = {
-      1: "super_admin",
-      2: "landlord",
-      3: "tenant",
-      4: "contractor",
-      5: "realtor",
-      6: "service_admin",
-    };
+    const registeredEmails = new Set<string>();
+    const registeredUsers: PlatformUser[] = (users || []).map((u: any) => {
+      registeredEmails.add((u.email || "").toLowerCase());
+      return {
+        userId: u.user_id,
+        authUserId: u.auth_user_id || null,
+        name: u.name || u.email || "Unknown",
+        email: u.email || "",
+        role: ROLE_BY_ID_MAP[u.role_id] || "landlord",
+        joined: u.created_at
+          ? new Date(u.created_at).toISOString().split("T")[0]
+          : todayIsoDate(),
+        status: (u.status as PlatformUser["status"]) || "Pending",
+        isInvitation: false,
+      };
+    });
 
-    return (data || []).map((u) => ({
-      id: `U-${u.user_id}`,
-      userId: u.user_id,
-      authUserId: u.auth_user_id ?? null,
-      name: u.name,
-      email: u.email,
-      role: roleMap[u.role_id] || "landlord",
-      status: u.status || "Active",
-      joined: u.created_at
-        ? new Date(u.created_at).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0],
-    }));
+    // 2. Fetch pending invitations (not yet accepted)
+    const { data: invitations, error: invError } = await supabase
+      .from("invitations")
+      .select("id, email, name, role, token_hash, expires_at, accepted_at, created_at")
+      .is("accepted_at", null)
+      .order("created_at", { ascending: false });
+
+    if (invError) {
+      console.error("[getPlatformUsers] Error fetching invitations:", invError);
+    }
+
+    const now = Date.now();
+    const invitedUsers: PlatformUser[] = (invitations || [])
+      .filter((inv: any) => !registeredEmails.has((inv.email || "").toLowerCase()))
+      .map((inv: any, idx: number) => {
+        const expired = inv.expires_at ? new Date(inv.expires_at).getTime() < now : false;
+        return {
+          userId: -(idx + 1), // negative sentinel to distinguish from real user IDs
+          authUserId: null,
+          name: inv.name || inv.email || "Invited User",
+          email: inv.email || "",
+          role: inv.role || "landlord",
+          joined: inv.created_at
+            ? new Date(inv.created_at).toISOString().split("T")[0]
+            : todayIsoDate(),
+          status: expired ? "Expired" : "Invited",
+          isInvitation: true,
+          invitationToken: inv.token_hash,
+        };
+      });
+
+    return [...registeredUsers, ...invitedUsers];
   } catch (err) {
-    console.error("Exception fetching platform users:", err);
+    console.error("[getPlatformUsers] Exception:", err);
     return [];
   }
 }
@@ -2324,4 +2363,97 @@ export async function createReviewRating(payload: {
 
   if (error) throw error;
   return data;
+}
+
+// ================= PLATFORM USERS (Super Admin) =================
+
+// ================= PLATFORM ANALYTICS (Super Admin) =================
+
+export interface PlatformStats {
+  totalUsers: number;
+  activeLandlords: number;
+  activeTenants: number;
+  activeContractors: number;
+  activeRealtors: number;
+  activeServiceAdmins: number;
+  totalProperties: number;
+  pendingRequests: number;
+}
+
+export async function getPlatformStats(): Promise<PlatformStats> {
+  try {
+    const [usersResult, propertiesResult, requestsResult] = await Promise.all([
+      supabase.from("users").select("role_id, status"),
+      supabase.from("properties").select("property_id", { count: "exact", head: true }),
+      supabase.from("service_requests").select("status").neq("status", "Completed"),
+    ]);
+
+    const users: Array<{ role_id: number; status: string }> = usersResult.data || [];
+
+    const countRole = (roleId: number, activeOnly = true) =>
+      users.filter((u) => u.role_id === roleId && (!activeOnly || u.status === "Active")).length;
+
+    return {
+      totalUsers: users.length,
+      activeLandlords: countRole(2),
+      activeTenants: countRole(3),
+      activeContractors: countRole(4),
+      activeRealtors: countRole(5),
+      activeServiceAdmins: countRole(6),
+      totalProperties: propertiesResult.count ?? 0,
+      pendingRequests: (requestsResult.data || []).length,
+    };
+  } catch (err) {
+    console.error("[getPlatformStats] Exception:", err);
+    return {
+      totalUsers: 0,
+      activeLandlords: 0,
+      activeTenants: 0,
+      activeContractors: 0,
+      activeRealtors: 0,
+      activeServiceAdmins: 0,
+      totalProperties: 0,
+      pendingRequests: 0,
+    };
+  }
+}
+
+// ================= EMAIL AUDIT LOGS (Super Admin) =================
+
+export interface AuditLogEntry {
+  id: string;
+  time: string;
+  actor: string;
+  action: string;
+  ip: string;
+  status?: string;
+}
+
+export async function getPlatformAuditLogs(): Promise<AuditLogEntry[]> {
+  try {
+    const { data, error } = await supabase
+      .from("email_logs")
+      .select("id, recipient, email_type, subject, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    if (error) {
+      console.error("[getPlatformAuditLogs] Error:", error);
+      return [];
+    }
+
+    return (data || []).map((row: any, idx: number) => ({
+      id: String(row.id ?? idx),
+      time: row.created_at
+        ? new Date(row.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+        : "—",
+      actor: row.recipient || "system",
+      action: `${(row.email_type || "email").replace(/_/g, " ")} — ${row.subject || ""}`,
+      ip: "—",
+      status: row.status || "sent",
+    }));
+  } catch (err) {
+    console.error("[getPlatformAuditLogs] Exception:", err);
+    return [];
+  }
 }
