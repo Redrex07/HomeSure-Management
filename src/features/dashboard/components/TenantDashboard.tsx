@@ -54,17 +54,51 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/features/auth/store/auth-store";
 import { formatINR } from "@/shared/utils/utils";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getTenantAppointments,
+  getTenantInvoices,
+  getTenantServiceRequests,
+} from "@/core/db/supabase-queries";
+import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 
 const fmt = (n: number) => formatINR(n);
 
 /* ---------------- TENANT ---------------- */
 export function TenantDashboard() {
+  const session = useSession();
+  const tenantContext = useTenantContext();
+  const tenantName = session?.name?.split(" ")[0] || "Sarah";
+  const { data: dbRequests = [] } = useQuery({
+    queryKey: ["service-requests", tenantContext.tenantId, tenantContext.serviceTenantId],
+    queryFn: () => getTenantServiceRequests(tenantContext.tenantId!, tenantContext.serviceTenantId),
+    enabled: !!tenantContext.tenantId && !!tenantContext.serviceTenantId,
+  });
+  const { data: dbAppointments = [] } = useQuery({
+    queryKey: ["appointments", tenantContext.tenantId, tenantContext.serviceTenantId],
+    queryFn: () => getTenantAppointments(tenantContext.tenantId!, tenantContext.serviceTenantId),
+    enabled: !!tenantContext.tenantId && !!tenantContext.serviceTenantId,
+  });
+  const { data: dbInvoices = [] } = useQuery({
+    queryKey: ["invoices", tenantContext.tenantId],
+    queryFn: () => getTenantInvoices(tenantContext.tenantId!, tenantContext.serviceTenantId),
+    enabled: !!tenantContext.tenantId,
+  });
+
+  const visibleRequests = dbRequests.length > 0 ? dbRequests : serviceRequests;
+  const visibleAppointments = dbAppointments.length > 0 ? dbAppointments : appointments;
+  const visibleInvoices = dbInvoices.length > 0 ? dbInvoices : invoices;
   const myUnit = properties[0];
-  const next = invoices.find((i) => i.status === "Pending") ?? invoices[0];
+  const next = visibleInvoices.find((i) => i.status === "Pending") ?? visibleInvoices[0];
+  const openRequests = visibleRequests.filter((r) => r.status !== "Completed");
+  const upcomingAppointments = visibleAppointments.filter((a) => {
+    if (!a.date) return true;
+    return new Date(`${a.date}T23:59:59`) >= new Date();
+  });
   return (
     <>
       <PageHeader
-        title="Hello, Sarah"
+        title={`Hello, ${tenantName}`}
         description="Your home, payments and requests in one place."
         actions={
           <Link to="/app/service-requests">
@@ -112,22 +146,41 @@ export function TenantDashboard() {
             <div className="text-xs font-semibold uppercase tracking-wide text-primary">
               Next rent
             </div>
-            <div className="mt-2 text-3xl font-bold text-foreground">{fmt(next.amount)}</div>
-            <div className="text-sm text-muted-foreground">Due {next.due}</div>
-            <Button className="mt-4 w-full">Pay rent</Button>
+            <div className="mt-2 text-3xl font-bold text-foreground">
+              {fmt(next?.amount ?? myUnit.rent)}
+            </div>
+            <div className="text-sm text-muted-foreground">Due {next?.due ?? "This month"}</div>
+            <Button asChild className="mt-4 w-full">
+              <Link to="/app/invoices">Pay rent</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Open requests" value="2" icon={Wrench} tone="info" />
-        <StatCard label="Upcoming appointments" value="1" icon={Calendar} />
-        <StatCard
-          label="Documents on file"
-          value={String(leaseDocs.length)}
-          icon={FileText}
-          tone="success"
-        />
+        <Link to="/app/service-requests" className="block">
+          <StatCard
+            label="Open requests"
+            value={String(openRequests.length)}
+            icon={Wrench}
+            tone="info"
+          />
+        </Link>
+        <Link to="/app/appointments" className="block">
+          <StatCard
+            label="Upcoming appointments"
+            value={String(upcomingAppointments.length)}
+            icon={Calendar}
+          />
+        </Link>
+        <Link to="/app/leases" className="block">
+          <StatCard
+            label="Documents on file"
+            value={String(leaseDocs.length)}
+            icon={FileText}
+            tone="success"
+          />
+        </Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -136,22 +189,20 @@ export function TenantDashboard() {
             <CardTitle className="text-sm font-semibold">My maintenance requests</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {serviceRequests
-              .filter((r) => r.tenant === "Sarah Chen")
-              .map((r) => (
-                <div
-                  key={r.id}
-                  className="flex items-center justify-between gap-3 rounded-md border border-border/60 p-2.5"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{r.title}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {r.category} · {r.contractor ?? "Awaiting assignment"}
-                    </div>
+            {visibleRequests.slice(0, 5).map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between gap-3 rounded-md border border-border/60 p-2.5"
+              >
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium">{r.title}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {r.category} · {r.contractor ?? "Awaiting assignment"}
                   </div>
-                  <StatusBadge value={r.status} />
                 </div>
-              ))}
+                <StatusBadge value={r.status} />
+              </div>
+            ))}
           </CardContent>
         </Card>
 
@@ -174,8 +225,8 @@ export function TenantDashboard() {
                     {d.size} · Updated {d.updated}
                   </div>
                 </div>
-                <Button variant="ghost" size="sm">
-                  View
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/app/leases">View</Link>
                 </Button>
               </div>
             ))}

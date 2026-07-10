@@ -5,7 +5,12 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getServiceRequests, createServiceRequest } from "@/core/db/supabase-queries";
+import {
+  getServiceRequests,
+  createServiceRequest,
+  getTenantServiceRequests,
+} from "@/core/db/supabase-queries";
+import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 import {
   Select,
   SelectContent,
@@ -45,17 +50,29 @@ function ServiceRequestsPage() {
   const [newDesc, setNewDesc] = useState("");
 
   const queryClient = useQueryClient();
+  const tenantContext = useTenantContext();
+  const isTenant = tenantContext.isTenant;
+  const tenantId = tenantContext.tenantId;
+  const serviceTenantId = tenantContext.serviceTenantId;
 
   // Load service requests from Supabase
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["service-requests"],
-    queryFn: getServiceRequests,
+    queryKey: ["service-requests", isTenant ? `${tenantId}:${serviceTenantId}` : "all"],
+    queryFn: () =>
+      isTenant && tenantId
+        ? getTenantServiceRequests(tenantId, serviceTenantId)
+        : getServiceRequests(),
+    enabled: !isTenant || (!!tenantId && !!serviceTenantId),
   });
 
   // Create request mutation
   const createMutation = useMutation({
     mutationFn: createServiceRequest,
-    onSuccess: () => {
+    onSuccess: (created) => {
+      queryClient.setQueryData(
+        ["service-requests", isTenant ? `${tenantId}:${serviceTenantId}` : "all"],
+        (current: any[] | undefined) => [...(created || []), ...(current || [])],
+      );
       queryClient.invalidateQueries({ queryKey: ["service-requests"] });
       toast.success("Request submitted");
       setOpen(false);
@@ -77,6 +94,9 @@ function ServiceRequestsPage() {
       category: newCategory,
       priority: newPriority,
       description: newDesc,
+      tenant_id: serviceTenantId || tenantId || undefined,
+      property_id: tenantContext.propertyId || undefined,
+      created_by: serviceTenantId || tenantId || undefined,
     });
   };
 
@@ -237,7 +257,9 @@ function ServiceRequestsPage() {
             {
               key: "id",
               header: "ID",
-              render: (r) => <span className="font-mono text-xs text-muted-foreground">{r.id}</span>,
+              render: (r) => (
+                <span className="font-mono text-xs text-muted-foreground">{r.id}</span>
+              ),
             },
             {
               key: "title",

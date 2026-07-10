@@ -1,10 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
-import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video, CheckCircle } from "lucide-react";
+import { Card } from "@/shared/components/ui/card";
+import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video, CheckCircle, Search, Home, Heart, MessageSquare, FileCheck, Star } from "lucide-react";
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "@/features/auth/store/auth-store";
 import {
   useProperties,
@@ -14,9 +16,14 @@ import {
 } from "@/shared/utils/properties-store";
 import {
   getLandlordProperties,
+  getAllProperties,
   createProperty,
   updateProperty as updateSupabaseProperty,
-  deleteProperty as deleteSupabaseProperty
+  deleteProperty as deleteSupabaseProperty,
+  createFavoriteProperty,
+  createPropertyInquiry,
+  createRentalApplication,
+  createReviewRating,
 } from "@/core/db/supabase-queries";
 import { supabase } from "@/core/db/supabase";
 import {
@@ -42,10 +49,18 @@ import {
   SheetDescription,
   SheetFooter,
 } from "@/shared/components/ui/sheet";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/shared/components/ui/accordion";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { Checkbox } from "@/shared/components/ui/checkbox";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
+import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 
 export const Route = createFileRoute("/app/properties")({
   head: () => ({ meta: [{ title: "Properties — HomeSure" }] }),
@@ -53,19 +68,40 @@ export const Route = createFileRoute("/app/properties")({
 });
 
 /** Fixed room labels mapped by upload order (index 0–3) */
-const ROOM_LABELS = ["Hall View", "Front View", "Bed View", "Kitchen View"] as const;
+const ROOM_LABELS = ["Front View", "Living Room", "Bedroom", "Kitchen"] as const;
 
 export type UnifiedProperty = LocalProperty & { isLocal?: boolean };
 
+const parseImageUrls = (urlData: any): string[] => {
+  if (!urlData) return [];
+  if (Array.isArray(urlData)) return urlData;
+  try {
+    const parsed = JSON.parse(urlData);
+    if (Array.isArray(parsed)) return parsed;
+    return [urlData];
+  } catch {
+    return [urlData];
+  }
+};
+
 function PropertiesPage() {
   const localProps = useProperties();
-  const { session } = useSession();
+  const navigate = useNavigate();
+  const session = useSession();
+  const tenantContext = useTenantContext();
+  const isTenant = session?.role === "tenant";
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchSupabaseProperties = async () => {
-    const landlordId = "2"; // Force "2" to match Supabase mock data
-    const data = await getLandlordProperties(landlordId);
-    setSupabaseProps(data as UnifiedProperty[]);
+    setIsLoading(true);
+    try {
+      const landlordId = "2"; // Force "2" to match Supabase mock data
+      const data = isTenant ? await getAllProperties() : await getLandlordProperties(landlordId);
+      setSupabaseProps(data as UnifiedProperty[]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -78,10 +114,14 @@ function PropertiesPage() {
   
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const pageSize = 9;
 
   const filteredProps = landlordProps.filter((p) => {
     let matchesType = true;
     let matchesStatus = true;
+    let matchesSearch = true;
 
     if (propertyTypeFilter !== "All") {
       matchesType = p.property_type.toLowerCase().includes(propertyTypeFilter.toLowerCase());
@@ -91,10 +131,20 @@ function PropertiesPage() {
       matchesStatus = p.availability_status === statusFilter;
     }
 
-    return matchesType && matchesStatus;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const locStr = p.address ? String(p.address).toLowerCase() : "";
+      matchesSearch = (p.property_name?.toLowerCase().includes(q) || String(p.property_id).includes(q) || locStr.includes(q));
+    }
+
+    return matchesType && matchesStatus && matchesSearch;
   });
 
+  const totalPages = Math.ceil(filteredProps.length / pageSize);
+  const paginatedProps = filteredProps.slice(page * pageSize, (page + 1) * pageSize);
+
   const [isAdding, setIsAdding] = useState(false);
+  const [step, setStep] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
     useState<UnifiedProperty | null>(null);
@@ -104,6 +154,66 @@ function PropertiesPage() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [editingProperty, setEditingProperty] = useState<UnifiedProperty | null>(null);
   const [selectedPropertyForAmenities, setSelectedPropertyForAmenities] = useState<UnifiedProperty | null>(null);
+  const tenantId = tenantContext.tenantId || Number(session?.id) || 3;
+
+  const getPropertyNumericId = (property: UnifiedProperty) => Number(property.property_id);
+  const getLandlordId = (property: UnifiedProperty) => Number((property as any).landlord_id || 2);
+
+  const handleFavoriteProperty = async (property: UnifiedProperty) => {
+    try {
+      await createFavoriteProperty({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+      });
+      toast.success("Property added to favorites");
+    } catch (err: any) {
+      toast.error("Could not save favorite: " + (err.message || String(err)));
+    }
+  };
+
+  const handleInquiry = async (property: UnifiedProperty) => {
+    try {
+      await createPropertyInquiry({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+        landlord_id: getLandlordId(property),
+        inquiry_message: `I am interested in ${property.property_name}. Please share availability and visit details.`,
+      });
+      toast.success("Inquiry sent to landlord");
+    } catch (err: any) {
+      toast.error("Could not send inquiry: " + (err.message || String(err)));
+    }
+  };
+
+  const handleApply = async (property: UnifiedProperty) => {
+    try {
+      await createRentalApplication({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+        landlord_id: getLandlordId(property),
+        remarks: `Rental application submitted for ${property.property_name}.`,
+      });
+      toast.success("Rental application submitted");
+    } catch (err: any) {
+      toast.error("Could not submit application: " + (err.message || String(err)));
+    }
+  };
+
+  const handleReview = async (property: UnifiedProperty) => {
+    try {
+      await createReviewRating({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+        landlord_id: getLandlordId(property),
+        rating: 5,
+        review_title: "Interested tenant review",
+        review_description: `Saved tenant feedback for ${property.property_name}.`,
+      });
+      toast.success("Review saved");
+    } catch (err: any) {
+      toast.error("Could not save review: " + (err.message || String(err)));
+    }
+  };
   const [editForm, setEditForm] = useState({
     property_name: "",
     property_type: "",
@@ -114,6 +224,35 @@ function PropertiesPage() {
     listing_date: "",
     Description: "",
     Category: "Residential",
+    security_deposit: "",
+    maintenance_charges: "",
+    electricity_charges: "",
+    water_charges: "",
+    parking_charges: "",
+    advance_payment: "",
+    available_from: "",
+    lease_duration: "",
+    wifi: false,
+    power_backup: false,
+    parking: false,
+    lift: false,
+    gym: false,
+    swimming_pool: false,
+    cctv: false,
+    security: false,
+    garden: false,
+    childrens_play_area: false,
+    furnished: false,
+    semi_furnished: false,
+    air_conditioning: false,
+    preferred_tenant_type: "",
+    bachelors_allowed: false,
+    family_allowed: false,
+    students_allowed: false,
+    pets_allowed: false,
+    smoking_allowed: false,
+    drinking_allowed: false,
+    maximum_occupants: "",
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -133,10 +272,69 @@ function PropertiesPage() {
     listing_date: "",
     Description: "",
     Category: "Residential",
+    house_number: "",
+    building_name: "",
+    street_address: "",
+    locality: "",
+    landmark: "",
+    city: "Chennai",
+    state: "Tamil Nadu",
+    country: "India",
+    pin_code: "",
+    map_location: "",
+    bedrooms: "",
+    bathrooms: "",
+    balconies: "",
+    kitchen: "",
+    hall: "",
+    dining_room: "",
+    study_room: "",
+    floor_number: "",
+    total_floors: "",
+    built_up_area: "",
+    carpet_area: "",
+    plot_area: "",
+    property_age: "",
+    facing_direction: "",
+    security_deposit: "",
+    maintenance_charges: "",
+    electricity_charges: "",
+    water_charges: "",
+    parking_charges: "",
+    advance_payment: "",
+    available_from: "",
+    lease_duration: "",
+    wifi: false,
+    power_backup: false,
+    parking: false,
+    lift: false,
+    gym: false,
+    swimming_pool: false,
+    cctv: false,
+    security: false,
+    garden: false,
+    childrens_play_area: false,
+    furnished: false,
+    semi_furnished: false,
+    air_conditioning: false,
+    preferred_tenant_type: "",
+    bachelors_allowed: false,
+    family_allowed: false,
+    students_allowed: false,
+    pets_allowed: false,
+    smoking_allowed: false,
+    drinking_allowed: false,
+    maximum_occupants: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent premature saving if they press "Enter" on an earlier step
+    if (step < 7) {
+      setStep(step + 1);
+      return;
+    }
 
     if (!form.property_name || !form.property_type) {
       toast.error("Please fill all fields");
@@ -144,6 +342,46 @@ function PropertiesPage() {
     }
 
     try {
+      const location_details = {
+        house_number: form.house_number,
+        building_name: form.building_name,
+        street_address: form.street_address,
+        locality: form.locality,
+        landmark: form.landmark,
+        city: form.city,
+        state: form.state,
+        country: form.country,
+        pin_code: form.pin_code,
+        map_location: form.map_location,
+      };
+
+      const specifications = {
+        bedrooms: form.bedrooms,
+        bathrooms: form.bathrooms,
+        balconies: form.balconies,
+        kitchen: form.kitchen,
+        hall: form.hall,
+        dining_room: form.dining_room,
+        study_room: form.study_room,
+        floor_number: form.floor_number,
+        total_floors: form.total_floors,
+        built_up_area: form.built_up_area,
+        carpet_area: form.carpet_area,
+        plot_area: form.plot_area,
+        property_age: form.property_age,
+        facing_direction: form.facing_direction,
+        rent_details: {
+          security_deposit: form.security_deposit,
+          maintenance_charges: form.maintenance_charges,
+          electricity_charges: form.electricity_charges,
+          water_charges: form.water_charges,
+          parking_charges: form.parking_charges,
+          advance_payment: form.advance_payment,
+          available_from: form.available_from,
+          lease_duration: form.lease_duration,
+        }
+      };
+
       const payload: any = {
         landlord_id: "2", // Force "2" to match Supabase mock data
         property_name: form.property_name,
@@ -153,6 +391,31 @@ function PropertiesPage() {
         Listing_date: new Date().toISOString(),
         Description: form.Description,
         Category: form.Category,
+        address: JSON.stringify(location_details),
+        specifications: JSON.stringify(specifications),
+        amenities: {
+          wifi: form.wifi,
+          power_backup: form.power_backup,
+          parking: form.parking,
+          lift: form.lift,
+          gym: form.gym,
+          swimming_pool: form.swimming_pool,
+          cctv: form.cctv,
+          security: form.security,
+          garden: form.garden,
+          childrens_play_area: form.childrens_play_area,
+          furnished: form.furnished,
+          semi_furnished: form.semi_furnished,
+          air_conditioning: form.air_conditioning
+        },
+        tenant_preferences: {
+          preferred_tenant_type: form.preferred_tenant_type,
+          bachelors_allowed: form.bachelors_allowed === true,
+          students_allowed: form.students_allowed === true,
+          pets_allowed: form.pets_allowed === true,
+          smoking_allowed: form.smoking_allowed === true,
+          drinking_allowed: form.drinking_allowed === true
+        }
       };
       if (uploadedVideo) {
         payload.Virtual_Tour = uploadedVideo;
@@ -182,7 +445,61 @@ function PropertiesPage() {
       listing_date: "",
       Description: "",
       Category: "Residential",
+      house_number: "",
+      building_name: "",
+      street_address: "",
+      locality: "",
+      landmark: "",
+      city: "Chennai",
+      state: "Tamil Nadu",
+      country: "India",
+      pin_code: "",
+      map_location: "",
+      bedrooms: "",
+      bathrooms: "",
+      balconies: "",
+      kitchen: "",
+      hall: "",
+      dining_room: "",
+      study_room: "",
+      floor_number: "",
+      total_floors: "",
+      built_up_area: "",
+      carpet_area: "",
+      plot_area: "",
+      property_age: "",
+      facing_direction: "",
+      security_deposit: "",
+      maintenance_charges: "",
+      electricity_charges: "",
+      water_charges: "",
+      parking_charges: "",
+      advance_payment: "",
+      available_from: "",
+      lease_duration: "",
+      wifi: false,
+      power_backup: false,
+      parking: false,
+      lift: false,
+      gym: false,
+      swimming_pool: false,
+      cctv: false,
+      security: false,
+      garden: false,
+      childrens_play_area: false,
+      furnished: false,
+      semi_furnished: false,
+      air_conditioning: false,
+      preferred_tenant_type: "",
+      bachelors_allowed: false,
+      family_allowed: false,
+      students_allowed: false,
+      pets_allowed: false,
+      smoking_allowed: false,
+      drinking_allowed: false,
+      maximum_occupants: "",
     });
+    setStep(1);
     setUploadedImages([]);
     setUploadedVideo(null);
     setIsAdding(false);
@@ -202,13 +519,13 @@ function PropertiesPage() {
     try {
       const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
       const { error } = await supabase.storage
-        .from('property-videos')
+        .from('property-images')
         .upload(`properties/${fileName}`, file, { cacheControl: '3600', upsert: false });
 
       if (error) throw error;
 
       const { data: publicUrlData } = supabase.storage
-        .from('property-videos')
+        .from('property-images')
         .getPublicUrl(`properties/${fileName}`);
 
       if (isEdit) {
@@ -354,6 +671,35 @@ function PropertiesPage() {
       listing_date: p.listing_date || "",
       Description: p.Description || "",
       Category: p.Category || "Residential",
+      security_deposit: "",
+      maintenance_charges: "",
+      electricity_charges: "",
+      water_charges: "",
+      parking_charges: "",
+      advance_payment: "",
+      available_from: "",
+      lease_duration: "",
+      wifi: false,
+      power_backup: false,
+      parking: false,
+      lift: false,
+      gym: false,
+      swimming_pool: false,
+      cctv: false,
+      security: false,
+      garden: false,
+      childrens_play_area: false,
+      furnished: false,
+      semi_furnished: false,
+      air_conditioning: false,
+      preferred_tenant_type: (p as any).tenantPreferencesData?.preferred_tenant_type || "",
+      bachelors_allowed: (p as any).tenantPreferencesData?.bachelors_allowed || false,
+      family_allowed: (p as any).tenantPreferencesData?.family_allowed || false,
+      students_allowed: (p as any).tenantPreferencesData?.students_allowed || false,
+      pets_allowed: (p as any).tenantPreferencesData?.pets_allowed || false,
+      smoking_allowed: (p as any).tenantPreferencesData?.smoking_allowed || false,
+      drinking_allowed: (p as any).tenantPreferencesData?.drinking_allowed || false,
+      maximum_occupants: (p as any).tenantPreferencesData?.maximum_occupants ? String((p as any).tenantPreferencesData?.maximum_occupants) : "",
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);
@@ -417,13 +763,11 @@ function PropertiesPage() {
         property_name: editForm.property_name,
         property_type: editForm.property_type,
         availability_status: editForm.availability_status,
-        image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+        image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
         Description: editForm.Description,
         Category: editForm.Category,
+        Virtual_Tour: editVideo || null,
       };
-      if (editVideo) {
-        localPayload.Virtual_Tour = editVideo;
-      }
       updateLocalProperty(editingProperty.property_id, localPayload);
       toast.success("Property updated successfully!");
       setEditingProperty(null);
@@ -433,13 +777,11 @@ function PropertiesPage() {
           property_name: editForm.property_name,
           property_type: editForm.property_type,
           availability_status: editForm.availability_status,
-          image_url: editImages.length > 0 ? JSON.stringify(editImages) : undefined,
+          image_url: editImages.length > 0 ? JSON.stringify(editImages) : null,
           Description: editForm.Description,
           Category: editForm.Category,
+          Virtual_Tour: editVideo || null,
         };
-        if (editVideo) {
-          supabasePayload.Virtual_Tour = editVideo;
-        }
         await updateSupabaseProperty(editingProperty.property_id, supabasePayload);
         toast.success("Property updated successfully!");
         setEditingProperty(null);
@@ -470,14 +812,21 @@ function PropertiesPage() {
       />
 
       {/* Add Property Sheet */}
-      <Sheet open={isAdding} onOpenChange={setIsAdding}>
+      <Sheet open={isAdding} onOpenChange={(open) => {
+        setIsAdding(open);
+        if(!open) setStep(1);
+      }}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Basic Property Information</SheetTitle>
+            <SheetTitle>
+              {step === 1 ? "Step 1 of 7: Basic Property Information" : step === 2 ? "Step 2 of 7: Location Details" : step === 3 ? "Step 3 of 7: Images & Media" : step === 4 ? "Step 4 of 7: Property Specifications" : step === 5 ? "Step 5 of 7: Rent Details" : step === 6 ? "Step 6 of 7: Amenities" : "Step 7 of 7: Tenant Preferences"}
+            </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
 
-          <form onSubmit={handleAddProperty} className="grid gap-4 py-4">
+          <form onSubmit={(e) => e.preventDefault()} className="grid gap-4 py-4">
+            {step === 1 ? (
+              <>
             <div className="grid gap-2">
               <Label>Property Name</Label>
               <Input
@@ -535,89 +884,402 @@ function PropertiesPage() {
               </select>
             </div>
 
-
-
-            <div className="grid gap-2">
-              <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
-              {uploadedVideo ? (
-                <div className="flex items-center gap-4">
-                  <video src={uploadedVideo} className="h-20 w-32 object-cover rounded-md bg-black" />
-                  <Button variant="outline" size="sm" onClick={() => setUploadedVideo(null)}>
-                    Remove Video
-                  </Button>
+              </>
+            ) : step === 2 ? (
+              <>
+                <div className="grid gap-2">
+                  <Label>House/Flat Number</Label>
+                  <Input placeholder="A-302" value={form.house_number} onChange={(e) => setForm({ ...form, house_number: e.target.value })} />
                 </div>
-              ) : (
-                <Input
-                  type="file"
-                  accept="video/mp4,video/x-m4v,video/*"
-                  onChange={(e) => handleVideoUpload(e, false)}
-                  disabled={isUploadingVideo}
-                  className="cursor-pointer"
-                />
-              )}
-              {isUploadingVideo && <p className="text-xs text-muted-foreground animate-pulse">Uploading video...</p>}
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Pictures (Up to 4)</Label>
-
-              {/* Thumbnail preview of uploaded images */}
-              {uploadedImages.length > 0 && (
-                <div className="flex gap-3 flex-wrap">
-                  {uploadedImages.map((url, idx) => (
-                    <div key={idx} className="flex flex-col items-center gap-1">
-                      <div
-                        className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
-                      >
-                        <img
-                          src={url}
-                          alt={ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeUploadedImage(idx)}
-                          className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                      <span className="text-[10px] font-medium text-muted-foreground">
-                        {ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
-                      </span>
+                <div className="grid gap-2">
+                  <Label>Building Name</Label>
+                  <Input placeholder="Green Residency" value={form.building_name} onChange={(e) => setForm({ ...form, building_name: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Street Address</Label>
+                  <Input placeholder="MG Road" value={form.street_address} onChange={(e) => setForm({ ...form, street_address: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Area/Locality</Label>
+                  <Input placeholder="Anna Nagar" value={form.locality} onChange={(e) => setForm({ ...form, locality: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Landmark (Optional)</Label>
+                  <Input placeholder="Near Bus Stand" value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>City</Label>
+                  <Input placeholder="Chennai" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>State</Label>
+                  <Input placeholder="Tamil Nadu" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Country</Label>
+                  <Input placeholder="India" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>PIN Code</Label>
+                  <Input placeholder="600040" value={form.pin_code} onChange={(e) => setForm({ ...form, pin_code: e.target.value })} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Google Map Location (Latitude & Longitude) (Optional)</Label>
+                  <Input placeholder="13.0827, 80.2707" value={form.map_location} onChange={(e) => setForm({ ...form, map_location: e.target.value })} />
+                </div>
+              </>
+            ) : step === 3 ? (
+              <>
+                <div className="grid gap-2">
+                  <Label>Virtual Tour Video (Optional, Max 10MB)</Label>
+                  {uploadedVideo ? (
+                    <div className="flex items-center gap-4">
+                      <video src={uploadedVideo} className="h-20 w-32 object-cover rounded-md bg-black" />
+                      <Button type="button" variant="outline" size="sm" onClick={() => setUploadedVideo(null)}>
+                        Remove Video
+                      </Button>
                     </div>
-                  ))}
+                  ) : (
+                    <Input
+                      type="file"
+                      accept="video/mp4,video/x-m4v,video/*"
+                      onChange={(e) => handleVideoUpload(e, false)}
+                      disabled={isUploadingVideo}
+                      className="cursor-pointer"
+                    />
+                  )}
+                  {isUploadingVideo && <p className="text-xs text-muted-foreground animate-pulse">Uploading video...</p>}
                 </div>
-              )}
 
-              {/* Upload button */}
-              {uploadedImages.length < 4 && (
-                <div className="relative">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    onChange={handleImageUpload}
-                    disabled={isUploading}
-                  />
-                  <div className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
-                    <ImagePlus className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      {isUploading
-                        ? "Uploading..."
-                        : `Upload next: ${ROOM_LABELS[uploadedImages.length] ?? "Image"} (${4 - uploadedImages.length} remaining)`}
-                    </span>
-                  </div>
+                <div className="grid gap-2 mt-4">
+                  <Label>Pictures (Up to 4)</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Please upload images in order: 1. Front View, 2. Living Room, 3. Bedroom, 4. Kitchen</p>
+
+                  {/* Thumbnail preview of uploaded images */}
+                  {uploadedImages.length > 0 && (
+                    <div className="flex gap-3 flex-wrap">
+                      {uploadedImages.map((url, idx) => (
+                        <div key={idx} className="flex flex-col items-center gap-1">
+                          <div
+                            className="relative group w-20 h-20 rounded-lg overflow-hidden border border-border"
+                          >
+                            <img
+                              src={url}
+                              alt={ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeUploadedImage(idx)}
+                              className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                          <span className="text-[10px] font-medium text-muted-foreground">
+                            {ROOM_LABELS[idx] ?? `Image ${idx + 1}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  {uploadedImages.length < 4 && (
+                    <div className="relative mt-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        onChange={handleImageUpload}
+                        disabled={isUploading}
+                      />
+                      <div className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                        <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          {isUploading
+                            ? "Uploading..."
+                            : `Upload next: ${ROOM_LABELS[uploadedImages.length] ?? "Image"} (${4 - uploadedImages.length} remaining)`}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </>
+            ) : step === 4 ? (
+                <>
+                  <div className="grid gap-2">
+                    <Label>Bedrooms</Label>
+                    <Input type="number" placeholder="e.g. 2" value={form.bedrooms} onChange={(e) => setForm({...form, bedrooms: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Bathrooms</Label>
+                    <Input type="number" placeholder="e.g. 2" value={form.bathrooms} onChange={(e) => setForm({...form, bathrooms: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Balconies</Label>
+                    <Input type="number" placeholder="e.g. 1" value={form.balconies} onChange={(e) => setForm({...form, balconies: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Kitchen</Label>
+                    <Input placeholder="e.g. Modular" value={form.kitchen} onChange={(e) => setForm({...form, kitchen: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Hall</Label>
+                    <Input placeholder="e.g. 1" value={form.hall} onChange={(e) => setForm({...form, hall: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Dining Room</Label>
+                    <Input placeholder="e.g. Yes/No" value={form.dining_room} onChange={(e) => setForm({...form, dining_room: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Study Room</Label>
+                    <Input placeholder="e.g. Yes/No" value={form.study_room} onChange={(e) => setForm({...form, study_room: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Floor Number</Label>
+                    <Input type="number" placeholder="e.g. 2" value={form.floor_number} onChange={(e) => setForm({...form, floor_number: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Total Floors</Label>
+                    <Input type="number" placeholder="e.g. 5" value={form.total_floors} onChange={(e) => setForm({...form, total_floors: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Built-up Area (sq.ft)</Label>
+                    <Input type="number" placeholder="e.g. 1200" value={form.built_up_area} onChange={(e) => setForm({...form, built_up_area: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Carpet Area (sq.ft)</Label>
+                    <Input type="number" placeholder="e.g. 1000" value={form.carpet_area} onChange={(e) => setForm({...form, carpet_area: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Plot Area (sq.ft)</Label>
+                    <Input type="number" placeholder="e.g. 1500" value={form.plot_area} onChange={(e) => setForm({...form, plot_area: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Property Age</Label>
+                    <Input placeholder="e.g. 5 Years" value={form.property_age} onChange={(e) => setForm({...form, property_age: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Facing Direction</Label>
+                    <Input placeholder="e.g. East" value={form.facing_direction} onChange={(e) => setForm({...form, facing_direction: e.target.value})} />
+                  </div>
+                </>
+              ) : step === 5 ? (
+                <>
+                  <div className="grid gap-2">
+                    <Label>Monthly Rent</Label>
+                    <Input placeholder="e.g. ₹18,000" value={form.rent_amount} onChange={(e) => setForm({...form, rent_amount: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Security Deposit</Label>
+                    <Input placeholder="e.g. ₹50,000" value={form.security_deposit} onChange={(e) => setForm({...form, security_deposit: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Maintenance Charges</Label>
+                    <Input placeholder="e.g. ₹2,000" value={form.maintenance_charges} onChange={(e) => setForm({...form, maintenance_charges: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Electricity Charges</Label>
+                    <Input placeholder="e.g. Included/Separate" value={form.electricity_charges} onChange={(e) => setForm({...form, electricity_charges: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Water Charges</Label>
+                    <Input placeholder="e.g. Included" value={form.water_charges} onChange={(e) => setForm({...form, water_charges: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Parking Charges</Label>
+                    <Input placeholder="e.g. ₹500" value={form.parking_charges} onChange={(e) => setForm({...form, parking_charges: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Advance Payment</Label>
+                    <Input placeholder="e.g. 2 Months" value={form.advance_payment} onChange={(e) => setForm({...form, advance_payment: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Available From</Label>
+                    <Input placeholder="e.g. 1-Aug-26" type="date" value={form.available_from} onChange={(e) => setForm({...form, available_from: e.target.value})} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Lease Duration</Label>
+                    <Input placeholder="e.g. 11 Months" value={form.lease_duration} onChange={(e) => setForm({...form, lease_duration: e.target.value})} />
+                  </div>
+                </>
+              ) : step === 6 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="wifi" checked={form.wifi} onCheckedChange={(checked) => setForm({...form, wifi: checked === true})} />
+                      <Label htmlFor="wifi" className="cursor-pointer">Wi-Fi</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="power_backup" checked={form.power_backup} onCheckedChange={(checked) => setForm({...form, power_backup: checked === true})} />
+                      <Label htmlFor="power_backup" className="cursor-pointer">Power Backup</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="parking" checked={form.parking} onCheckedChange={(checked) => setForm({...form, parking: checked === true})} />
+                      <Label htmlFor="parking" className="cursor-pointer">Parking</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="lift" checked={form.lift} onCheckedChange={(checked) => setForm({...form, lift: checked === true})} />
+                      <Label htmlFor="lift" className="cursor-pointer">Lift</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="gym" checked={form.gym} onCheckedChange={(checked) => setForm({...form, gym: checked === true})} />
+                      <Label htmlFor="gym" className="cursor-pointer">Gym/Fitness Center</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="swimming_pool" checked={form.swimming_pool} onCheckedChange={(checked) => setForm({...form, swimming_pool: checked === true})} />
+                      <Label htmlFor="swimming_pool" className="cursor-pointer">Swimming Pool</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="cctv" checked={form.cctv} onCheckedChange={(checked) => setForm({...form, cctv: checked === true})} />
+                      <Label htmlFor="cctv" className="cursor-pointer">CCTV Surveillance</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="security" checked={form.security} onCheckedChange={(checked) => setForm({...form, security: checked === true})} />
+                      <Label htmlFor="security" className="cursor-pointer">Security Guard</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="garden" checked={form.garden} onCheckedChange={(checked) => setForm({...form, garden: checked === true})} />
+                      <Label htmlFor="garden" className="cursor-pointer">Garden</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="childrens_play_area" checked={form.childrens_play_area} onCheckedChange={(checked) => setForm({...form, childrens_play_area: checked === true})} />
+                      <Label htmlFor="childrens_play_area" className="cursor-pointer">Children's Play Area</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="furnished" checked={form.furnished} onCheckedChange={(checked) => setForm({...form, furnished: checked === true})} />
+                      <Label htmlFor="furnished" className="cursor-pointer">Furnished</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="semi_furnished" checked={form.semi_furnished} onCheckedChange={(checked) => setForm({...form, semi_furnished: checked === true})} />
+                      <Label htmlFor="semi_furnished" className="cursor-pointer">Semi-Furnished</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="air_conditioning" checked={form.air_conditioning} onCheckedChange={(checked) => setForm({...form, air_conditioning: checked === true})} />
+                      <Label htmlFor="air_conditioning" className="cursor-pointer">Air Conditioning</Label>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Preferred Tenant Type</Label>
+                      <Input placeholder="e.g. Family" value={form.preferred_tenant_type} onChange={(e) => setForm({...form, preferred_tenant_type: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bachelors Allowed</Label>
+                      <Select value={form.bachelors_allowed ? "yes" : "no"} onValueChange={(val) => setForm({...form, bachelors_allowed: val === "yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Students Allowed</Label>
+                      <Select value={form.students_allowed ? "yes" : "no"} onValueChange={(val) => setForm({...form, students_allowed: val === "yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Pets Allowed</Label>
+                      <Select value={form.pets_allowed ? "yes" : "no"} onValueChange={(val) => setForm({...form, pets_allowed: val === "yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Smoking Allowed</Label>
+                      <Select value={form.smoking_allowed ? "yes" : "no"} onValueChange={(val) => setForm({...form, smoking_allowed: val === "yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Drinking Allowed</Label>
+                      <Select value={form.drinking_allowed ? "yes" : "no"} onValueChange={(val) => setForm({...form, drinking_allowed: val === "yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Maximum Occupants</Label>
+                      <Input type="number" placeholder="e.g. 4" value={form.maximum_occupants} onChange={(e) => setForm({...form, maximum_occupants: e.target.value})} />
+                    </div>
+                  </div>
+                </>
               )}
-            </div>
 
             <SheetFooter className="mt-4 pb-12">
-              <Button type="button" variant="outline" onClick={() => setIsAdding(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Save Property</Button>
+              {step === 1 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setIsAdding(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="button" onClick={() => setStep(2)}>Next</Button>
+                </>
+              ) : step === 2 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(1)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(3)}>Next</Button>
+                </>
+              ) : step === 3 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(2)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(4)}>Next</Button>
+                </>
+              ) : step === 4 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(3)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(5)}>Next</Button>
+                </>
+              ) : step === 5 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(4)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(6)}>Next</Button>
+                </>
+              ) : step === 6 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(5)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(7)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(6)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo}>
+                    {(isUploading || isUploadingVideo) ? "Uploading..." : "Save Property"}
+                  </Button>
+                </>
+              )}
             </SheetFooter>
           </form>
         </SheetContent>
@@ -742,19 +1404,32 @@ function PropertiesPage() {
         </DialogContent>
       </Dialog>
 
-      {landlordProps.length === 0 ? (
-        <div className="p-8 text-center text-gray-500">
-          <p>No properties found.</p>
+      {isLoading ? (
+        <div className="py-24 text-center flex flex-col items-center justify-center gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground font-medium">Loading your properties...</p>
+        </div>
+      ) : landlordProps.length === 0 ? (
+        <div className="py-24 text-center text-muted-foreground bg-card/50 rounded-xl border border-border border-dashed">
+          <h3 className="text-xl font-medium mb-2">No properties found</h3>
+          <p className="mb-4">You haven't added any properties yet.</p>
+          <Button onClick={() => setIsAdding(true)}>Add your first property</Button>
         </div>
       ) : (
-        <DataCardGrid
-          rows={filteredProps}
-          pageSize={7}
-          accentStyles={true}
-          toolbar={
-            <div className="flex items-center gap-2">
-              <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
-                <SelectTrigger className="w-[140px] h-9">
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card/80 backdrop-blur-sm p-4 rounded-xl border border-border shadow-sm">
+            <div className="relative w-full sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search properties by name, ID or address..."
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+                className="pl-9 h-10 w-full bg-background/50 border-border/80 focus-visible:ring-primary/30"
+              />
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+              <Select value={propertyTypeFilter} onValueChange={(val) => { setPropertyTypeFilter(val); setPage(0); }}>
+                <SelectTrigger className="w-[140px] h-10 bg-background/50">
                   <SelectValue placeholder="Property Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -770,8 +1445,8 @@ function PropertiesPage() {
                   <SelectItem value="Townhouse">Townhouse</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[170px] h-9">
+              <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setPage(0); }}>
+                <SelectTrigger className="w-[170px] h-10 bg-background/50">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -782,143 +1457,133 @@ function PropertiesPage() {
                 </SelectContent>
               </Select>
             </div>
-          }
-          filterKeys={["property_name", "address", "property_id"]}
-          fields={[
-            {
-              key: "property_name",
-              label: "Property",
-              primary: true,
-              render: (p) => (
-                <Link
-                  to="/app/properties/$id"
-                  params={{ id: String(p.property_id) }}
-                  className="hover:text-primary hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {p.property_name}
-                </Link>
-              ),
-            },
-            {
-              key: "address",
-              label: "Address",
-              secondary: true,
-            },
-            {
-              key: "property_id",
-              label: "Property ID",
-              render: (p) => (
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  #{p.property_id}
-                </span>
-              ),
-            },
-            {
-              key: "property_type",
-              label: "Type",
-            },
-            {
-              key: "listing_date",
-              label: "Listing Date",
-              render: (p) => {
-                const dateVal = p.listing_date || p.Listing_date || "2024-01-15T10:00:00Z";
-                return (
-                  <span className="text-foreground">
-                    {dateVal ? new Date(dateVal).toLocaleDateString() : "—"}
-                  </span>
-                );
-              },
-            },
-            {
-              key: "Description",
-              label: "Description",
-              render: (p) => (
-                <div className="whitespace-normal break-words text-foreground">
-                  {p.Description || "—"}
-                </div>
-              ),
-            },
-            {
-              key: "Category",
-              label: "Category",
-              render: (p) => (
-                p.Category ? (
-                  <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                    {p.Category}
-                  </span>
-                ) : <span className="text-muted-foreground">—</span>
-              ),
-            },
+          </div>
 
-            {
-              key: "availability_status",
-              label: "Status",
-              render: (p) => <StatusBadge value={p.availability_status} />,
-            },
-
-            {
-              key: "image_url",
-              label: "Pictures",
-              render: (p) => (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPropertyForImage(p);
-                    setGalleryPage(0);
-                  }}
-                  className="group/pic relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-violet-500/60 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/10 to-amber-500/15 px-3 py-1 text-[11px] font-semibold text-violet-700 shadow-sm transition-all duration-300 hover:border-violet-500 hover:from-violet-500/25 hover:via-fuchsia-500/20 hover:to-amber-500/25 hover:shadow-md hover:shadow-violet-500/20 dark:border-violet-400/50 dark:text-violet-300 dark:hover:border-violet-400 dark:hover:shadow-violet-400/20"
-                >
-                  {/* Shimmer sweep effect */}
-                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/pic:translate-x-full dark:via-white/10" />
-                  <Image className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover/pic:scale-110" />
-                  <span className="relative">View Pictures</span>
-                </button>
-              ),
-            },
-            {
-              key: "Virtual_Tour",
-              label: "Virtual Tour",
-              render: (p) => (
-                p.Virtual_Tour ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPropertyForVideo(p);
-                    }}
-                    className="group/vid relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border-2 border-emerald-500/60 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-green-500/15 px-3 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm transition-all duration-300 hover:border-emerald-500 hover:from-emerald-500/25 hover:via-teal-500/20 hover:to-green-500/25 hover:shadow-md hover:shadow-emerald-500/20"
-                  >
-                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/vid:translate-x-full" />
-                    <Video className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover/vid:scale-110" />
-                    <span className="relative">Watch Video</span>
-                  </button>
-                ) : <span className="text-muted-foreground text-[11px] italic">—</span>
-              )
-            },
-          ]}
-          actions={(p) => (
-            <div className="flex items-center gap-0.5">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                onClick={() => openEditDialog(p)}
-                title="Edit"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => handleDeleteProperty(p)}
-                title="Delete"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+          {filteredProps.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground bg-card/50 rounded-xl border border-border border-dashed">
+               <p className="mb-4">No properties match your filters.</p>
+               <Button variant="outline" onClick={() => { setSearchQuery(""); setPropertyTypeFilter("All"); setStatusFilter("All"); }}>Clear Filters</Button>
             </div>
+          ) : (
+            <>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              >
+                <AnimatePresence mode="popLayout">
+                  {paginatedProps.map((p, idx) => (
+                    <motion.div
+                      key={p.property_id}
+                      initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ 
+                        duration: 0.5, 
+                        delay: idx * 0.08, 
+                        type: "spring",
+                        stiffness: 100,
+                        damping: 15
+                      }}
+                      className="h-full"
+                    >
+                      <Card className="overflow-hidden group hover:shadow-2xl transition-all duration-500 border-border/60 hover:border-primary/50 bg-card flex flex-col h-full rounded-2xl hover:-translate-y-1">
+                        <div className="relative h-56 w-full bg-muted/30 overflow-hidden cursor-pointer" onClick={() => navigate({ to: "/app/property/$id", params: { id: String(p.property_id) } })}>
+                          {parseImageUrls(p.image_url)[0] ? (
+                            <img src={parseImageUrls(p.image_url)[0]} alt={p.property_name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/30 group-hover:bg-primary/10 transition-colors duration-500">
+                               <Home className="h-12 w-12 opacity-40" />
+                            </div>
+                          )}
+                          
+                          {/* Subtle overlay gradient */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
+                          
+                          <div className="absolute top-3 left-3">
+                            <StatusBadge value={p.availability_status} />
+                          </div>
+                          
+                          {!isTenant && (
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0">
+                            <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                          )}
+                          
+                          <div className="absolute bottom-3 left-4 right-4 pointer-events-none transform transition-transform duration-500 group-hover:-translate-y-1">
+                            <h3 className="text-white font-bold text-xl truncate drop-shadow-md">{p.property_name}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-black/40 text-white/90 backdrop-blur-md">#{p.property_id}</span>
+                              <span className="text-xs font-medium text-white/90 line-clamp-1">
+                                 {p.property_type} {p.Category ? `• ${p.Category}` : ''}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="p-5 flex flex-col flex-grow bg-card relative overflow-hidden">
+                          {/* Subtle background flair */}
+                          <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                          
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-5 flex-grow font-medium leading-relaxed z-10">
+                             {(() => {
+                                try {
+                                  const loc = JSON.parse(p.address || "{}");
+                                  return [loc.street_address, loc.locality, loc.city].filter(Boolean).join(", ") || "";
+                                } catch {
+                                  return p.address || "";
+                                }
+                             })()}
+                          </p>
+                          
+                          <Button className="w-full mt-auto font-semibold shadow-sm hover:shadow-md transition-all duration-300 group/btn bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90" variant="default" asChild>
+                            <Link to="/app/property/$id" params={{ id: String(p.property_id) }}>
+                              View Property Details
+                              <ChevronRight className="ml-1 h-4 w-4 opacity-70 group-hover/btn:translate-x-1.5 transition-transform" />
+                            </Link>
+                          </Button>
+                          {isTenant && (
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                              <Button variant="outline" size="sm" onClick={() => handleFavoriteProperty(p)}>
+                                <Heart className="mr-1 h-3.5 w-3.5" /> Favorite
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleInquiry(p)}>
+                                <MessageSquare className="mr-1 h-3.5 w-3.5" /> Inquiry
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleApply(p)}>
+                                <FileCheck className="mr-1 h-3.5 w-3.5" /> Apply
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleReview(p)}>
+                                <Star className="mr-1 h-3.5 w-3.5" /> Review
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-8 pt-4">
+                  <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="hover:bg-primary hover:text-primary-foreground">
+                    <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                  </Button>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Page {page + 1} of {totalPages}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1} className="hover:bg-primary hover:text-primary-foreground">
+                    Next <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              )}
+            </>
           )}
-        />
+        </div>
       )}
 
       {/* Edit Property Dialog */}
@@ -934,7 +1599,7 @@ function PropertiesPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleUpdateProperty} className="grid gap-4 py-4">
+          <form onSubmit={(e) => e.preventDefault()} className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Property Name</Label>
               <Input
@@ -1090,7 +1755,7 @@ function PropertiesPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit">Update Property</Button>
+              <Button type="button" onClick={handleUpdateProperty}>Update Property</Button>
             </DialogFooter>
           </form>
         </DialogContent>

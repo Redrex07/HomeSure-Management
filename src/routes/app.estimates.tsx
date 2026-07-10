@@ -105,11 +105,15 @@ function EstimatesPage() {
       toast.error("Please fill in all fields.");
       return;
     }
+    console.log({
+  createRequestId,
+  createContractorId,
+});
     createMutation.mutate({
-      service_request_id: parseInt(createRequestId.replace("SR-", ""), 10),
-      contractor_id: parseInt(createContractorId.replace("C-", ""), 10),
-      estimated_cost: parseFloat(createAmount),
-    });
+  service_request_id: parseInt(createRequestId.replace("SR-", ""), 10),
+  contractor_id: Number(createContractorId),
+  estimated_cost: Number(createAmount),
+});
   };
 
   return (
@@ -149,18 +153,28 @@ function EstimatesPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Contractor</Label>
-                  <Select value={createContractorId} onValueChange={setCreateContractorId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select contractor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contractors.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name} ({c.trade})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Select
+  value={createContractorId}
+  onValueChange={(value) => {
+    console.log("Selected contractor:", value);
+    setCreateContractorId(value);
+  }}
+>
+  <SelectTrigger>
+    <SelectValue placeholder="Select contractor" />
+  </SelectTrigger>
+
+  <SelectContent>
+    {contractors.map((c) => (
+      <SelectItem
+        key={String(c.id)}
+        value={String(c.id)}
+      >
+        {c.name} ({c.trade})
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Estimated Cost (INR)</Label>

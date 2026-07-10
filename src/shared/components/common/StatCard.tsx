@@ -20,6 +20,14 @@ const toneMap: Record<NonNullable<StatCardProps["tone"]>, string> = {
   info: "bg-sky-50 text-sky-600 border border-sky-100",
 };
 
+const borderAccentMap: Record<NonNullable<StatCardProps["tone"]>, string> = {
+  default: "border-t-blue-600",
+  success: "border-t-green-600",
+  warning: "border-t-amber-500",
+  destructive: "border-t-red-600",
+  info: "border-t-blue-400",
+};
+
 export function StatCard({
   label,
   value,
@@ -30,18 +38,18 @@ export function StatCard({
 }: StatCardProps) {
   const up = (delta ?? 0) >= 0;
   return (
-    <Card className="border border-slate-200 bg-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 overflow-hidden">
+    <Card className={cn("border border-slate-200 border-t-4 bg-white rounded-xl shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 overflow-hidden", borderAccentMap[tone])}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             {label}
           </div>
-          <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg shadow-sm", toneMap[tone])}>
-            <Icon className="h-4.5 w-4.5" />
+          <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg shadow-sm", toneMap[tone])}>
+            <Icon className="h-5 w-5" />
           </div>
         </div>
         <div className="mt-4">
-          <div className="text-3xl font-bold tracking-tight text-slate-900">
+          <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
             {value}
           </div>
           {(delta !== undefined || hint) && (

@@ -57,7 +57,7 @@ export function ServiceAdminDashboard() {
   } = dashboardData || {};
 
   return (
-    <>
+    <div className="space-y-6">
       <PageHeader
         title="Service operations"
         description="Triage requests, manage contractors and track delivery."
@@ -69,31 +69,28 @@ export function ServiceAdminDashboard() {
           </Link>
         }
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total requests"
           value={String(stats.total)}
           icon={Wrench}
-          delta={0}
         />
-        <StatCard label="Pending" value={String(stats.pending)} icon={Clock} tone="warning" delta={0} />
+        <StatCard label="Pending" value={String(stats.pending)} icon={Clock} tone="warning" />
         <StatCard
           label="Assigned / in-progress"
           value={String(stats.assigned)}
           icon={HardHat}
           tone="info"
-          delta={0}
         />
         <StatCard
           label="Completed (mo)"
           value={String(stats.completed)}
           icon={CheckCircle2}
           tone="success"
-          delta={0}
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         <ChartCard title="Requests · last 7 days" className="lg:col-span-2">
           <RequestsBar data={requestsSeries} />
         </ChartCard>
@@ -103,7 +100,11 @@ export function ServiceAdminDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {contractors.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-4 text-center">No contractors registered.</p>
+              <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                <HardHat className="h-8 w-8 stroke-1 text-muted-foreground/50 mb-2" />
+                <p className="text-xs font-semibold text-slate-800">No contractors registered</p>
+                <p className="text-[10px] text-muted-foreground">Invite technicians in the Contractors tab.</p>
+              </div>
             ) : (
               contractors.slice(0, 5).map((c) => (
                 <div key={c.id} className="flex items-center gap-3">
@@ -132,7 +133,7 @@ export function ServiceAdminDashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         <Card className="border-border/70 shadow-card lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-semibold">Active service requests</CardTitle>
@@ -144,7 +145,11 @@ export function ServiceAdminDashboard() {
           </CardHeader>
           <CardContent className="space-y-2">
             {activeRequests.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-8 text-center">No active service requests.</p>
+              <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
+                <Wrench className="h-8 w-8 stroke-1 text-muted-foreground/50 mb-2" />
+                <p className="text-xs font-semibold text-slate-800">No active requests</p>
+                <p className="text-[10px] text-muted-foreground">All logged maintenance tasks have been resolved.</p>
+              </div>
             ) : (
               activeRequests.slice(0, 5).map((r) => (
                 <div
@@ -175,10 +180,10 @@ export function ServiceAdminDashboard() {
           </CardHeader>
           <CardContent className="space-y-2">
             {appointments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                <Calendar className="h-8 w-8 stroke-1 text-muted-foreground/60 mb-2" />
-                <p className="text-xs font-medium">No visits scheduled today</p>
-                <p className="text-[10px]">Operations are currently clear.</p>
+              <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
+                <Calendar className="h-8 w-8 stroke-1 text-muted-foreground/50 mb-2" />
+                <p className="text-xs font-semibold text-slate-800">No visits scheduled today</p>
+                <p className="text-[10px] text-muted-foreground">Operations are currently clear.</p>
               </div>
             ) : (
               appointments.map((a) => (
@@ -196,7 +201,7 @@ export function ServiceAdminDashboard() {
           </CardContent>
         </Card>
       </div>
-    </>
+    </div>
   );
 }
 

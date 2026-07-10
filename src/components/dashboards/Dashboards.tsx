@@ -153,9 +153,9 @@ export function ServiceAdminDashboard() {
           <CardContent className="space-y-3">
             {contractors.slice(0, 5).map((c) => (
               <div key={c.id} className="flex items-center gap-3">
-                <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary-soft text-xs text-primary">{c.name.split(" ").map(w => w[0]).slice(0,2).join("")}</AvatarFallback></Avatar>
+                <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary-soft text-xs text-primary">{c.contractorName.split(" ").map((w: string) => w[0]).slice(0,2).join("")}</AvatarFallback></Avatar>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{c.name}</div>
+                  <div className="truncate text-sm font-medium">{c.contractorName}</div>
                   <div className="text-xs text-muted-foreground">{c.trade} · ★ {c.rating}</div>
                 </div>
                 <span className={`h-2 w-2 rounded-full ${c.available ? "bg-success" : "bg-muted-foreground/40"}`} />

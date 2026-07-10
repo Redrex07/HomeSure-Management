@@ -23,9 +23,14 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatCard } from "@/shared/components/common/StatCard";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
-import { useInvoices, updateInvoice as updateLocalInvoice } from "@/shared/utils/invoices-store";
-import { getInvoices, updateInvoiceStatus as updateSupabaseInvoice } from "@/core/db/supabase-queries";
-import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  getInvoices,
+  recordRentPaymentSuccess,
+  updateInvoiceStatus as updateSupabaseInvoice,
+} from "@/core/db/supabase-queries";
+import { createRazorpayOrder, verifyRazorpayPayment } from "@/core/api/razorpay.functions";
+import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
 const formatUsd = new Intl.NumberFormat("en-US", {
@@ -41,28 +46,63 @@ export const Route = createFileRoute("/app/invoices")({
 
 export type UnifiedInvoice = any & { isLocal?: boolean };
 
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => {
+      open: () => void;
+      on: (event: string, callback: (response: any) => void) => void;
+    };
+  }
+}
+
+function loadRazorpayCheckout() {
+  return new Promise<void>((resolve, reject) => {
+    if (typeof window === "undefined") return reject(new Error("Payments are only available in the browser."));
+    if (window.Razorpay) return resolve();
+
+    const existing = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Unable to load Razorpay Checkout.")), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Unable to load Razorpay Checkout."));
+    document.body.appendChild(script);
+  });
+}
+
 function InvoicesPage() {
   const session = useSession();
   const isContractor = session?.role === "contractor";
   const formatCurrency = (amount: number) =>
     isContractor ? formatUsd.format(amount) : formatINR(amount);
 
-  const localInvoices = useInvoices();
-  const [supabaseInvoices, setSupabaseInvoices] = useState<UnifiedInvoice[]>([]);
+  const queryClient = useQueryClient();
 
-  const fetchSupabaseInvoices = async () => {
-    const data = await getInvoices();
-    setSupabaseInvoices(data as UnifiedInvoice[]);
-  };
+  const { data: invoices = [], isLoading } = useQuery({
+    queryKey: ["invoices"],
+    queryFn: getInvoices,
+  });
 
-  useEffect(() => {
-    fetchSupabaseInvoices();
-  }, []);
+  const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
+  const updateMutation = useMutation({
+    mutationFn: ({ id, status, reason }: { id: string; status: string; reason?: string }) =>
+      updateSupabaseInvoice(id.replace("INV-", ""), { status, reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success("Invoice status updated successfully!");
+      setEditingInvoice(null);
+    },
+    onError: (err: any) => {
+      toast.error("Error updating invoice: " + (err.message || String(err)));
+    },
+  });
 
-  const invoices: UnifiedInvoice[] = [
-    ...localInvoices.map(i => ({ ...i, isLocal: true })),
-    ...supabaseInvoices
-  ];
   const paid = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
   const pending = invoices.filter((i) => i.status === "Pending").reduce((s, i) => s + i.amount, 0);
   const overdue = invoices.filter((i) => i.status === "Overdue").reduce((s, i) => s + i.amount, 0);
@@ -71,25 +111,16 @@ function InvoicesPage() {
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!editingInvoice) return;
     const formData = new FormData(e.currentTarget);
     const newStatus = formData.get("status") as string;
     const newReason = formData.get("reason") as string;
     
-    if (editingInvoice.isLocal) {
-      updateLocalInvoice(editingInvoice.id, { status: newStatus, reason: newReason });
-      toast.success("Local invoice updated successfully!");
-      setEditingInvoice(null);
-    } else {
-      try {
-        const rawId = editingInvoice.id.replace("INV-", "");
-        await updateSupabaseInvoice(rawId, { status: newStatus, reason: newReason });
-        toast.success("Cloud invoice updated successfully!");
-        setEditingInvoice(null);
-        fetchSupabaseInvoices();
-      } catch (error) {
-        toast.error("Failed to update cloud invoice");
-      }
-    }
+    updateMutation.mutate({
+      id: editingInvoice.id,
+      status: newStatus,
+      reason: newReason,
+    });
   };
 
   const getInvoiceHTML = (invoice: any) => {
@@ -238,6 +269,76 @@ function InvoicesPage() {
     }
   };
 
+  const handlePayInvoice = async (invoice: any) => {
+    if (!invoice?.amount || Number(invoice.amount) <= 0) {
+      toast.error("This invoice does not have a payable amount.");
+      return;
+    }
+
+    setPayingInvoiceId(invoice.id);
+    try {
+      await loadRazorpayCheckout();
+      const amountInPaise = Math.round(Number(invoice.amount) * 100);
+      const order = await createRazorpayOrder({
+        data: {
+          amount: amountInPaise,
+          currency: "INR",
+          receipt: String(invoice.id).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40),
+          notes: {
+            invoice_id: String(invoice.id),
+            user_email: session?.email || "",
+          },
+        },
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        const RazorpayCheckout = window.Razorpay;
+        if (!RazorpayCheckout) {
+          reject(new Error("Razorpay Checkout did not load."));
+          return;
+        }
+
+        const checkout = new RazorpayCheckout({
+          key: order.keyId,
+          amount: order.amount,
+          currency: order.currency,
+          name: "HomeSure",
+          description: `Rent payment ${invoice.id}`,
+          order_id: order.orderId,
+          prefill: {
+            name: session?.name || "",
+            email: session?.email || "",
+          },
+          theme: { color: "#4f46e5" },
+          handler: async (response: any) => {
+            try {
+              await verifyRazorpayPayment({ data: response });
+              await recordRentPaymentSuccess(invoice, {
+                payment_method: "Razorpay",
+                payment_reference: response.razorpay_payment_id,
+                receipt_url: `https://dashboard.razorpay.com/app/payments/${response.razorpay_payment_id}`,
+              });
+              queryClient.invalidateQueries({ queryKey: ["invoices"] });
+              toast.success("Rent payment completed successfully.");
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          },
+        });
+
+        checkout.on("payment.failed", (response: any) => {
+          reject(new Error(response?.error?.description || "Razorpay payment failed."));
+        });
+        checkout.open();
+      });
+    } catch (err: any) {
+      toast.error("Payment failed: " + (err.message || String(err)));
+    } finally {
+      setPayingInvoiceId(null);
+    }
+  };
+
   return (
     <>
       <PageHeader title="Invoices" description="Track billing, payments and overdue accounts." />
@@ -261,81 +362,100 @@ function InvoicesPage() {
           tone="destructive"
         />
       </div>
-      <DataTable
-        rows={invoices}
-        filterKeys={["id", "request"]}
-        columns={[
-          {
-            key: "id",
-            header: "Invoice",
-            render: (i) => <span className="font-mono text-xs">{i.id}</span>,
-          },
-          {
-            key: "request",
-            header: "Request",
-            render: (i) => (
-              <span className="font-mono text-xs text-muted-foreground">{i.request}</span>
-            ),
-          },
-          { key: "issued", header: "Issued" },
-          { key: "due", header: "Due" },
-          {
-            key: "amount",
-            header: "Amount",
-            sortable: true,
-            render: (i) => <span className="font-medium">{formatCurrency(i.amount)}</span>,
-          },
-          { 
-            key: "status", 
-            header: "Status", 
-            render: (i) => (
-              <div className="flex flex-col items-start gap-1">
-                <StatusBadge value={i.status} />
-                {i.reason && (
-                  <span className="text-[10px] text-muted-foreground max-w-[120px] truncate" title={i.reason}>
-                    {i.reason}
-                  </span>
-                )}
-              </div>
-            )
-          },
-          {
-            key: "actions",
-            header: "",
-            render: (i) => (
-              <div className="flex items-center gap-1 justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                  onClick={() => setEditingInvoice(i)}
-                  title="Edit"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                  onClick={() => handlePrintInvoice(i)}
-                  title="Print"
-                >
-                  <Printer className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                  onClick={() => handleDownloadInvoice(i)}
-                  title="Download"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ),
-          },
-        ]}
-      />
+      {isLoading ? (
+        <div className="flex h-64 items-center justify-center border border-border/60 rounded-md bg-background/50">
+          <p className="text-sm text-muted-foreground animate-pulse">Loading invoices...</p>
+        </div>
+      ) : (
+        <DataTable
+          rows={invoices}
+          filterKeys={["id", "request"]}
+          empty="No Invoices Found"
+          columns={[
+            {
+              key: "id",
+              header: "Invoice",
+              render: (i) => <span className="font-mono text-xs">{i.id}</span>,
+            },
+            {
+              key: "request",
+              header: "Request",
+              render: (i) => (
+                <span className="font-mono text-xs text-muted-foreground">{i.request}</span>
+              ),
+            },
+            { key: "issued", header: "Issued" },
+            { key: "due", header: "Due" },
+            {
+              key: "amount",
+              header: "Amount",
+              sortable: true,
+              render: (i) => <span className="font-medium">{formatCurrency(i.amount)}</span>,
+            },
+            { 
+              key: "status", 
+              header: "Status", 
+              render: (i) => (
+                <div className="flex flex-col items-start gap-1">
+                  <StatusBadge value={i.status} />
+                  {i.reason && (
+                    <span className="text-[10px] text-muted-foreground max-w-[120px] truncate" title={i.reason}>
+                      {i.reason}
+                    </span>
+                  )}
+                </div>
+              )
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (i) => (
+                <div className="flex items-center gap-1 justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                    onClick={() => setEditingInvoice(i)}
+                    title="Edit"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  {session?.role === "tenant" && i.status !== "Paid" && i.status !== "Successful" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                      onClick={() => handlePayInvoice(i)}
+                      disabled={payingInvoiceId === i.id}
+                      title="Pay rent"
+                    >
+                      <CreditCard className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                    onClick={() => handlePrintInvoice(i)}
+                    title="Print"
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
+                    onClick={() => handleDownloadInvoice(i)}
+                    title="Download"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ),
+            },
+          ]}
+        />
+      )}
 
 
       <Dialog open={!!editingInvoice} onOpenChange={(open) => !open && setEditingInvoice(null)}>
@@ -373,7 +493,9 @@ function InvoicesPage() {
               <Button type="button" variant="outline" onClick={() => setEditingInvoice(null)}>
                 Cancel
               </Button>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

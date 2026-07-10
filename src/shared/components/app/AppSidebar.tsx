@@ -70,6 +70,7 @@ export const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
       items: [
         { title: "Service Requests", url: "/app/service-requests", icon: Wrench },
         { title: "Contractors", url: "/app/contractors", icon: HardHat },
+        { title: "Realtors", url: "/app/realtors", icon: Megaphone },
         { title: "Appointments", url: "/app/appointments", icon: Calendar },
         { title: "Estimates", url: "/app/estimates", icon: FileSpreadsheet },
         { title: "Invoices", url: "/app/invoices", icon: Receipt },
@@ -92,6 +93,7 @@ export const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
       label: "Services",
       items: [
         { title: "Maintenance", url: "/app/service-requests", icon: Wrench },
+        { title: "Analytics", url: "/app/analytics", icon: BarChart3 },
         { title: "Subscription", url: "/app/subscriptions", icon: CreditCard },
       ],
     },
@@ -101,6 +103,7 @@ export const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
     {
       label: "Activity",
       items: [
+        { title: "Browse Properties", url: "/app/properties", icon: Building2 },
         { title: "Rent Payments", url: "/app/invoices", icon: Receipt },
         { title: "Maintenance", url: "/app/service-requests", icon: Wrench },
         { title: "Appointments", url: "/app/appointments", icon: Calendar },
