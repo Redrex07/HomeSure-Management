@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { sendInvitationEmail as sendInviteViaResend } from "@/core/email/email.service.server";
+import { sendInvitationEmail } from "@/core/email/email.service.server";
 import { getAppUrl } from "@/core/email/email.config.server";
 
 export const sendTenantInviteEmail = createServerFn({ method: "POST" })
@@ -15,7 +15,7 @@ export const sendTenantInviteEmail = createServerFn({ method: "POST" })
     const appUrl = getAppUrl();
     const invitationLink = `${appUrl}/login`;
 
-    const result = await sendInviteViaResend({
+    const result = await sendInvitationEmail({
       recipientEmail: data.email,
       recipientName: data.email.split("@")[0],
       role: `Tenant — Property #${data.propertyId}`,
@@ -28,3 +28,4 @@ export const sendTenantInviteEmail = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
