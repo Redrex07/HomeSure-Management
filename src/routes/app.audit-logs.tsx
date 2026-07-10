@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { DataTable } from "@/shared/components/common/DataTable";
 import { useQuery } from "@tanstack/react-query";
-import { getPlatformAuditLogs } from "@/core/db/supabase-queries";
+import { fetchPlatformAuditLogs } from "@/core/api/users.functions";
 import { Badge } from "@/shared/components/ui/badge";
 
 export const Route = createFileRoute("/app/audit-logs")({
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/app/audit-logs")({
 function AuditPage() {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["platform-audit-logs"],
-    queryFn: getPlatformAuditLogs,
+    queryFn: () => fetchPlatformAuditLogs(),
     refetchOnWindowFocus: false,
   });
 

@@ -13,7 +13,7 @@ import { revenueSeries, requestsSeries, categoryBreakdown } from "@/shared/utils
 import { DollarSign, Building2, Users, Wrench } from "lucide-react";
 import { formatINR } from "@/shared/utils/utils";
 import { useQuery } from "@tanstack/react-query";
-import { getPlatformStats } from "@/core/db/supabase-queries";
+import { fetchPlatformStats } from "@/core/api/users.functions";
 
 export const Route = createFileRoute("/app/analytics")({
   head: () => ({ meta: [{ title: "Analytics — HomeSure" }] }),
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/app/analytics")({
 function AnalyticsPage() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["platform-stats"],
-    queryFn: getPlatformStats,
+    queryFn: () => fetchPlatformStats(),
     refetchOnWindowFocus: false,
   });
 

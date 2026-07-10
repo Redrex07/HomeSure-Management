@@ -9,8 +9,12 @@ import { DataTable } from "@/shared/components/common/DataTable";
 import { StatCard } from "@/shared/components/common/StatCard";
 import { Plus, MoreHorizontal, Trash2, RefreshCw, Users, UserCheck, Clock, Mail } from "lucide-react";
 import { ROLE_LABELS, type Role } from "@/features/auth/utils/roles";
-import { getPlatformUsers, type PlatformUser } from "@/core/db/supabase-queries";
-import { invitePlatformUser, deletePlatformUser } from "@/core/api/users.functions";
+import { 
+  invitePlatformUser, 
+  deletePlatformUser, 
+  fetchPlatformUsers, 
+  type PlatformUser 
+} from "@/core/api/users.functions";
 import { useSession } from "@/features/auth/store/auth-store";
 import { toast } from "sonner";
 import {
@@ -83,7 +87,7 @@ function UsersPage() {
 
   const { data: allUsers = [], isLoading } = useQuery({
     queryKey: ["platform-users"],
-    queryFn: getPlatformUsers,
+    queryFn: () => fetchPlatformUsers(),
     refetchOnWindowFocus: false,
   });
 
