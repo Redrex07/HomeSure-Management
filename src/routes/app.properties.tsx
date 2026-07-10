@@ -1419,7 +1419,8 @@ function PropertiesPage() {
                       className="h-full"
                     >
                       <Card className="overflow-hidden group hover:shadow-2xl transition-all duration-500 border-border/60 hover:border-primary/50 bg-card flex flex-col h-full rounded-2xl hover:-translate-y-1">
-                        <div className="relative h-56 w-full bg-muted/30 overflow-hidden cursor-pointer" onClick={() => navigate({ to: "/app/property/$id", params: { id: String(p.property_id) } })}>
+                        <div className="relative h-56 w-full bg-muted/30 overflow-hidden">
+                          <Link to="/app/property/$id" params={{ id: String(p.property_id) }} className="absolute inset-0 z-10" />
                           {parseImageUrls(p.image_url)[0] ? (
                             <img src={parseImageUrls(p.image_url)[0]} alt={p.property_name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
                           ) : (
@@ -1431,12 +1432,12 @@ function PropertiesPage() {
                           {/* Subtle overlay gradient */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
                           
-                          <div className="absolute top-3 left-3">
+                          <div className="absolute top-3 left-3 z-20">
                             <StatusBadge value={p.availability_status} />
                           </div>
                           
-                          <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0">
-                            <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0 z-20">
+                            <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
