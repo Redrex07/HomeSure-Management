@@ -1196,7 +1196,7 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
-              ) : (
+              ) : step === 7 ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2 grid gap-2">

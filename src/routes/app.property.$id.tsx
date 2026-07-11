@@ -834,7 +834,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(7)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : (
+              ) : editStep === 7 ? (
                 <>
                   {/* Tenant Preferences */}
                   <div>
