@@ -266,6 +266,13 @@ function PropertiesPage() {
     airport_distance: "",
     supermarket_distance: "",
     bank_distance: "",
+    ownership_proof: "",
+    tax_receipt: "",
+    electricity_bill: "",
+    encumbrance_certificate: "",
+    occupancy_certificate: "",
+    property_insurance: "",
+    owner_government_id: "",
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -274,6 +281,7 @@ function PropertiesPage() {
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
   const [editVideo, setEditVideo] = useState<string | null>(null);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   const [form, setForm] = useState({
     property_name: "",
@@ -351,13 +359,20 @@ function PropertiesPage() {
     airport_distance: "",
     supermarket_distance: "",
     bank_distance: "",
+    ownership_proof: "",
+    tax_receipt: "",
+    electricity_bill: "",
+    encumbrance_certificate: "",
+    occupancy_certificate: "",
+    property_insurance: "",
+    owner_government_id: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 8) {
+    if (step < 10) {
       setStep(step + 1);
       return;
     }
@@ -458,6 +473,15 @@ function PropertiesPage() {
           airport_distance: form.airport_distance,
           supermarket_distance: form.supermarket_distance,
           bank_distance: form.bank_distance
+        },
+        property_documents: {
+          ownership_proof: form.ownership_proof,
+          tax_receipt: form.tax_receipt,
+          electricity_bill: form.electricity_bill,
+          encumbrance_certificate: form.encumbrance_certificate,
+          occupancy_certificate: form.occupancy_certificate,
+          property_insurance: form.property_insurance,
+          owner_government_id: form.owner_government_id
         }
       };
       if (uploadedVideo) {
@@ -595,6 +619,44 @@ function PropertiesPage() {
       toast.error("Failed to upload video.");
     } finally {
       setIsUploadingVideo(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof typeof form, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Document must be less than 10MB");
+      e.target.value = "";
+      return;
+    }
+
+    setIsUploadingDoc(true);
+    try {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+      const { error } = await supabase.storage
+        .from('property-documents')
+        .upload(`properties/${fileName}`, file, { cacheControl: '3600', upsert: false });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('property-documents')
+        .getPublicUrl(`properties/${fileName}`);
+
+      if (isEdit) {
+        setEditForm({ ...editForm, [fieldName]: publicUrlData.publicUrl });
+      } else {
+        setForm({ ...form, [fieldName]: publicUrlData.publicUrl });
+      }
+      toast.success("Document uploaded successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload document.");
+    } finally {
+      setIsUploadingDoc(false);
       e.target.value = "";
     }
   };
@@ -905,7 +967,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 9: Basic Property Information" : step === 2 ? "Step 2 of 9: Location Details" : step === 3 ? "Step 3 of 9: Images & Media" : step === 4 ? "Step 4 of 9: Property Specifications" : step === 5 ? "Step 5 of 9: Rent Details" : step === 6 ? "Step 6 of 9: Amenities" : step === 7 ? "Step 7 of 9: Tenant Preferences" : step === 8 ? "Step 8 of 9: Utility Information" : "Step 9 of 9: Nearby Facilities"}
+              {step === 1 ? "Step 1 of 10: Basic Property Information" : step === 2 ? "Step 2 of 10: Location Details" : step === 3 ? "Step 3 of 10: Images & Media" : step === 4 ? "Step 4 of 10: Property Specifications" : step === 5 ? "Step 5 of 10: Rent Details" : step === 6 ? "Step 6 of 10: Amenities" : step === 7 ? "Step 7 of 10: Tenant Preferences" : step === 8 ? "Step 8 of 10: Utility Information" : step === 9 ? "Step 9 of 10: Nearby Facilities" : "Step 10 of 10: Property Documents"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -1373,6 +1435,62 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
+              ) : step === 10 ? (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Upload relevant property documents. Only PDFs and Images (max 10MB) are allowed.</p>
+                    
+                    <div className="grid gap-2">
+                      <Label>Ownership Proof *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'ownership_proof')} disabled={isUploadingDoc} />
+                        {form.ownership_proof && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Tax Receipt *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'tax_receipt')} disabled={isUploadingDoc} />
+                        {form.tax_receipt && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Electricity Bill *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'electricity_bill')} disabled={isUploadingDoc} />
+                        {form.electricity_bill && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Encumbrance Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'encumbrance_certificate')} disabled={isUploadingDoc} />
+                        {form.encumbrance_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Occupancy Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'occupancy_certificate')} disabled={isUploadingDoc} />
+                        {form.occupancy_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Government ID of Owner *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'owner_government_id')} disabled={isUploadingDoc} />
+                        {form.owner_government_id && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Property Insurance (Optional)</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'property_insurance')} disabled={isUploadingDoc} />
+                        {form.property_insurance && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                  </div>
+                </>
               ) : null}
 
             <SheetFooter className="mt-4 pb-12">
@@ -1432,13 +1550,20 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(9)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 9 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(8)}>
                     Back
                   </Button>
-                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo}>
-                    {(isUploading || isUploadingVideo) ? "Uploading..." : "Save Property"}
+                  <Button type="button" onClick={() => setStep(10)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(9)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc || !form.ownership_proof || !form.tax_receipt || !form.electricity_bill || !form.encumbrance_certificate || !form.occupancy_certificate || !form.owner_government_id}>
+                    {(isUploading || isUploadingVideo || isUploadingDoc) ? "Uploading..." : "Save Property"}
                   </Button>
                 </>
               )}

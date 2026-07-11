@@ -53,6 +53,7 @@ function PropertyDetailsPage() {
   const [editVideo, setEditVideo] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   const openEditDialog = () => {
     let loc = {};
@@ -83,7 +84,8 @@ function PropertyDetailsPage() {
     const tenantPrefs = (property as any)?.tenantPreferencesData || {};
     const utilities = (property as any)?.utilitiesData || {};
     const nearbyFacilities = (property as any)?.nearbyFacilitiesData || {};
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities }));
+    const documents = (property as any)?.documentsData || {};
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents }));
 
     let images = [];
     try {
@@ -176,9 +178,43 @@ function PropertyDetailsPage() {
     }
   };
 
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Document must be less than 10MB");
+      e.target.value = "";
+      return;
+    }
+
+    setIsUploadingDoc(true);
+    try {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+      const { error } = await supabase.storage
+        .from('property-documents')
+        .upload(`properties/${fileName}`, file, { cacheControl: '3600', upsert: false });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('property-documents')
+        .getPublicUrl(`properties/${fileName}`);
+
+      setEditForm((prev: any) => ({ ...prev, [fieldName]: publicUrlData.publicUrl }));
+      toast.success("Document uploaded successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload document.");
+    } finally {
+      setIsUploadingDoc(false);
+      e.target.value = "";
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editStep < 9) {
+    if (editStep < 10) {
       setEditStep(editStep + 1);
       return;
     }
@@ -277,6 +313,15 @@ function PropertyDetailsPage() {
         airport_distance: editForm.airport_distance,
         supermarket_distance: editForm.supermarket_distance,
         bank_distance: editForm.bank_distance
+      },
+      property_documents: {
+        ownership_proof: editForm.ownership_proof,
+        tax_receipt: editForm.tax_receipt,
+        electricity_bill: editForm.electricity_bill,
+        encumbrance_certificate: editForm.encumbrance_certificate,
+        occupancy_certificate: editForm.occupancy_certificate,
+        property_insurance: editForm.property_insurance,
+        owner_government_id: editForm.owner_government_id
       }
     };
     
@@ -468,7 +513,7 @@ function PropertyDetailsPage() {
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 9`}</DialogTitle>
+              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 10`}</DialogTitle>
             </DialogHeader>
             
             <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
@@ -994,8 +1039,69 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(8)}>Back</Button>
-                    <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo}>
-                      {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
+                    <Button type="button" onClick={() => setEditStep(10)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : editStep === 10 ? (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Upload relevant property documents. Only PDFs and Images (max 10MB) are allowed.</p>
+                    
+                    <div className="grid gap-2">
+                      <Label>Ownership Proof *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'ownership_proof', true)} disabled={isUploadingDoc} />
+                        {editForm.ownership_proof && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Tax Receipt *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'tax_receipt', true)} disabled={isUploadingDoc} />
+                        {editForm.tax_receipt && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Electricity Bill *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'electricity_bill', true)} disabled={isUploadingDoc} />
+                        {editForm.electricity_bill && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Encumbrance Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'encumbrance_certificate', true)} disabled={isUploadingDoc} />
+                        {editForm.encumbrance_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Occupancy Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'occupancy_certificate', true)} disabled={isUploadingDoc} />
+                        {editForm.occupancy_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Government ID of Owner *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'owner_government_id', true)} disabled={isUploadingDoc} />
+                        {editForm.owner_government_id && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Property Insurance (Optional)</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'property_insurance', true)} disabled={isUploadingDoc} />
+                        {editForm.property_insurance && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(9)}>Back</Button>
+                    <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc || !editForm.ownership_proof || !editForm.tax_receipt || !editForm.electricity_bill || !editForm.encumbrance_certificate || !editForm.occupancy_certificate || !editForm.owner_government_id}>
+                      {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
                     </Button>
                   </DialogFooter>
                 </>
@@ -1544,6 +1650,54 @@ function PropertyDetailsPage() {
                       elements.push(
                         <div key="no_data_nf" className="col-span-2 sm:col-span-3 md:col-span-4">
                           <span className="text-muted-foreground italic">Nearby facilities not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Property Documents Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="property_documents" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Property Documents
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const docData = (property as any)?.documentsData || {};
+                    let elements = [];
+
+                    const docs = [
+                      { id: "ownership_proof", label: "Ownership Proof" },
+                      { id: "tax_receipt", label: "Tax Receipt" },
+                      { id: "electricity_bill", label: "Electricity Bill" },
+                      { id: "encumbrance_certificate", label: "Encumbrance Certificate" },
+                      { id: "occupancy_certificate", label: "Occupancy Certificate" },
+                      { id: "property_insurance", label: "Property Insurance" },
+                      { id: "owner_government_id", label: "Owner Government ID" }
+                    ];
+
+                    docs.forEach(d => {
+                      if (docData[d.id]) {
+                        elements.push(
+                          <div key={d.id} className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                            <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">{d.label}</span>
+                            <a href={docData[d.id]} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium text-base truncate block w-full">View Document</a>
+                          </div>
+                        );
+                      }
+                    });
+
+                    if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_doc" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Property documents not specified</span>
                         </div>
                       );
                     }

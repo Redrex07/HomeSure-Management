@@ -73,7 +73,7 @@ export async function getAllProperties() {
   try {
     console.log("🔍 Fetching ALL properties...");
 
-    const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*)");
+    const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*)");
 
     console.log("📊 DATA:", data);
     console.log("❌ ERROR:", error);
@@ -93,7 +93,7 @@ export async function getLandlordProperties(landlordId: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*)")
+      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*)")
       .eq("landlord_id", landlordId)
       .order("property_id", { ascending: false });
 
@@ -123,6 +123,9 @@ export async function createProperty(payload: any) {
 
     const nearbyFacilitiesObj = payload.nearby_facilities;
     delete payload.nearby_facilities;
+
+    const propertyDocumentsObj = payload.property_documents;
+    delete payload.property_documents;
 
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -251,6 +254,24 @@ export async function createProperty(payload: any) {
           .insert([facilitiesPayload]);
         if (facilitiesError) console.error("Error creating nearby facilities:", facilitiesError);
       }
+
+      // Add Property Documents
+      if (propertyDocumentsObj) {
+        const documentsPayload = {
+          property_id: propertyId,
+          ownership_proof: propertyDocumentsObj.ownership_proof || null,
+          tax_receipt: propertyDocumentsObj.tax_receipt || null,
+          electricity_bill: propertyDocumentsObj.electricity_bill || null,
+          encumbrance_certificate: propertyDocumentsObj.encumbrance_certificate || null,
+          occupancy_certificate: propertyDocumentsObj.occupancy_certificate || null,
+          property_insurance: propertyDocumentsObj.property_insurance || null,
+          owner_government_id: propertyDocumentsObj.owner_government_id || null,
+        };
+        const { error: documentsError } = await supabase
+          .from("property_documents")
+          .insert([documentsPayload]);
+        if (documentsError) console.error("Error creating property documents:", documentsError);
+      }
     }
 
     return data;
@@ -275,6 +296,9 @@ export async function updateProperty(id: number, payload: any) {
 
     const nearbyFacilitiesObj = payload.nearby_facilities;
     delete payload.nearby_facilities;
+
+    const propertyDocumentsObj = payload.property_documents;
+    delete payload.property_documents;
 
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -463,6 +487,38 @@ export async function updateProperty(id: number, payload: any) {
       }
     }
 
+    if (propertyDocumentsObj) {
+      const documentsPayload = {
+        property_id: id,
+        ownership_proof: propertyDocumentsObj.ownership_proof || null,
+        tax_receipt: propertyDocumentsObj.tax_receipt || null,
+        electricity_bill: propertyDocumentsObj.electricity_bill || null,
+        encumbrance_certificate: propertyDocumentsObj.encumbrance_certificate || null,
+        occupancy_certificate: propertyDocumentsObj.occupancy_certificate || null,
+        property_insurance: propertyDocumentsObj.property_insurance || null,
+        owner_government_id: propertyDocumentsObj.owner_government_id || null,
+      };
+
+      const { data: existingDoc } = await supabase
+        .from("property_documents")
+        .select("document_id")
+        .eq("property_id", id)
+        .maybeSingle();
+
+      if (existingDoc) {
+        const { error: upError } = await supabase
+          .from("property_documents")
+          .update(documentsPayload)
+          .eq("property_id", id);
+        if (upError) console.error("Error updating property documents:", upError);
+      } else {
+        const { error: insError } = await supabase
+          .from("property_documents")
+          .insert([documentsPayload]);
+        if (insError) console.error("Error inserting property documents:", insError);
+      }
+    }
+
     return data;
   } catch (err) {
     console.error("Error updating property:", err);
@@ -490,7 +546,7 @@ export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*)")
+      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*)")
       .eq("property_id", id)
       .single();
 
