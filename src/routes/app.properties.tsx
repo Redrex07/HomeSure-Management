@@ -905,7 +905,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 8: Basic Property Information" : step === 2 ? "Step 2 of 8: Location Details" : step === 3 ? "Step 3 of 8: Images & Media" : step === 4 ? "Step 4 of 8: Property Specifications" : step === 5 ? "Step 5 of 8: Rent Details" : step === 6 ? "Step 6 of 8: Amenities" : step === 7 ? "Step 7 of 8: Tenant Preferences" : "Step 8 of 8: Utility Information"}
+              {step === 1 ? "Step 1 of 9: Basic Property Information" : step === 2 ? "Step 2 of 9: Location Details" : step === 3 ? "Step 3 of 9: Images & Media" : step === 4 ? "Step 4 of 9: Property Specifications" : step === 5 ? "Step 5 of 9: Rent Details" : step === 6 ? "Step 6 of 9: Amenities" : step === 7 ? "Step 7 of 9: Tenant Preferences" : step === 8 ? "Step 8 of 9: Utility Information" : "Step 9 of 9: Nearby Facilities"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
