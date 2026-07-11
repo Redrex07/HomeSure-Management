@@ -203,9 +203,9 @@ function PropertyDetailsPage() {
 
       setEditForm((prev: any) => ({ ...prev, [fieldName]: publicUrlData.publicUrl }));
       toast.success("Document uploaded successfully!");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Failed to upload document.");
+      toast.error(`Failed to upload document: ${err.message || 'Unknown error'}`);
     } finally {
       setIsUploadingDoc(false);
       e.target.value = "";
