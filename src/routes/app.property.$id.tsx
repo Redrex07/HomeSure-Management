@@ -996,7 +996,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(9)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : (
+              ) : editStep === 9 ? (
                 <>
                   {/* Nearby Facilities */}
                   <div>
@@ -1042,7 +1042,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(10)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : editStep === 10 ? (
+              ) : (
                 <>
                   <div className="grid gap-4">
                     <p className="text-sm text-muted-foreground mb-2">Upload relevant property documents. Only PDFs and Images (max 10MB) are allowed.</p>
