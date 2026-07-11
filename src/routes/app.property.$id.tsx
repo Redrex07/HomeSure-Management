@@ -1149,7 +1149,7 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(10)}>Back</Button>
-                    <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc || !editForm.ownership_proof || !editForm.tax_receipt || !editForm.electricity_bill || !editForm.encumbrance_certificate || !editForm.occupancy_certificate || !editForm.owner_government_id || !editForm.landlord_name || !editForm.mobile_number}>
+                    <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc}>
                       {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
                     </Button>
                   </DialogFooter>

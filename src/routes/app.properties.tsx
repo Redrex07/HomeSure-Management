@@ -1629,7 +1629,7 @@ function PropertiesPage() {
                   <Button type="button" variant="outline" onClick={() => setStep(10)}>
                     Back
                   </Button>
-                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc || !form.ownership_proof || !form.tax_receipt || !form.electricity_bill || !form.encumbrance_certificate || !form.occupancy_certificate || !form.owner_government_id || !form.landlord_name || !form.mobile_number}>
+                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc}>
                     {(isUploading || isUploadingVideo || isUploadingDoc) ? "Uploading..." : "Save Property"}
                   </Button>
                 </>
