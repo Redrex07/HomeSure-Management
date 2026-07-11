@@ -82,7 +82,8 @@ function PropertyDetailsPage() {
     const amenities = (property as any)?.amenitiesData || {};
     const tenantPrefs = (property as any)?.tenantPreferencesData || {};
     const utilities = (property as any)?.utilitiesData || {};
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities }));
+    const nearbyFacilities = (property as any)?.nearbyFacilitiesData || {};
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities }));
 
     let images = [];
     try {
@@ -177,7 +178,7 @@ function PropertyDetailsPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editStep < 8) {
+    if (editStep < 9) {
       setEditStep(editStep + 1);
       return;
     }
@@ -266,6 +267,16 @@ function PropertyDetailsPage() {
         internet_available: editForm.internet_available === true,
         gas_connection: editForm.gas_connection === true,
         sewage_connection: editForm.sewage_connection === true
+      },
+      nearby_facilities: {
+        school_distance: editForm.school_distance,
+        college_distance: editForm.college_distance,
+        hospital_distance: editForm.hospital_distance,
+        bus_stop_distance: editForm.bus_stop_distance,
+        railway_station_distance: editForm.railway_station_distance,
+        airport_distance: editForm.airport_distance,
+        supermarket_distance: editForm.supermarket_distance,
+        bank_distance: editForm.bank_distance
       }
     };
     
@@ -906,7 +917,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(8)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : (
+              ) : editStep === 8 ? (
                 <>
                   {/* Utility Information */}
                   <div>
@@ -937,6 +948,52 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(7)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(9)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  {/* Nearby Facilities */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Nearby Facilities</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>School Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 1.5" value={editForm.school_distance || ""} onChange={(e) => setEditForm({...editForm, school_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>College Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 3.0" value={editForm.college_distance || ""} onChange={(e) => setEditForm({...editForm, college_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Hospital Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 2.0" value={editForm.hospital_distance || ""} onChange={(e) => setEditForm({...editForm, hospital_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Bus Stop Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 0.5" value={editForm.bus_stop_distance || ""} onChange={(e) => setEditForm({...editForm, bus_stop_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Railway Station (km)</Label>
+                        <Input type="number" placeholder="e.g. 5.0" value={editForm.railway_station_distance || ""} onChange={(e) => setEditForm({...editForm, railway_station_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Airport Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 15.0" value={editForm.airport_distance || ""} onChange={(e) => setEditForm({...editForm, airport_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Supermarket (km)</Label>
+                        <Input type="number" placeholder="e.g. 1.0" value={editForm.supermarket_distance || ""} onChange={(e) => setEditForm({...editForm, supermarket_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Bank/ATM (km)</Label>
+                        <Input type="number" placeholder="e.g. 0.2" value={editForm.bank_distance || ""} onChange={(e) => setEditForm({...editForm, bank_distance: e.target.value})} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(8)}>Back</Button>
                     <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo}>
                       {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
                     </Button>
@@ -1438,6 +1495,55 @@ function PropertyDetailsPage() {
                       elements.push(
                         <div key="no_data_utils" className="col-span-2 sm:col-span-3 md:col-span-4">
                           <span className="text-muted-foreground italic">Utility information not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Nearby Facilities Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="nearby_facilities" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Nearby Facilities
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const nfData = (property as any)?.nearbyFacilitiesData || {};
+                    let elements = [];
+
+                    const distances = [
+                      { id: "school_distance", label: "School" },
+                      { id: "college_distance", label: "College" },
+                      { id: "hospital_distance", label: "Hospital" },
+                      { id: "bus_stop_distance", label: "Bus Stop" },
+                      { id: "railway_station_distance", label: "Railway Station" },
+                      { id: "airport_distance", label: "Airport" },
+                      { id: "supermarket_distance", label: "Supermarket" },
+                      { id: "bank_distance", label: "Bank/ATM" }
+                    ];
+
+                    distances.forEach(d => {
+                      if (nfData[d.id]) {
+                        elements.push(
+                          <div key={d.id} className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                            <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">{d.label}</span>
+                            <span className="font-medium text-base">{nfData[d.id]} km</span>
+                          </div>
+                        );
+                      }
+                    });
+
+                    if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_nf" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Nearby facilities not specified</span>
                         </div>
                       );
                     }

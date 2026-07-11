@@ -73,7 +73,7 @@ export async function getAllProperties() {
   try {
     console.log("🔍 Fetching ALL properties...");
 
-    const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*)");
+    const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*)");
 
     console.log("📊 DATA:", data);
     console.log("❌ ERROR:", error);
@@ -93,7 +93,7 @@ export async function getLandlordProperties(landlordId: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*)")
+      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*)")
       .eq("landlord_id", landlordId)
       .order("property_id", { ascending: false });
 
@@ -120,6 +120,9 @@ export async function createProperty(payload: any) {
 
     const utilitiesObj = payload.property_utilities;
     delete payload.property_utilities;
+
+    const nearbyFacilitiesObj = payload.nearby_facilities;
+    delete payload.nearby_facilities;
 
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -229,6 +232,25 @@ export async function createProperty(payload: any) {
           .insert([utilitiesPayload]);
         if (utilsError) console.error("Error creating property utilities:", utilsError);
       }
+
+      // Add Nearby Facilities
+      if (nearbyFacilitiesObj) {
+        const facilitiesPayload = {
+          property_id: propertyId,
+          school_distance: parseNumeric(nearbyFacilitiesObj.school_distance),
+          college_distance: parseNumeric(nearbyFacilitiesObj.college_distance),
+          hospital_distance: parseNumeric(nearbyFacilitiesObj.hospital_distance),
+          bus_stop_distance: parseNumeric(nearbyFacilitiesObj.bus_stop_distance),
+          railway_station_distance: parseNumeric(nearbyFacilitiesObj.railway_station_distance),
+          airport_distance: parseNumeric(nearbyFacilitiesObj.airport_distance),
+          supermarket_distance: parseNumeric(nearbyFacilitiesObj.supermarket_distance),
+          bank_distance: parseNumeric(nearbyFacilitiesObj.bank_distance),
+        };
+        const { error: facilitiesError } = await supabase
+          .from("nearby_facilities")
+          .insert([facilitiesPayload]);
+        if (facilitiesError) console.error("Error creating nearby facilities:", facilitiesError);
+      }
     }
 
     return data;
@@ -250,6 +272,9 @@ export async function updateProperty(id: number, payload: any) {
 
     const utilitiesObj = payload.property_utilities;
     delete payload.property_utilities;
+
+    const nearbyFacilitiesObj = payload.nearby_facilities;
+    delete payload.nearby_facilities;
 
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -398,6 +423,46 @@ export async function updateProperty(id: number, payload: any) {
         if (insError) console.error("Error inserting utilities:", insError);
       }
     }
+
+    if (nearbyFacilitiesObj) {
+      const parseNumeric = (val: any) => {
+        if (!val) return null;
+        const num = Number(String(val).replace(/[^0-9.-]/g, ""));
+        return isNaN(num) ? null : num;
+      };
+
+      const facilitiesPayload = {
+        property_id: id,
+        school_distance: parseNumeric(nearbyFacilitiesObj.school_distance),
+        college_distance: parseNumeric(nearbyFacilitiesObj.college_distance),
+        hospital_distance: parseNumeric(nearbyFacilitiesObj.hospital_distance),
+        bus_stop_distance: parseNumeric(nearbyFacilitiesObj.bus_stop_distance),
+        railway_station_distance: parseNumeric(nearbyFacilitiesObj.railway_station_distance),
+        airport_distance: parseNumeric(nearbyFacilitiesObj.airport_distance),
+        supermarket_distance: parseNumeric(nearbyFacilitiesObj.supermarket_distance),
+        bank_distance: parseNumeric(nearbyFacilitiesObj.bank_distance),
+      };
+
+      const { data: existingFac } = await supabase
+        .from("nearby_facilities")
+        .select("facility_id")
+        .eq("property_id", id)
+        .maybeSingle();
+
+      if (existingFac) {
+        const { error: upError } = await supabase
+          .from("nearby_facilities")
+          .update(facilitiesPayload)
+          .eq("property_id", id);
+        if (upError) console.error("Error updating nearby facilities:", upError);
+      } else {
+        const { error: insError } = await supabase
+          .from("nearby_facilities")
+          .insert([facilitiesPayload]);
+        if (insError) console.error("Error inserting nearby facilities:", insError);
+      }
+    }
+
     return data;
   } catch (err) {
     console.error("Error updating property:", err);
@@ -425,7 +490,7 @@ export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*)")
+      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*)")
       .eq("property_id", id)
       .single();
 
@@ -451,6 +516,9 @@ export async function getPropertyById(id: string) {
 
       data.utilitiesData = data.property_utilities?.[0] || data.property_utilities || null;
       delete data.property_utilities;
+
+      data.nearbyFacilitiesData = data.nearby_facilities?.[0] || data.nearby_facilities || null;
+      delete data.nearby_facilities;
     }
     return data;
   } catch (err) {

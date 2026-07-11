@@ -258,6 +258,14 @@ function PropertiesPage() {
     internet_available: false,
     gas_connection: false,
     sewage_connection: false,
+    school_distance: "",
+    college_distance: "",
+    hospital_distance: "",
+    bus_stop_distance: "",
+    railway_station_distance: "",
+    airport_distance: "",
+    supermarket_distance: "",
+    bank_distance: "",
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -335,6 +343,14 @@ function PropertiesPage() {
     internet_available: false,
     gas_connection: false,
     sewage_connection: false,
+    school_distance: "",
+    college_distance: "",
+    hospital_distance: "",
+    bus_stop_distance: "",
+    railway_station_distance: "",
+    airport_distance: "",
+    supermarket_distance: "",
+    bank_distance: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
@@ -432,6 +448,16 @@ function PropertiesPage() {
           internet_available: form.internet_available === true,
           gas_connection: form.gas_connection === true,
           sewage_connection: form.sewage_connection === true
+        },
+        nearby_facilities: {
+          school_distance: form.school_distance,
+          college_distance: form.college_distance,
+          hospital_distance: form.hospital_distance,
+          bus_stop_distance: form.bus_stop_distance,
+          railway_station_distance: form.railway_station_distance,
+          airport_distance: form.airport_distance,
+          supermarket_distance: form.supermarket_distance,
+          bank_distance: form.bank_distance
         }
       };
       if (uploadedVideo) {
@@ -520,6 +546,14 @@ function PropertiesPage() {
       internet_available: false,
       gas_connection: false,
       sewage_connection: false,
+      school_distance: "",
+      college_distance: "",
+      hospital_distance: "",
+      bus_stop_distance: "",
+      railway_station_distance: "",
+      airport_distance: "",
+      supermarket_distance: "",
+      bank_distance: "",
     });
     setStep(1);
     setUploadedImages([]);
@@ -727,6 +761,14 @@ function PropertiesPage() {
       internet_available: (p as any).utilitiesData?.internet_available || false,
       gas_connection: (p as any).utilitiesData?.gas_connection || false,
       sewage_connection: (p as any).utilitiesData?.sewage_connection || false,
+      school_distance: (p as any).nearbyFacilitiesData?.school_distance || "",
+      college_distance: (p as any).nearbyFacilitiesData?.college_distance || "",
+      hospital_distance: (p as any).nearbyFacilitiesData?.hospital_distance || "",
+      bus_stop_distance: (p as any).nearbyFacilitiesData?.bus_stop_distance || "",
+      railway_station_distance: (p as any).nearbyFacilitiesData?.railway_station_distance || "",
+      airport_distance: (p as any).nearbyFacilitiesData?.airport_distance || "",
+      supermarket_distance: (p as any).nearbyFacilitiesData?.supermarket_distance || "",
+      bank_distance: (p as any).nearbyFacilitiesData?.bank_distance || "",
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);
@@ -814,6 +856,16 @@ function PropertiesPage() {
             internet_available: editForm.internet_available === true,
             gas_connection: editForm.gas_connection === true,
             sewage_connection: editForm.sewage_connection === true
+          },
+          nearby_facilities: {
+            school_distance: editForm.school_distance,
+            college_distance: editForm.college_distance,
+            hospital_distance: editForm.hospital_distance,
+            bus_stop_distance: editForm.bus_stop_distance,
+            railway_station_distance: editForm.railway_station_distance,
+            airport_distance: editForm.airport_distance,
+            supermarket_distance: editForm.supermarket_distance,
+            bank_distance: editForm.bank_distance
           }
         };
         await updateSupabaseProperty(editingProperty.property_id, supabasePayload);
@@ -1284,6 +1336,43 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
+              ) : step === 9 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label>School Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.5" value={form.school_distance} onChange={(e) => setForm({...form, school_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>College Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 3.0" value={form.college_distance} onChange={(e) => setForm({...form, college_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Hospital Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 2.0" value={form.hospital_distance} onChange={(e) => setForm({...form, hospital_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bus Stop Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.5" value={form.bus_stop_distance} onChange={(e) => setForm({...form, bus_stop_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Railway Station (km)</Label>
+                      <Input type="number" placeholder="e.g. 5.0" value={form.railway_station_distance} onChange={(e) => setForm({...form, railway_station_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Airport Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 15.0" value={form.airport_distance} onChange={(e) => setForm({...form, airport_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Supermarket (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.0" value={form.supermarket_distance} onChange={(e) => setForm({...form, supermarket_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bank/ATM (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.2" value={form.bank_distance} onChange={(e) => setForm({...form, bank_distance: e.target.value})} />
+                    </div>
+                  </div>
+                </>
               ) : null}
 
             <SheetFooter className="mt-4 pb-12">
@@ -1336,9 +1425,16 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(8)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 8 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(7)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(9)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(8)}>
                     Back
                   </Button>
                   <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo}>
@@ -1760,6 +1856,45 @@ function PropertiesPage() {
                     <div className="flex items-center space-x-2">
                       <Checkbox id="edit-sewage" checked={editForm.sewage_connection} onCheckedChange={(c) => setEditForm({...editForm, sewage_connection: !!c})} />
                       <Label htmlFor="edit-sewage">Sewage Connection</Label>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="nearby_facilities">
+                <AccordionTrigger>Nearby Facilities</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="grid gap-2">
+                      <Label>School Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.5" value={editForm.school_distance} onChange={(e) => setEditForm({...editForm, school_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>College Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 3.0" value={editForm.college_distance} onChange={(e) => setEditForm({...editForm, college_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Hospital Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 2.0" value={editForm.hospital_distance} onChange={(e) => setEditForm({...editForm, hospital_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bus Stop Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.5" value={editForm.bus_stop_distance} onChange={(e) => setEditForm({...editForm, bus_stop_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Railway Station (km)</Label>
+                      <Input type="number" placeholder="e.g. 5.0" value={editForm.railway_station_distance} onChange={(e) => setEditForm({...editForm, railway_station_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Airport Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 15.0" value={editForm.airport_distance} onChange={(e) => setEditForm({...editForm, airport_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Supermarket (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.0" value={editForm.supermarket_distance} onChange={(e) => setEditForm({...editForm, supermarket_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bank/ATM (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.2" value={editForm.bank_distance} onChange={(e) => setEditForm({...editForm, bank_distance: e.target.value})} />
                     </div>
                   </div>
                 </AccordionContent>
