@@ -73,7 +73,7 @@ export async function getAllProperties() {
   try {
     console.log("🔍 Fetching ALL properties...");
 
-    const { data, error } = await supabase.from("properties").select("*");
+    const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*)");
 
     console.log("📊 DATA:", data);
     console.log("❌ ERROR:", error);
@@ -93,7 +93,7 @@ export async function getLandlordProperties(landlordId: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*")
+      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*)")
       .eq("landlord_id", landlordId)
       .order("property_id", { ascending: false });
 
@@ -117,6 +117,9 @@ export async function createProperty(payload: any) {
 
     const tenantPreferencesObj = payload.tenant_preferences;
     delete payload.tenant_preferences;
+
+    const utilitiesObj = payload.property_utilities;
+    delete payload.property_utilities;
 
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -210,6 +213,22 @@ export async function createProperty(payload: any) {
           .insert([tenantPrefPayload]);
         if (tpError) console.error("Error creating tenant preferences:", tpError);
       }
+
+      // Add Property Utilities
+      if (utilitiesObj) {
+        const utilitiesPayload = {
+          property_id: propertyId,
+          water_supply: utilitiesObj.water_supply,
+          electricity_connection: utilitiesObj.electricity_connection,
+          internet_available: utilitiesObj.internet_available,
+          gas_connection: utilitiesObj.gas_connection,
+          sewage_connection: utilitiesObj.sewage_connection,
+        };
+        const { error: utilsError } = await supabase
+          .from("property_utilities")
+          .insert([utilitiesPayload]);
+        if (utilsError) console.error("Error creating property utilities:", utilsError);
+      }
     }
 
     return data;
@@ -228,6 +247,9 @@ export async function updateProperty(id: number, payload: any) {
 
     const tenantPreferencesObj = payload.tenant_preferences;
     delete payload.tenant_preferences;
+
+    const utilitiesObj = payload.property_utilities;
+    delete payload.property_utilities;
 
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -345,6 +367,37 @@ export async function updateProperty(id: number, payload: any) {
         if (insError) throw insError;
       }
     }
+
+    // Handle Property Utilities
+    if (utilitiesObj) {
+      const utilitiesPayload = {
+        property_id: id,
+        water_supply: utilitiesObj.water_supply,
+        electricity_connection: utilitiesObj.electricity_connection,
+        internet_available: utilitiesObj.internet_available,
+        gas_connection: utilitiesObj.gas_connection,
+        sewage_connection: utilitiesObj.sewage_connection,
+      };
+
+      const { data: existingUtil } = await supabase
+        .from("property_utilities")
+        .select("utility_id")
+        .eq("property_id", id)
+        .maybeSingle();
+
+      if (existingUtil) {
+        const { error: upError } = await supabase
+          .from("property_utilities")
+          .update(utilitiesPayload)
+          .eq("property_id", id);
+        if (upError) console.error("Error updating utilities:", upError);
+      } else {
+        const { error: insError } = await supabase
+          .from("property_utilities")
+          .insert([utilitiesPayload]);
+        if (insError) console.error("Error inserting utilities:", insError);
+      }
+    }
     return data;
   } catch (err) {
     console.error("Error updating property:", err);
@@ -372,7 +425,7 @@ export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*)")
+      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*)")
       .eq("property_id", id)
       .single();
 
@@ -395,6 +448,9 @@ export async function getPropertyById(id: string) {
       data.tenantPreferencesData = data.tenant_preferences?.[0] || data.tenant_preferences || null;
       // We don't delete data.tenant_preferences since it might be useful or not, but we can delete it for consistency
       delete data.tenant_preferences;
+
+      data.utilitiesData = data.property_utilities?.[0] || data.property_utilities || null;
+      delete data.property_utilities;
     }
     return data;
   } catch (err) {

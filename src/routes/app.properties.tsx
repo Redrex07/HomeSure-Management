@@ -253,6 +253,11 @@ function PropertiesPage() {
     smoking_allowed: false,
     drinking_allowed: false,
     maximum_occupants: "",
+    water_supply: "",
+    electricity_connection: "",
+    internet_available: false,
+    gas_connection: false,
+    sewage_connection: false,
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -325,13 +330,18 @@ function PropertiesPage() {
     smoking_allowed: false,
     drinking_allowed: false,
     maximum_occupants: "",
+    water_supply: "",
+    electricity_connection: "",
+    internet_available: false,
+    gas_connection: false,
+    sewage_connection: false,
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 7) {
+    if (step < 8) {
       setStep(step + 1);
       return;
     }
@@ -415,6 +425,13 @@ function PropertiesPage() {
           pets_allowed: form.pets_allowed === true,
           smoking_allowed: form.smoking_allowed === true,
           drinking_allowed: form.drinking_allowed === true
+        },
+        property_utilities: {
+          water_supply: form.water_supply,
+          electricity_connection: form.electricity_connection,
+          internet_available: form.internet_available === true,
+          gas_connection: form.gas_connection === true,
+          sewage_connection: form.sewage_connection === true
         }
       };
       if (uploadedVideo) {
@@ -498,6 +515,11 @@ function PropertiesPage() {
       smoking_allowed: false,
       drinking_allowed: false,
       maximum_occupants: "",
+      water_supply: "",
+      electricity_connection: "",
+      internet_available: false,
+      gas_connection: false,
+      sewage_connection: false,
     });
     setStep(1);
     setUploadedImages([]);
@@ -700,6 +722,11 @@ function PropertiesPage() {
       smoking_allowed: (p as any).tenantPreferencesData?.smoking_allowed || false,
       drinking_allowed: (p as any).tenantPreferencesData?.drinking_allowed || false,
       maximum_occupants: (p as any).tenantPreferencesData?.maximum_occupants ? String((p as any).tenantPreferencesData?.maximum_occupants) : "",
+      water_supply: (p as any).utilitiesData?.water_supply || "",
+      electricity_connection: (p as any).utilitiesData?.electricity_connection || "",
+      internet_available: (p as any).utilitiesData?.internet_available || false,
+      gas_connection: (p as any).utilitiesData?.gas_connection || false,
+      sewage_connection: (p as any).utilitiesData?.sewage_connection || false,
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);
@@ -781,6 +808,13 @@ function PropertiesPage() {
           Description: editForm.Description,
           Category: editForm.Category,
           Virtual_Tour: editVideo || null,
+          property_utilities: {
+            water_supply: editForm.water_supply,
+            electricity_connection: editForm.electricity_connection,
+            internet_available: editForm.internet_available === true,
+            gas_connection: editForm.gas_connection === true,
+            sewage_connection: editForm.sewage_connection === true
+          }
         };
         await updateSupabaseProperty(editingProperty.property_id, supabasePayload);
         toast.success("Property updated successfully!");
@@ -819,7 +853,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 7: Basic Property Information" : step === 2 ? "Step 2 of 7: Location Details" : step === 3 ? "Step 3 of 7: Images & Media" : step === 4 ? "Step 4 of 7: Property Specifications" : step === 5 ? "Step 5 of 7: Rent Details" : step === 6 ? "Step 6 of 7: Amenities" : "Step 7 of 7: Tenant Preferences"}
+              {step === 1 ? "Step 1 of 8: Basic Property Information" : step === 2 ? "Step 2 of 8: Location Details" : step === 3 ? "Step 3 of 8: Images & Media" : step === 4 ? "Step 4 of 8: Property Specifications" : step === 5 ? "Step 5 of 8: Rent Details" : step === 6 ? "Step 6 of 8: Amenities" : step === 7 ? "Step 7 of 8: Tenant Preferences" : "Step 8 of 8: Utility Information"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -1225,7 +1259,32 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
-              )}
+              ) : step === 8 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Water Supply</Label>
+                      <Input placeholder="e.g. 24x7 Corporation Water" value={form.water_supply} onChange={(e) => setForm({...form, water_supply: e.target.value})} />
+                    </div>
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Electricity Connection</Label>
+                      <Input placeholder="e.g. Generator / Invertor" value={form.electricity_connection} onChange={(e) => setForm({...form, electricity_connection: e.target.value})} />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="add-internet" checked={form.internet_available} onCheckedChange={(c) => setForm({...form, internet_available: !!c})} />
+                      <Label htmlFor="add-internet">Internet Available</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="add-gas" checked={form.gas_connection} onCheckedChange={(c) => setForm({...form, gas_connection: !!c})} />
+                      <Label htmlFor="add-gas">Gas Connection (Pipeline)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="add-sewage" checked={form.sewage_connection} onCheckedChange={(c) => setForm({...form, sewage_connection: !!c})} />
+                      <Label htmlFor="add-sewage">Sewage Connection</Label>
+                    </div>
+                  </div>
+                </>
+              ) : null}
 
             <SheetFooter className="mt-4 pb-12">
               {step === 1 ? (
@@ -1270,9 +1329,16 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(7)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 7 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(6)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(8)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(7)}>
                     Back
                   </Button>
                   <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo}>
@@ -1670,7 +1736,35 @@ function PropertiesPage() {
               </select>
             </div>
 
-
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="utilities">
+                <AccordionTrigger>Utility Information</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Water Supply</Label>
+                      <Input placeholder="e.g. 24x7 Corporation Water" value={editForm.water_supply} onChange={(e) => setEditForm({...editForm, water_supply: e.target.value})} />
+                    </div>
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Electricity Connection</Label>
+                      <Input placeholder="e.g. Generator / Invertor" value={editForm.electricity_connection} onChange={(e) => setEditForm({...editForm, electricity_connection: e.target.value})} />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-internet" checked={editForm.internet_available} onCheckedChange={(c) => setEditForm({...editForm, internet_available: !!c})} />
+                      <Label htmlFor="edit-internet">Internet Available</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-gas" checked={editForm.gas_connection} onCheckedChange={(c) => setEditForm({...editForm, gas_connection: !!c})} />
+                      <Label htmlFor="edit-gas">Gas Connection (Pipeline)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-sewage" checked={editForm.sewage_connection} onCheckedChange={(c) => setEditForm({...editForm, sewage_connection: !!c})} />
+                      <Label htmlFor="edit-sewage">Sewage Connection</Label>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
             <div className="grid gap-2">
               <Label>Virtual Tour Video (Optional, Max 10MB)</Label>

@@ -81,7 +81,8 @@ function PropertyDetailsPage() {
     const rentDetails = specs.rent_details || {};
     const amenities = (property as any)?.amenitiesData || {};
     const tenantPrefs = (property as any)?.tenantPreferencesData || {};
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs }));
+    const utilities = (property as any)?.utilitiesData || {};
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities }));
 
     let images = [];
     try {
@@ -176,7 +177,7 @@ function PropertyDetailsPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editStep < 6) {
+    if (editStep < 8) {
       setEditStep(editStep + 1);
       return;
     }
@@ -258,6 +259,13 @@ function PropertyDetailsPage() {
         smoking_allowed: editForm.smoking_allowed === true,
         drinking_allowed: editForm.drinking_allowed === true,
         maximum_occupants: editForm.maximum_occupants
+      },
+      property_utilities: {
+        water_supply: editForm.water_supply,
+        electricity_connection: editForm.electricity_connection,
+        internet_available: editForm.internet_available === true,
+        gas_connection: editForm.gas_connection === true,
+        sewage_connection: editForm.sewage_connection === true
       }
     };
     
@@ -449,7 +457,7 @@ function PropertyDetailsPage() {
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 7`}</DialogTitle>
+              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 8`}</DialogTitle>
             </DialogHeader>
             
             <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
@@ -895,6 +903,40 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(6)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(8)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  {/* Utility Information */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Utility Information</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2 grid gap-2">
+                        <Label>Water Supply</Label>
+                        <Input placeholder="e.g. 24x7 Corporation Water" value={editForm.water_supply || ""} onChange={(e) => setEditForm({...editForm, water_supply: e.target.value})} />
+                      </div>
+                      <div className="col-span-2 grid gap-2">
+                        <Label>Electricity Connection</Label>
+                        <Input placeholder="e.g. Generator / Invertor" value={editForm.electricity_connection || ""} onChange={(e) => setEditForm({...editForm, electricity_connection: e.target.value})} />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_internet" checked={editForm.internet_available} onCheckedChange={(c) => setEditForm({...editForm, internet_available: !!c})} />
+                        <Label htmlFor="edit_internet" className="cursor-pointer">Internet Available</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_gas" checked={editForm.gas_connection} onCheckedChange={(c) => setEditForm({...editForm, gas_connection: !!c})} />
+                        <Label htmlFor="edit_gas" className="cursor-pointer">Gas Connection</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_sewage" checked={editForm.sewage_connection} onCheckedChange={(c) => setEditForm({...editForm, sewage_connection: !!c})} />
+                        <Label htmlFor="edit_sewage" className="cursor-pointer">Sewage Connection</Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(7)}>Back</Button>
                     <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo}>
                       {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
                     </Button>
@@ -1332,6 +1374,70 @@ function PropertyDetailsPage() {
                       elements.push(
                         <div key="no_data" className="col-span-2 sm:col-span-3 md:col-span-4">
                           <span className="text-muted-foreground italic">Tenant preferences not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Utility Information Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="utility_info" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Utility Information
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const utData = (property as any)?.utilitiesData || {};
+                    let elements = [];
+
+                    if (utData.water_supply) {
+                      elements.push(
+                        <div key="water_supply" className="col-span-2 sm:col-span-3 md:col-span-4 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Water Supply</span>
+                          <span className="font-medium text-base">{utData.water_supply}</span>
+                        </div>
+                      );
+                    }
+                    if (utData.electricity_connection) {
+                      elements.push(
+                        <div key="electricity_connection" className="col-span-2 sm:col-span-3 md:col-span-4 mb-4">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Electricity Connection</span>
+                          <span className="font-medium text-base">{utData.electricity_connection}</span>
+                        </div>
+                      );
+                    }
+
+                    const utBools = [
+                      { id: "internet_available", label: "Internet Available" },
+                      { id: "gas_connection", label: "Gas Connection" },
+                      { id: "sewage_connection", label: "Sewage Connection" }
+                    ];
+
+                    const present = utBools.filter(b => utData[b.id] === true);
+                    if (present.length > 0) {
+                      elements.push(...present.map(b => (
+                        <div key={b.id} className="flex items-center space-x-2 text-muted-foreground">
+                          <CheckCircle className="h-4 w-4 text-primary" />
+                          <span>{b.label}</span>
+                        </div>
+                      )));
+                    } else if (Object.keys(utData).length > 0 && elements.length === 0) {
+                      elements.push(
+                        <div key="no_utils" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">No utilities specified</span>
+                        </div>
+                      );
+                    } else if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_utils" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Utility information not specified</span>
                         </div>
                       );
                     }
