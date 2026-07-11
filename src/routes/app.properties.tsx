@@ -273,6 +273,11 @@ function PropertiesPage() {
     occupancy_certificate: "",
     property_insurance: "",
     owner_government_id: "",
+    landlord_name: "",
+    mobile_number: "",
+    email: "",
+    preferred_contact_time: "Anytime",
+    whatsapp_number: "",
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -372,7 +377,7 @@ function PropertiesPage() {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 10) {
+    if (step < 11) {
       setStep(step + 1);
       return;
     }
@@ -482,6 +487,13 @@ function PropertiesPage() {
           occupancy_certificate: form.occupancy_certificate,
           property_insurance: form.property_insurance,
           owner_government_id: form.owner_government_id
+        },
+        property_contact_details: {
+          landlord_name: form.landlord_name,
+          mobile_number: form.mobile_number,
+          email: form.email,
+          preferred_contact_time: form.preferred_contact_time,
+          whatsapp_number: form.whatsapp_number
         }
       };
       if (uploadedVideo) {
@@ -578,6 +590,18 @@ function PropertiesPage() {
       airport_distance: "",
       supermarket_distance: "",
       bank_distance: "",
+      ownership_proof: "",
+      tax_receipt: "",
+      electricity_bill: "",
+      encumbrance_certificate: "",
+      occupancy_certificate: "",
+      property_insurance: "",
+      owner_government_id: "",
+      landlord_name: "",
+      mobile_number: "",
+      email: "",
+      preferred_contact_time: "Anytime",
+      whatsapp_number: "",
     });
     setStep(1);
     setUploadedImages([]);
@@ -967,7 +991,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 10: Basic Property Information" : step === 2 ? "Step 2 of 10: Location Details" : step === 3 ? "Step 3 of 10: Images & Media" : step === 4 ? "Step 4 of 10: Property Specifications" : step === 5 ? "Step 5 of 10: Rent Details" : step === 6 ? "Step 6 of 10: Amenities" : step === 7 ? "Step 7 of 10: Tenant Preferences" : step === 8 ? "Step 8 of 10: Utility Information" : step === 9 ? "Step 9 of 10: Nearby Facilities" : "Step 10 of 10: Property Documents"}
+              {step === 1 ? "Step 1 of 11: Basic Property Information" : step === 2 ? "Step 2 of 11: Location Details" : step === 3 ? "Step 3 of 11: Images & Media" : step === 4 ? "Step 4 of 11: Property Specifications" : step === 5 ? "Step 5 of 11: Rent Details" : step === 6 ? "Step 6 of 11: Amenities" : step === 7 ? "Step 7 of 11: Tenant Preferences" : step === 8 ? "Step 8 of 11: Utility Information" : step === 9 ? "Step 9 of 11: Nearby Facilities" : step === 10 ? "Step 10 of 11: Property Documents" : "Step 11 of 11: Contact Details"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -1491,6 +1515,42 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
+              ) : step === 11 ? (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Provide contact details for the landlord or property manager.</p>
+                    <div className="grid gap-2">
+                      <Label>Landlord Name *</Label>
+                      <Input placeholder="e.g. John Smith" value={form.landlord_name || ""} onChange={(e) => setForm({...form, landlord_name: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Mobile Number *</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={form.mobile_number || ""} onChange={(e) => setForm({...form, mobile_number: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="e.g. john@email.com" value={form.email || ""} onChange={(e) => setForm({...form, email: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Preferred Contact Time</Label>
+                      <Select value={form.preferred_contact_time || "Anytime"} onValueChange={(val) => setForm({...form, preferred_contact_time: val})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Contact Time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Morning">Morning</SelectItem>
+                          <SelectItem value="Afternoon">Afternoon</SelectItem>
+                          <SelectItem value="Evening">Evening</SelectItem>
+                          <SelectItem value="Anytime">Anytime</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>WhatsApp Number (Optional)</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={form.whatsapp_number || ""} onChange={(e) => setForm({...form, whatsapp_number: e.target.value})} />
+                    </div>
+                  </div>
+                </>
               ) : null}
 
             <SheetFooter className="mt-4 pb-12">
@@ -1557,12 +1617,19 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(10)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 10 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(9)}>
                     Back
                   </Button>
-                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc || !form.ownership_proof || !form.tax_receipt || !form.electricity_bill || !form.encumbrance_certificate || !form.occupancy_certificate || !form.owner_government_id}>
+                  <Button type="button" onClick={() => setStep(11)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(10)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc || !form.ownership_proof || !form.tax_receipt || !form.electricity_bill || !form.encumbrance_certificate || !form.occupancy_certificate || !form.owner_government_id || !form.landlord_name || !form.mobile_number}>
                     {(isUploading || isUploadingVideo || isUploadingDoc) ? "Uploading..." : "Save Property"}
                   </Button>
                 </>

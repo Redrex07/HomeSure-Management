@@ -73,7 +73,7 @@ export async function getAllProperties() {
   try {
     console.log("🔍 Fetching ALL properties...");
 
-    const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*)");
+    const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*)");
 
     console.log("📊 DATA:", data);
     console.log("❌ ERROR:", error);
@@ -93,7 +93,7 @@ export async function getLandlordProperties(landlordId: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*)")
+      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*)")
       .eq("landlord_id", landlordId)
       .order("property_id", { ascending: false });
 
@@ -117,6 +117,9 @@ export async function createProperty(payload: any) {
 
     const tenantPreferencesObj = payload.tenant_preferences;
     delete payload.tenant_preferences;
+
+    const propertyContactDetailsObj = payload.property_contact_details;
+    delete payload.property_contact_details;
 
     const utilitiesObj = payload.property_utilities;
     delete payload.property_utilities;
@@ -272,6 +275,22 @@ export async function createProperty(payload: any) {
           .insert([documentsPayload]);
         if (documentsError) console.error("Error creating property documents:", documentsError);
       }
+
+      // Add Property Contact Details
+      if (propertyContactDetailsObj) {
+        const contactPayload = {
+          property_id: propertyId,
+          landlord_name: propertyContactDetailsObj.landlord_name || null,
+          mobile_number: propertyContactDetailsObj.mobile_number || null,
+          email: propertyContactDetailsObj.email || null,
+          preferred_contact_time: propertyContactDetailsObj.preferred_contact_time || null,
+          whatsapp_number: propertyContactDetailsObj.whatsapp_number || null,
+        };
+        const { error: contactError } = await supabase
+          .from("property_contact_details")
+          .insert([contactPayload]);
+        if (contactError) console.error("Error creating property contact details:", contactError);
+      }
     }
 
     return data;
@@ -299,6 +318,9 @@ export async function updateProperty(id: number, payload: any) {
 
     const propertyDocumentsObj = payload.property_documents;
     delete payload.property_documents;
+
+    const propertyContactDetailsObj = payload.property_contact_details;
+    delete payload.property_contact_details;
 
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -519,6 +541,37 @@ export async function updateProperty(id: number, payload: any) {
       }
     }
 
+    // Handle Property Contact Details
+    if (propertyContactDetailsObj) {
+      const contactPayload = {
+        property_id: id,
+        landlord_name: propertyContactDetailsObj.landlord_name || null,
+        mobile_number: propertyContactDetailsObj.mobile_number || null,
+        email: propertyContactDetailsObj.email || null,
+        preferred_contact_time: propertyContactDetailsObj.preferred_contact_time || null,
+        whatsapp_number: propertyContactDetailsObj.whatsapp_number || null,
+      };
+
+      const { data: existingContact } = await supabase
+        .from("property_contact_details")
+        .select("contact_id")
+        .eq("property_id", id)
+        .maybeSingle();
+
+      if (existingContact) {
+        const { error: upError } = await supabase
+          .from("property_contact_details")
+          .update(contactPayload)
+          .eq("property_id", id);
+        if (upError) console.error("Error updating property contact details:", upError);
+      } else {
+        const { error: insError } = await supabase
+          .from("property_contact_details")
+          .insert([contactPayload]);
+        if (insError) console.error("Error inserting property contact details:", insError);
+      }
+    }
+
     return data;
   } catch (err) {
     console.error("Error updating property:", err);
@@ -546,7 +599,7 @@ export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*)")
+      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*)")
       .eq("property_id", id)
       .single();
 
@@ -575,6 +628,12 @@ export async function getPropertyById(id: string) {
 
       data.nearbyFacilitiesData = data.nearby_facilities?.[0] || data.nearby_facilities || null;
       delete data.nearby_facilities;
+
+      data.documentsData = data.property_documents?.[0] || data.property_documents || null;
+      delete data.property_documents;
+
+      data.contactDetailsData = data.property_contact_details?.[0] || data.property_contact_details || null;
+      delete data.property_contact_details;
     }
     return data;
   } catch (err) {

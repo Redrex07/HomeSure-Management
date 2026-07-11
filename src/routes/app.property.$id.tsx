@@ -85,7 +85,8 @@ function PropertyDetailsPage() {
     const utilities = (property as any)?.utilitiesData || {};
     const nearbyFacilities = (property as any)?.nearbyFacilitiesData || {};
     const documents = (property as any)?.documentsData || {};
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents }));
+    const contactDetails = (property as any)?.contactDetailsData || {};
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails }));
 
     let images = [];
     try {
@@ -322,6 +323,13 @@ function PropertyDetailsPage() {
         occupancy_certificate: editForm.occupancy_certificate,
         property_insurance: editForm.property_insurance,
         owner_government_id: editForm.owner_government_id
+      },
+      property_contact_details: {
+        landlord_name: editForm.landlord_name,
+        mobile_number: editForm.mobile_number,
+        email: editForm.email,
+        preferred_contact_time: editForm.preferred_contact_time,
+        whatsapp_number: editForm.whatsapp_number
       }
     };
     
@@ -513,7 +521,7 @@ function PropertyDetailsPage() {
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 10`}</DialogTitle>
+              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 11`}</DialogTitle>
             </DialogHeader>
             
             <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
@@ -1042,7 +1050,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(10)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : (
+              ) : editStep === 10 ? (
                 <>
                   <div className="grid gap-4">
                     <p className="text-sm text-muted-foreground mb-2">Upload relevant property documents. Only PDFs and Images (max 10MB) are allowed.</p>
@@ -1100,7 +1108,48 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(9)}>Back</Button>
-                    <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc || !editForm.ownership_proof || !editForm.tax_receipt || !editForm.electricity_bill || !editForm.encumbrance_certificate || !editForm.occupancy_certificate || !editForm.owner_government_id}>
+                    <Button type="button" onClick={() => setEditStep(11)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Update contact details for the landlord or property manager.</p>
+                    <div className="grid gap-2">
+                      <Label>Landlord Name *</Label>
+                      <Input placeholder="e.g. John Smith" value={editForm.landlord_name || ""} onChange={(e) => setEditForm({...editForm, landlord_name: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Mobile Number *</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={editForm.mobile_number || ""} onChange={(e) => setEditForm({...editForm, mobile_number: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="e.g. john@email.com" value={editForm.email || ""} onChange={(e) => setEditForm({...editForm, email: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Preferred Contact Time</Label>
+                      <Select value={editForm.preferred_contact_time || "Anytime"} onValueChange={(val) => setEditForm({...editForm, preferred_contact_time: val})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Contact Time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Morning">Morning</SelectItem>
+                          <SelectItem value="Afternoon">Afternoon</SelectItem>
+                          <SelectItem value="Evening">Evening</SelectItem>
+                          <SelectItem value="Anytime">Anytime</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>WhatsApp Number (Optional)</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={editForm.whatsapp_number || ""} onChange={(e) => setEditForm({...editForm, whatsapp_number: e.target.value})} />
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(10)}>Back</Button>
+                    <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc || !editForm.ownership_proof || !editForm.tax_receipt || !editForm.electricity_bill || !editForm.encumbrance_certificate || !editForm.occupancy_certificate || !editForm.owner_government_id || !editForm.landlord_name || !editForm.mobile_number}>
                       {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
                     </Button>
                   </DialogFooter>
@@ -1698,6 +1747,74 @@ function PropertyDetailsPage() {
                       elements.push(
                         <div key="no_data_doc" className="col-span-2 sm:col-span-3 md:col-span-4">
                           <span className="text-muted-foreground italic">Property documents not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Contact Details Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="contact_details" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Contact Details
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const contactData = (property as any)?.contactDetailsData || {};
+                    let elements = [];
+
+                    if (contactData.landlord_name) {
+                      elements.push(
+                        <div key="landlord_name" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Landlord Name</span>
+                          <span className="font-medium text-base">{contactData.landlord_name}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.mobile_number) {
+                      elements.push(
+                        <div key="mobile_number" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Mobile Number</span>
+                          <span className="font-medium text-base">{contactData.mobile_number}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.email) {
+                      elements.push(
+                        <div key="email" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Email</span>
+                          <span className="font-medium text-base">{contactData.email}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.preferred_contact_time) {
+                      elements.push(
+                        <div key="preferred_contact_time" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Preferred Time</span>
+                          <span className="font-medium text-base">{contactData.preferred_contact_time}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.whatsapp_number) {
+                      elements.push(
+                        <div key="whatsapp_number" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">WhatsApp Number</span>
+                          <span className="font-medium text-base">{contactData.whatsapp_number}</span>
+                        </div>
+                      );
+                    }
+
+                    if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_contact" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Contact details not specified</span>
                         </div>
                       );
                     }
