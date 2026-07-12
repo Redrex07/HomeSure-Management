@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
+import { getContractorProfile } from "@/core/db/supabase-queries";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
@@ -36,8 +37,6 @@ function SettingsPage() {
   const [showPlanDialog, setShowPlanDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (s?.id) {
@@ -55,6 +54,7 @@ function SettingsPage() {
               .from("users")
               .select("name, email, phone, profile_photo")
               .eq("email", s.email)
+              
               .single();
 
             if (altData) {
@@ -87,43 +87,104 @@ function SettingsPage() {
       loadProfile();
     }
   }, [s?.id, s?.email]);
+useEffect(() => {
+  const loadContractor = async () => {
+    const data = await getContractorProfile(contractorId);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!s?.id) return;
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from("users")
-        .update({
-          name,
-          email,
-          phone,
-        })
-        .eq("auth_user_id", s.id);
+    setContractor(data);
 
-      if (error) {
-        const { error: altError } = await supabase
-          .from("users")
-          .update({
-            name,
-            email,
-            phone,
-          })
-          .eq("email", s.email);
+    setCompanyName(data.company_name || "");
+    setContactPerson(data.contact_person || "");
+    setContractorType(data.contractor_type || "");
+    setServiceArea(data.service_area || "");
+    setExperience(String(data.years_of_experience || ""));
+    setSpecialization(data.specialization || "");
+    setCertification(data.certification || "");
+    setAvailableDays(data.available_days || "");
+    setAvailableTime(data.available_time || "");
+    setHourlyRate(String(data.hourly_rate || ""));
+    setChargeType(data.service_charge_type || "");
+    setEmergencyService(data.emergency_service || false);
+    setBusinessLicense(data.business_license || "");
+    setProfilePhoto(data.profile_photo || "");
+setCreatedAt(data.created_at || "");
+setUpdatedAt(data.updated_at || "");
+  };
 
-        if (altError) throw altError;
-      }
+  loadContractor();
+}, []);
+const handlePhotoUpload = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  if (!e.target.files?.length) return;
 
-      localStorage.setItem("homesure.timezone", timezone);
+  const file = e.target.files[0];
 
-      if (s) {
-        setSession({
-          ...s,
-          name,
-          email,
-        });
-      }
+  const fileName = `${contractorId}-${Date.now()}-${file.name}`;
+
+  const { error } = await supabase.storage
+    .from("contractor-photos")
+    .upload(fileName, file, {
+      upsert: true,
+    });
+
+  if (error) {
+    toast.error(error.message);
+    return;
+  }
+
+  const { data } = supabase.storage
+    .from("contractor-photos")
+    .getPublicUrl(fileName);
+
+  setProfilePhoto(data.publicUrl);
+
+  toast.success("Photo uploaded");
+};
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSaving(true);
+
+  try {
+    // Update users table
+    await supabase
+      .from("users")
+      .update({
+        name,
+        email,
+        phone,
+      })
+      .eq("auth_user_id", s?.id);
+
+    // Update Contractor table
+   await supabase
+  .from("Contractor")
+  .update({
+    company_name: companyName,
+    contact_person: contactPerson,
+    email,
+    mobile_number: phone,
+    contractor_type: contractorType,
+    service_area: serviceArea,
+    business_license: businessLicense,
+    profile_photo: profilePhoto,
+  })
+  .eq("contractor_id", contractorId);
+
+    // Update ContractorProfile table
+    await supabase
+      .from("ContractorProfile")
+      .update({
+        years_of_experience: Number(experience),
+        specialization,
+        certification,
+        available_days: availableDays,
+        available_time: availableTime,
+        hourly_rate: Number(hourlyRate),
+        service_charge_type: chargeType,
+        emergency_service: emergencyService,
+      })
+      .eq("contractor_id", contractorId);
 
       toast.success("Profile updated successfully!");
     } catch (err: any) {
@@ -131,60 +192,6 @@ function SettingsPage() {
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handlePhotoSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !s?.id) return;
-
-    if (!["image/png", "image/jpeg"].includes(file.type)) {
-      toast.error("Please upload a PNG or JPG image.");
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Profile photo must be 2MB or smaller.");
-      return;
-    }
-
-    setIsUploadingPhoto(true);
-    try {
-      const ext = file.type === "image/png" ? "png" : "jpg";
-      const path = `${s.id}/profile.${ext}`;
-      const upload = await supabase.storage
-        .from("profile-photos")
-        .upload(path, file, { upsert: true, contentType: file.type });
-
-      let photoUrl = "";
-      if (!upload.error) {
-        const { data: publicUrl } = supabase.storage.from("profile-photos").getPublicUrl(path);
-        photoUrl = publicUrl.publicUrl;
-        await supabase.from("users").update({ profile_photo: photoUrl }).eq("auth_user_id", s.id);
-      } else {
-        photoUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result));
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(file);
-        });
-      }
-
-      localStorage.setItem("homesure.profile_photo", photoUrl);
-      setProfilePhoto(photoUrl);
-      toast.success("Profile photo updated.");
-    } catch (err: any) {
-      toast.error("Failed to upload photo: " + (err.message || String(err)));
-    } finally {
-      setIsUploadingPhoto(false);
-      event.target.value = "";
-    }
-  };
-
-  const handlePlanChange = (plan: string) => {
-    setCurrentPlan(plan);
-    localStorage.setItem("homesure.plan", plan);
-    setShowPlanDialog(false);
-    toast.success(`Plan changed to ${plan}.`);
   };
 
   return (
@@ -208,26 +215,13 @@ function SettingsPage() {
             <CardContent>
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  {profilePhoto && <AvatarImage src={profilePhoto} alt={name || "Profile photo"} />}
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     {name ? name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() : "US"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg"
-                    className="hidden"
-                    onChange={handlePhotoSelected}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingPhoto}
-                  >
-                    {isUploadingPhoto ? "Uploading..." : "Upload photo"}
+                  <Button variant="outline" size="sm">
+                    Upload photo
                   </Button>
                   <div className="mt-1 text-xs text-muted-foreground">PNG or JPG, max 2MB.</div>
                 </div>
@@ -265,6 +259,7 @@ function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        
         <TabsContent value="workspace">
           <Card className="border-border/70 shadow-card">
             <CardHeader>
@@ -321,6 +316,7 @@ function SettingsPage() {
                 </Button>
               </div>
             </CardContent>
+            
           </Card>
         </TabsContent>
       </Tabs>

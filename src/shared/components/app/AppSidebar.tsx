@@ -112,18 +112,46 @@ export const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
       ],
     },
   ],
-  contractor: [
-    { label: "Workspace", items: COMMON },
+contractor: [
+  {
+    label: "Workspace",
+    items: COMMON,
+  },
+   {
+  label: "Jobs",
+  items: [
+    { title: "Assigned Jobs", url: "/app/service-requests", icon: Wrench },
+
+    { title: "Appointments", url: "/app/appointments", icon: Calendar },
+
     {
-      label: "Jobs",
-      items: [
-        { title: "Assigned Jobs", url: "/app/service-requests", icon: Wrench },
-        { title: "Appointments", url: "/app/appointments", icon: Calendar },
-        { title: "Estimates", url: "/app/estimates", icon: FileSpreadsheet },
-        { title: "Invoices", url: "/app/invoices", icon: Receipt },
-      ],
+      title: "Availability",
+      url: "/app/contractor-availability",
+      icon: Calendar,
+    },
+
+    { title: "Estimates", url: "/app/estimates", icon: FileSpreadsheet },
+
+    {
+      title: "Quotations",
+      url: "/app/contractor-quotations",
+      icon: FileText,
+    },
+
+    {
+      title: "Invoices",
+      url: "/app/contractor-invoices",
+      icon: Receipt,
     },
   ],
+},
+  {
+    label: "Profile",
+    items: [
+      { title: "My Profile", url: "/app/contractor-profile", icon: Users },
+    ],
+  },
+],
   realtor: [
     { label: "Overview", items: COMMON },
     {
@@ -187,7 +215,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Back to site">
-              <Link to="/" className="flex items-center gap-2">
+             <Link to="/app/dashboard" params={{}}>
                 <Home className="h-4 w-4" />
                 <span>Back to site</span>
               </Link>
