@@ -1,5 +1,6 @@
 import { getEmailConfig } from "./email.config.server";
 import { logEmailFailed, logEmailSent, type EmailLogType } from "./email-log.server";
+import { sendMail } from "./mailer.server";
 import {
   invitationEmailTemplate,
   passwordResetEmailTemplate,
@@ -25,35 +26,13 @@ async function dispatchEmail(params: {
   emailType: EmailLogType;
 }): Promise<SendResult | SendError> {
   try {
-    const config = getEmailConfig();
+    getEmailConfig();
 
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: config.emailFrom,
-        to: [params.to],
-        subject: params.subject,
-        html: params.html,
-      }),
+    const result = await sendMail({
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
     });
-
-    const payload = (await response.json()) as { id?: string; message?: string };
-
-    if (!response.ok) {
-      const message = payload.message || `Resend API error (${response.status})`;
-      console.error(`[EmailService] Failed to send ${params.emailType} to ${params.to}:`, message);
-      await logEmailFailed({
-        recipient: params.to,
-        emailType: params.emailType,
-        subject: params.subject,
-        errorMessage: message,
-      });
-      return { success: false, error: message };
-    }
 
     await logEmailSent({
       recipient: params.to,
@@ -61,7 +40,7 @@ async function dispatchEmail(params: {
       subject: params.subject,
     });
 
-    return { success: true, id: payload.id };
+    return { success: true, id: result.messageId };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`[EmailService] Unexpected error sending ${params.emailType}:`, message);
@@ -154,7 +133,7 @@ export async function sendWelcomeEmail(params: {
 }
 
 export async function sendTestEmail(recipientEmail: string) {
-  const subject = "HomeSure Management — Test Email";
+  const subject = "HomeSure Management - Test Email";
   const html = testEmailTemplate();
 
   return dispatchEmail({
@@ -165,7 +144,7 @@ export async function sendTestEmail(recipientEmail: string) {
   });
 }
 
-/** Fire-and-forget helper — logs errors but never throws. */
+/** Fire-and-forget helper - logs errors but never throws. */
 export function sendWelcomeEmailAsync(params: {
   recipientEmail: string;
   recipientName: string;

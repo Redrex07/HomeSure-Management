@@ -1,10 +1,10 @@
 import process from "node:process";
 
 // Server-only config. The .server.ts suffix prevents Vite from bundling
-// this file into the client — values here never reach the browser.
+// this file into the client - values here never reach the browser.
 //
 // On Cloudflare Workers, env binds at REQUEST time. Module-scope reads
-// (e.g. `const x = process.env.X`) resolve to undefined — always read
+// (e.g. `const x = process.env.X`) resolve to undefined - always read
 // process.env INSIDE a function or handler.
 //
 // When to use which env-access pattern:
@@ -14,13 +14,14 @@ import process from "node:process";
 //     not reused elsewhere.
 //   - import.meta.env.VITE_FOO: PUBLIC config readable from both client
 //     and server (analytics IDs, public URLs). Define in .env with the
-//     VITE_ prefix. Never put secrets here — they ship to the browser.
+//     VITE_ prefix. Never put secrets here - they ship to the browser.
 
 export function getServerConfig() {
   return {
     nodeEnv: process.env.NODE_ENV,
-    hasResendKey: Boolean(process.env.RESEND_API_KEY),
-    hasEmailFrom: Boolean(process.env.EMAIL_FROM),
+    hasEmailUser: Boolean(process.env.EMAIL_USER),
+    hasEmailPass: Boolean(process.env.EMAIL_PASS),
+    hasEmailFrom: Boolean(process.env.EMAIL_FROM || process.env.EMAIL_USER),
     appUrl: process.env.APP_URL,
   };
 }

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ContractorInvoices } from "@/features/dashboard/components/ContractorInvoices";
+import { ContractorProfile } from "@/features/dashboard/components/ContractorProfile";
 
 export const Route = createFileRoute("/app/contractor-invoices")({
-  component: ContractorInvoices,
+  component: ContractorProfile,
 });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
 import { getContractorProfile } from "@/core/db/supabase-queries";
 import { createFileRoute } from "@tanstack/react-router";
@@ -8,8 +8,16 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Switch } from "@/shared/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 import { PageHeader } from "@/shared/components/common/PageHeader";
-import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { useSession, setSession } from "@/features/auth/store/auth-store";
 import { toast } from "sonner";
 
@@ -24,27 +32,11 @@ function SettingsPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [timezone, setTimezone] = useState("America/Los_Angeles");
+  const [profilePhoto, setProfilePhoto] = useState("");
+  const [currentPlan, setCurrentPlan] = useState("Pro");
+  const [showPlanDialog, setShowPlanDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [companyName, setCompanyName] = useState("");
-const [contactPerson, setContactPerson] = useState("");
-const [contractorType, setContractorType] = useState("");
-const [serviceArea, setServiceArea] = useState("");
-const [experience, setExperience] = useState("");
-const [specialization, setSpecialization] = useState("");
-const [certification, setCertification] = useState("");
-const [availableDays, setAvailableDays] = useState("");
-const [availableTime, setAvailableTime] = useState("");
-const [hourlyRate, setHourlyRate] = useState("");
-const [chargeType, setChargeType] = useState("");
-const [profilePhoto, setProfilePhoto] = useState("");
-const [createdAt, setCreatedAt] = useState("");
-const [updatedAt, setUpdatedAt] = useState("");
-const [businessLicense, setBusinessLicense] = useState("");
-const [emergencyService, setEmergencyService] = useState(false);
-  const contractorId = 3001;
-
-const [contractor, setContractor] = useState<any>(null);
 
   useEffect(() => {
     if (s?.id) {
@@ -53,14 +45,14 @@ const [contractor, setContractor] = useState<any>(null);
         try {
           const { data, error } = await supabase
             .from("users")
-            .select("name, email, phone")
+            .select("name, email, phone, profile_photo")
             .eq("auth_user_id", s.id)
             .single();
 
           if (error) {
             const { data: altData } = await supabase
               .from("users")
-              .select("name, email, phone")
+              .select("name, email, phone, profile_photo")
               .eq("email", s.email)
               
               .single();
@@ -69,16 +61,22 @@ const [contractor, setContractor] = useState<any>(null);
               setName(altData.name || "");
               setEmail(altData.email || "");
               setPhone(altData.phone || "");
+              setProfilePhoto(altData.profile_photo || localStorage.getItem("homesure.profile_photo") || "");
             }
           } else if (data) {
             setName(data.name || "");
             setEmail(data.email || "");
             setPhone(data.phone || "");
+            setProfilePhoto(data.profile_photo || localStorage.getItem("homesure.profile_photo") || "");
           }
 
           const savedTz = localStorage.getItem("homesure.timezone");
           if (savedTz) {
             setTimezone(savedTz);
+          }
+          const savedPlan = localStorage.getItem("homesure.plan");
+          if (savedPlan) {
+            setCurrentPlan(savedPlan);
           }
         } catch (err) {
           console.error("Error loading profile details:", err);
@@ -188,13 +186,14 @@ const handleSubmit = async (e: React.FormEvent) => {
       })
       .eq("contractor_id", contractorId);
 
-    toast.success("Profile updated successfully!");
-  } catch (err: any) {
-    toast.error(err.message);
-  } finally {
-    setIsSaving(false);
-  }
-};
+      toast.success("Profile updated successfully!");
+    } catch (err: any) {
+      toast.error("Failed to update profile: " + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -214,147 +213,49 @@ const handleSubmit = async (e: React.FormEvent) => {
               <CardTitle className="text-sm font-semibold">Profile</CardTitle>
             </CardHeader>
             <CardContent>
-             
-                
-              <form
-  className="grid gap-5 sm:grid-cols-2"
-  onSubmit={handleSubmit}
-  >
-  <div className="sm:col-span-2 flex items-center gap-6">
-
-  <img
-    src={
-      profilePhoto
-        ? profilePhoto
-        : "https://placehold.co/120x120?text=Photo"
-    }
-    alt="Profile"
-    className="h-28 w-28 rounded-full border object-cover"
-  />
-
-  <div>
-
-    <input
-      id="profile-upload"
-      type="file"
-      accept="image/*"
-      className="hidden"
-      onChange={handlePhotoUpload}
-    />
-
-    <Button
-      type="button"
-      variant="outline"
-      onClick={() =>
-        document
-          .getElementById("profile-upload")
-          ?.click()
-      }
-    >
-      Upload Photo
-    </Button>
-
-    <p className="mt-2 text-xs text-muted-foreground">
-      PNG or JPG, max 2MB.
-    </p>
-
-  </div>
-
-</div>
-  
-
-  <div>
-    <Label>Company Name</Label>
-    <Input
-      value={companyName}
-      onChange={(e)=>setCompanyName(e.target.value)}
-    />
-  </div>
-
-  <div>
-    <Label>Contact Person</Label>
-    <Input
-      value={contactPerson}
-      onChange={(e)=>setContactPerson(e.target.value)}
-    />
-  </div>
-
-  <div>
-    <Label>Email</Label>
-    <Input
-      value={email}
-      onChange={(e)=>setEmail(e.target.value)}
-    />
-  </div>
-
-  <div>
-    <Label>Mobile Number</Label>
-    <Input
-      value={phone}
-      onChange={(e)=>setPhone(e.target.value)}
-    />
-  </div>
-
-  <div>
-    <Label>Contractor Type</Label>
-    <Input
-      value={contractorType}
-      onChange={(e)=>setContractorType(e.target.value)}
-    />
-  </div>
-
-  <div>
-    <Label>Service Area</Label>
-    <Input
-      value={serviceArea}
-      onChange={(e)=>setServiceArea(e.target.value)}
-    />
-  </div>
-
-  <div>
-    <Label>Business License</Label>
-    <Input
-      value={businessLicense}
-      onChange={(e)=>setBusinessLicense(e.target.value)}
-    />
-  </div>
-
-  <div>
-    <Label>Account Status</Label>
-    <Input
-      value={contractor?.account_status || ""}
-      readOnly
-    />
-  </div>
-  <div>
-  <Label>Created At</Label>
-  <Input
-    value={createdAt}
-    readOnly
-  />
-</div>
-<div>
-  <Label>Updated At</Label>
-  <Input
-    value={updatedAt}
-    readOnly
-  />
-</div>
-
-  <div className="sm:col-span-2">
-    <Button
-      type="submit"
-      disabled={isSaving}
-    >
-      {isSaving ? "Saving..." : "Save Changes"}
-    </Button>
-  </div>
-
-</form>
-              <hr className="my-8" />
-    
-
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {name ? name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() : "US"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <Button variant="outline" size="sm">
+                    Upload photo
+                  </Button>
+                  <div className="mt-1 text-xs text-muted-foreground">PNG or JPG, max 2MB.</div>
+                </div>
+              </div>
               
+              {isLoading ? (
+                <div className="flex h-48 items-center justify-center">
+                  <p className="text-xs text-muted-foreground animate-pulse">Loading profile...</p>
+                </div>
+              ) : (
+                <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
+                  <div className="space-y-1.5">
+                    <Label>Full name</Label>
+                    <Input value={name} onChange={(e) => setName(e.target.value)} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Email</Label>
+                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Phone</Label>
+                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-0100" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Timezone</Label>
+                    <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Button type="submit" disabled={isSaving}>
+                      {isSaving ? "Saving..." : "Save changes"}
+                    </Button>
+                  </div>
+                </form>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -410,7 +311,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <div className="text-base font-semibold">Pro · ₹149/month</div>
                   <div className="text-xs text-muted-foreground">Renews July 1, 2026</div>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => setShowPlanDialog(true)}>
                   Change plan
                 </Button>
               </div>
@@ -419,6 +320,36 @@ const handleSubmit = async (e: React.FormEvent) => {
           </Card>
         </TabsContent>
       </Tabs>
+      <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change plan</DialogTitle>
+            <DialogDescription>Current plan: {currentPlan}. Select a new plan for your HomeSure workspace.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            {[
+              { name: "Starter", price: "INR 49/month" },
+              { name: "Pro", price: "INR 149/month" },
+              { name: "Enterprise", price: "Custom" },
+            ].map((plan) => (
+              <button
+                key={plan.name}
+                type="button"
+                onClick={() => handlePlanChange(plan.name)}
+                className="flex items-center justify-between rounded-lg border border-border p-3 text-left hover:bg-muted"
+              >
+                <span className="font-medium">{plan.name}</span>
+                <span className="text-sm text-muted-foreground">{plan.price}</span>
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPlanDialog(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

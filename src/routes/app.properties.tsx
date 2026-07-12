@@ -4,7 +4,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Card } from "@/shared/components/ui/card";
-import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video, CheckCircle, Search, Home } from "lucide-react";
+import { Plus, Download, Trash2, ImagePlus, X, Pencil, Image, ChevronLeft, ChevronRight, ListChecks, Video, CheckCircle, Search, Home, Heart, MessageSquare, FileCheck, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "@/features/auth/store/auth-store";
@@ -16,9 +16,14 @@ import {
 } from "@/shared/utils/properties-store";
 import {
   getLandlordProperties,
+  getAllProperties,
   createProperty,
   updateProperty as updateSupabaseProperty,
-  deleteProperty as deleteSupabaseProperty
+  deleteProperty as deleteSupabaseProperty,
+  createFavoriteProperty,
+  createPropertyInquiry,
+  createRentalApplication,
+  createReviewRating,
 } from "@/core/db/supabase-queries";
 import { supabase } from "@/core/db/supabase";
 import {
@@ -55,6 +60,7 @@ import { Label } from "@/shared/components/ui/label";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
+import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 
 export const Route = createFileRoute("/app/properties")({
   head: () => ({ meta: [{ title: "Properties — HomeSure" }] }),
@@ -81,6 +87,9 @@ const parseImageUrls = (urlData: any): string[] => {
 function PropertiesPage() {
   const localProps = useProperties();
   const navigate = useNavigate();
+  const session = useSession();
+  const tenantContext = useTenantContext();
+  const isTenant = session?.role === "tenant";
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -88,7 +97,7 @@ function PropertiesPage() {
     setIsLoading(true);
     try {
       const landlordId = "2"; // Force "2" to match Supabase mock data
-      const data = await getLandlordProperties(landlordId);
+      const data = isTenant ? await getAllProperties() : await getLandlordProperties(landlordId);
       setSupabaseProps(data as UnifiedProperty[]);
     } finally {
       setIsLoading(false);
@@ -145,6 +154,66 @@ function PropertiesPage() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [editingProperty, setEditingProperty] = useState<UnifiedProperty | null>(null);
   const [selectedPropertyForAmenities, setSelectedPropertyForAmenities] = useState<UnifiedProperty | null>(null);
+  const tenantId = tenantContext.tenantId || Number(session?.id) || 3;
+
+  const getPropertyNumericId = (property: UnifiedProperty) => Number(property.property_id);
+  const getLandlordId = (property: UnifiedProperty) => Number((property as any).landlord_id || 2);
+
+  const handleFavoriteProperty = async (property: UnifiedProperty) => {
+    try {
+      await createFavoriteProperty({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+      });
+      toast.success("Property added to favorites");
+    } catch (err: any) {
+      toast.error("Could not save favorite: " + (err.message || String(err)));
+    }
+  };
+
+  const handleInquiry = async (property: UnifiedProperty) => {
+    try {
+      await createPropertyInquiry({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+        landlord_id: getLandlordId(property),
+        inquiry_message: `I am interested in ${property.property_name}. Please share availability and visit details.`,
+      });
+      toast.success("Inquiry sent to landlord");
+    } catch (err: any) {
+      toast.error("Could not send inquiry: " + (err.message || String(err)));
+    }
+  };
+
+  const handleApply = async (property: UnifiedProperty) => {
+    try {
+      await createRentalApplication({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+        landlord_id: getLandlordId(property),
+        remarks: `Rental application submitted for ${property.property_name}.`,
+      });
+      toast.success("Rental application submitted");
+    } catch (err: any) {
+      toast.error("Could not submit application: " + (err.message || String(err)));
+    }
+  };
+
+  const handleReview = async (property: UnifiedProperty) => {
+    try {
+      await createReviewRating({
+        tenant_id: tenantId,
+        property_id: getPropertyNumericId(property),
+        landlord_id: getLandlordId(property),
+        rating: 5,
+        review_title: "Interested tenant review",
+        review_description: `Saved tenant feedback for ${property.property_name}.`,
+      });
+      toast.success("Review saved");
+    } catch (err: any) {
+      toast.error("Could not save review: " + (err.message || String(err)));
+    }
+  };
   const [editForm, setEditForm] = useState({
     property_name: "",
     property_type: "",
@@ -184,6 +253,31 @@ function PropertiesPage() {
     smoking_allowed: false,
     drinking_allowed: false,
     maximum_occupants: "",
+    water_supply: "",
+    electricity_connection: "",
+    internet_available: false,
+    gas_connection: false,
+    sewage_connection: false,
+    school_distance: "",
+    college_distance: "",
+    hospital_distance: "",
+    bus_stop_distance: "",
+    railway_station_distance: "",
+    airport_distance: "",
+    supermarket_distance: "",
+    bank_distance: "",
+    ownership_proof: "",
+    tax_receipt: "",
+    electricity_bill: "",
+    encumbrance_certificate: "",
+    occupancy_certificate: "",
+    property_insurance: "",
+    owner_government_id: "",
+    landlord_name: "",
+    mobile_number: "",
+    email: "",
+    preferred_contact_time: "Anytime",
+    whatsapp_number: "",
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -192,6 +286,7 @@ function PropertiesPage() {
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
   const [editVideo, setEditVideo] = useState<string | null>(null);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   const [form, setForm] = useState({
     property_name: "",
@@ -256,13 +351,33 @@ function PropertiesPage() {
     smoking_allowed: false,
     drinking_allowed: false,
     maximum_occupants: "",
+    water_supply: "",
+    electricity_connection: "",
+    internet_available: false,
+    gas_connection: false,
+    sewage_connection: false,
+    school_distance: "",
+    college_distance: "",
+    hospital_distance: "",
+    bus_stop_distance: "",
+    railway_station_distance: "",
+    airport_distance: "",
+    supermarket_distance: "",
+    bank_distance: "",
+    ownership_proof: "",
+    tax_receipt: "",
+    electricity_bill: "",
+    encumbrance_certificate: "",
+    occupancy_certificate: "",
+    property_insurance: "",
+    owner_government_id: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 7) {
+    if (step < 11) {
       setStep(step + 1);
       return;
     }
@@ -346,6 +461,39 @@ function PropertiesPage() {
           pets_allowed: form.pets_allowed === true,
           smoking_allowed: form.smoking_allowed === true,
           drinking_allowed: form.drinking_allowed === true
+        },
+        property_utilities: {
+          water_supply: form.water_supply,
+          electricity_connection: form.electricity_connection,
+          internet_available: form.internet_available === true,
+          gas_connection: form.gas_connection === true,
+          sewage_connection: form.sewage_connection === true
+        },
+        nearby_facilities: {
+          school_distance: form.school_distance,
+          college_distance: form.college_distance,
+          hospital_distance: form.hospital_distance,
+          bus_stop_distance: form.bus_stop_distance,
+          railway_station_distance: form.railway_station_distance,
+          airport_distance: form.airport_distance,
+          supermarket_distance: form.supermarket_distance,
+          bank_distance: form.bank_distance
+        },
+        property_documents: {
+          ownership_proof: form.ownership_proof,
+          tax_receipt: form.tax_receipt,
+          electricity_bill: form.electricity_bill,
+          encumbrance_certificate: form.encumbrance_certificate,
+          occupancy_certificate: form.occupancy_certificate,
+          property_insurance: form.property_insurance,
+          owner_government_id: form.owner_government_id
+        },
+        property_contact_details: {
+          landlord_name: form.landlord_name,
+          mobile_number: form.mobile_number,
+          email: form.email,
+          preferred_contact_time: form.preferred_contact_time,
+          whatsapp_number: form.whatsapp_number
         }
       };
       if (uploadedVideo) {
@@ -429,6 +577,31 @@ function PropertiesPage() {
       smoking_allowed: false,
       drinking_allowed: false,
       maximum_occupants: "",
+      water_supply: "",
+      electricity_connection: "",
+      internet_available: false,
+      gas_connection: false,
+      sewage_connection: false,
+      school_distance: "",
+      college_distance: "",
+      hospital_distance: "",
+      bus_stop_distance: "",
+      railway_station_distance: "",
+      airport_distance: "",
+      supermarket_distance: "",
+      bank_distance: "",
+      ownership_proof: "",
+      tax_receipt: "",
+      electricity_bill: "",
+      encumbrance_certificate: "",
+      occupancy_certificate: "",
+      property_insurance: "",
+      owner_government_id: "",
+      landlord_name: "",
+      mobile_number: "",
+      email: "",
+      preferred_contact_time: "Anytime",
+      whatsapp_number: "",
     });
     setStep(1);
     setUploadedImages([]);
@@ -470,6 +643,44 @@ function PropertiesPage() {
       toast.error("Failed to upload video.");
     } finally {
       setIsUploadingVideo(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof typeof form, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Document must be less than 10MB");
+      e.target.value = "";
+      return;
+    }
+
+    setIsUploadingDoc(true);
+    try {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+      const { error } = await supabase.storage
+        .from('property-documents')
+        .upload(`properties/${fileName}`, file, { cacheControl: '3600', upsert: false });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('property-documents')
+        .getPublicUrl(`properties/${fileName}`);
+
+      if (isEdit) {
+        setEditForm({ ...editForm, [fieldName]: publicUrlData.publicUrl });
+      } else {
+        setForm({ ...form, [fieldName]: publicUrlData.publicUrl });
+      }
+      toast.success("Document uploaded successfully!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Failed to upload document: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsUploadingDoc(false);
       e.target.value = "";
     }
   };
@@ -631,6 +842,19 @@ function PropertiesPage() {
       smoking_allowed: (p as any).tenantPreferencesData?.smoking_allowed || false,
       drinking_allowed: (p as any).tenantPreferencesData?.drinking_allowed || false,
       maximum_occupants: (p as any).tenantPreferencesData?.maximum_occupants ? String((p as any).tenantPreferencesData?.maximum_occupants) : "",
+      water_supply: (p as any).utilitiesData?.water_supply || "",
+      electricity_connection: (p as any).utilitiesData?.electricity_connection || "",
+      internet_available: (p as any).utilitiesData?.internet_available || false,
+      gas_connection: (p as any).utilitiesData?.gas_connection || false,
+      sewage_connection: (p as any).utilitiesData?.sewage_connection || false,
+      school_distance: (p as any).nearbyFacilitiesData?.school_distance || "",
+      college_distance: (p as any).nearbyFacilitiesData?.college_distance || "",
+      hospital_distance: (p as any).nearbyFacilitiesData?.hospital_distance || "",
+      bus_stop_distance: (p as any).nearbyFacilitiesData?.bus_stop_distance || "",
+      railway_station_distance: (p as any).nearbyFacilitiesData?.railway_station_distance || "",
+      airport_distance: (p as any).nearbyFacilitiesData?.airport_distance || "",
+      supermarket_distance: (p as any).nearbyFacilitiesData?.supermarket_distance || "",
+      bank_distance: (p as any).nearbyFacilitiesData?.bank_distance || "",
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);
@@ -712,6 +936,23 @@ function PropertiesPage() {
           Description: editForm.Description,
           Category: editForm.Category,
           Virtual_Tour: editVideo || null,
+          property_utilities: {
+            water_supply: editForm.water_supply,
+            electricity_connection: editForm.electricity_connection,
+            internet_available: editForm.internet_available === true,
+            gas_connection: editForm.gas_connection === true,
+            sewage_connection: editForm.sewage_connection === true
+          },
+          nearby_facilities: {
+            school_distance: editForm.school_distance,
+            college_distance: editForm.college_distance,
+            hospital_distance: editForm.hospital_distance,
+            bus_stop_distance: editForm.bus_stop_distance,
+            railway_station_distance: editForm.railway_station_distance,
+            airport_distance: editForm.airport_distance,
+            supermarket_distance: editForm.supermarket_distance,
+            bank_distance: editForm.bank_distance
+          }
         };
         await updateSupabaseProperty(editingProperty.property_id, supabasePayload);
         toast.success("Property updated successfully!");
@@ -750,7 +991,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 7: Basic Property Information" : step === 2 ? "Step 2 of 7: Location Details" : step === 3 ? "Step 3 of 7: Images & Media" : step === 4 ? "Step 4 of 7: Property Specifications" : step === 5 ? "Step 5 of 7: Rent Details" : step === 6 ? "Step 6 of 7: Amenities" : "Step 7 of 7: Tenant Preferences"}
+              {step === 1 ? "Step 1 of 11: Basic Property Information" : step === 2 ? "Step 2 of 11: Location Details" : step === 3 ? "Step 3 of 11: Images & Media" : step === 4 ? "Step 4 of 11: Property Specifications" : step === 5 ? "Step 5 of 11: Rent Details" : step === 6 ? "Step 6 of 11: Amenities" : step === 7 ? "Step 7 of 11: Tenant Preferences" : step === 8 ? "Step 8 of 11: Utility Information" : step === 9 ? "Step 9 of 11: Nearby Facilities" : step === 10 ? "Step 10 of 11: Property Documents" : "Step 11 of 11: Contact Details"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -1093,7 +1334,7 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
-              ) : (
+              ) : step === 7 ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2 grid gap-2">
@@ -1156,7 +1397,161 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
-              )}
+              ) : step === 8 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Water Supply</Label>
+                      <Input placeholder="e.g. 24x7 Corporation Water" value={form.water_supply} onChange={(e) => setForm({...form, water_supply: e.target.value})} />
+                    </div>
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Electricity Connection</Label>
+                      <Input placeholder="e.g. Generator / Invertor" value={form.electricity_connection} onChange={(e) => setForm({...form, electricity_connection: e.target.value})} />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="add-internet" checked={form.internet_available} onCheckedChange={(c) => setForm({...form, internet_available: !!c})} />
+                      <Label htmlFor="add-internet">Internet Available</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="add-gas" checked={form.gas_connection} onCheckedChange={(c) => setForm({...form, gas_connection: !!c})} />
+                      <Label htmlFor="add-gas">Gas Connection (Pipeline)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="add-sewage" checked={form.sewage_connection} onCheckedChange={(c) => setForm({...form, sewage_connection: !!c})} />
+                      <Label htmlFor="add-sewage">Sewage Connection</Label>
+                    </div>
+                  </div>
+                </>
+              ) : step === 9 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label>School Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.5" value={form.school_distance} onChange={(e) => setForm({...form, school_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>College Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 3.0" value={form.college_distance} onChange={(e) => setForm({...form, college_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Hospital Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 2.0" value={form.hospital_distance} onChange={(e) => setForm({...form, hospital_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bus Stop Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.5" value={form.bus_stop_distance} onChange={(e) => setForm({...form, bus_stop_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Railway Station (km)</Label>
+                      <Input type="number" placeholder="e.g. 5.0" value={form.railway_station_distance} onChange={(e) => setForm({...form, railway_station_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Airport Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 15.0" value={form.airport_distance} onChange={(e) => setForm({...form, airport_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Supermarket (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.0" value={form.supermarket_distance} onChange={(e) => setForm({...form, supermarket_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bank/ATM (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.2" value={form.bank_distance} onChange={(e) => setForm({...form, bank_distance: e.target.value})} />
+                    </div>
+                  </div>
+                </>
+              ) : step === 10 ? (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Upload relevant property documents. Only PDFs and Images (max 10MB) are allowed.</p>
+                    
+                    <div className="grid gap-2">
+                      <Label>Ownership Proof *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'ownership_proof')} disabled={isUploadingDoc} />
+                        {form.ownership_proof && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Tax Receipt *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'tax_receipt')} disabled={isUploadingDoc} />
+                        {form.tax_receipt && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Electricity Bill *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'electricity_bill')} disabled={isUploadingDoc} />
+                        {form.electricity_bill && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Encumbrance Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'encumbrance_certificate')} disabled={isUploadingDoc} />
+                        {form.encumbrance_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Occupancy Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'occupancy_certificate')} disabled={isUploadingDoc} />
+                        {form.occupancy_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Government ID of Owner *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'owner_government_id')} disabled={isUploadingDoc} />
+                        {form.owner_government_id && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Property Insurance (Optional)</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'property_insurance')} disabled={isUploadingDoc} />
+                        {form.property_insurance && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : step === 11 ? (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Provide contact details for the landlord or property manager.</p>
+                    <div className="grid gap-2">
+                      <Label>Landlord Name *</Label>
+                      <Input placeholder="e.g. John Smith" value={form.landlord_name || ""} onChange={(e) => setForm({...form, landlord_name: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Mobile Number *</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={form.mobile_number || ""} onChange={(e) => setForm({...form, mobile_number: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="e.g. john@email.com" value={form.email || ""} onChange={(e) => setForm({...form, email: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Preferred Contact Time</Label>
+                      <Select value={form.preferred_contact_time || "Anytime"} onValueChange={(val) => setForm({...form, preferred_contact_time: val})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Contact Time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Morning">Morning</SelectItem>
+                          <SelectItem value="Afternoon">Afternoon</SelectItem>
+                          <SelectItem value="Evening">Evening</SelectItem>
+                          <SelectItem value="Anytime">Anytime</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>WhatsApp Number (Optional)</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={form.whatsapp_number || ""} onChange={(e) => setForm({...form, whatsapp_number: e.target.value})} />
+                    </div>
+                  </div>
+                </>
+              ) : null}
 
             <SheetFooter className="mt-4 pb-12">
               {step === 1 ? (
@@ -1201,13 +1596,41 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(7)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 7 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(6)}>
                     Back
                   </Button>
-                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo}>
-                    {(isUploading || isUploadingVideo) ? "Uploading..." : "Save Property"}
+                  <Button type="button" onClick={() => setStep(8)}>Next</Button>
+                </>
+              ) : step === 8 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(7)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(9)}>Next</Button>
+                </>
+              ) : step === 9 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(8)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(10)}>Next</Button>
+                </>
+              ) : step === 10 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(9)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(11)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(10)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc}>
+                    {(isUploading || isUploadingVideo || isUploadingDoc) ? "Uploading..." : "Save Property"}
                   </Button>
                 </>
               )}
@@ -1419,7 +1842,8 @@ function PropertiesPage() {
                       className="h-full"
                     >
                       <Card className="overflow-hidden group hover:shadow-2xl transition-all duration-500 border-border/60 hover:border-primary/50 bg-card flex flex-col h-full rounded-2xl hover:-translate-y-1">
-                        <div className="relative h-56 w-full bg-muted/30 overflow-hidden cursor-pointer" onClick={() => navigate({ to: "/app/property/$id", params: { id: String(p.property_id) } })}>
+                        <div className="relative h-56 w-full bg-muted/30 overflow-hidden">
+                          <Link to="/app/property/$id" params={{ id: String(p.property_id) }} className="absolute inset-0 z-10" />
                           {parseImageUrls(p.image_url)[0] ? (
                             <img src={parseImageUrls(p.image_url)[0]} alt={p.property_name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
                           ) : (
@@ -1431,15 +1855,17 @@ function PropertiesPage() {
                           {/* Subtle overlay gradient */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
                           
-                          <div className="absolute top-3 left-3">
+                          <div className="absolute top-3 left-3 z-20">
                             <StatusBadge value={p.availability_status} />
                           </div>
                           
-                          <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0">
-                            <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
+                          {!isTenant && (
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0 z-20">
+                            <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
+                          )}
                           
                           <div className="absolute bottom-3 left-4 right-4 pointer-events-none transform transition-transform duration-500 group-hover:-translate-y-1">
                             <h3 className="text-white font-bold text-xl truncate drop-shadow-md">{p.property_name}</h3>
@@ -1473,6 +1899,22 @@ function PropertiesPage() {
                               <ChevronRight className="ml-1 h-4 w-4 opacity-70 group-hover/btn:translate-x-1.5 transition-transform" />
                             </Link>
                           </Button>
+                          {isTenant && (
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                              <Button variant="outline" size="sm" onClick={() => handleFavoriteProperty(p)}>
+                                <Heart className="mr-1 h-3.5 w-3.5" /> Favorite
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleInquiry(p)}>
+                                <MessageSquare className="mr-1 h-3.5 w-3.5" /> Inquiry
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleApply(p)}>
+                                <FileCheck className="mr-1 h-3.5 w-3.5" /> Apply
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleReview(p)}>
+                                <Star className="mr-1 h-3.5 w-3.5" /> Review
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </Card>
                     </motion.div>
@@ -1582,7 +2024,74 @@ function PropertiesPage() {
               </select>
             </div>
 
-
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="utilities">
+                <AccordionTrigger>Utility Information</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Water Supply</Label>
+                      <Input placeholder="e.g. 24x7 Corporation Water" value={editForm.water_supply} onChange={(e) => setEditForm({...editForm, water_supply: e.target.value})} />
+                    </div>
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Electricity Connection</Label>
+                      <Input placeholder="e.g. Generator / Invertor" value={editForm.electricity_connection} onChange={(e) => setEditForm({...editForm, electricity_connection: e.target.value})} />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-internet" checked={editForm.internet_available} onCheckedChange={(c) => setEditForm({...editForm, internet_available: !!c})} />
+                      <Label htmlFor="edit-internet">Internet Available</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-gas" checked={editForm.gas_connection} onCheckedChange={(c) => setEditForm({...editForm, gas_connection: !!c})} />
+                      <Label htmlFor="edit-gas">Gas Connection (Pipeline)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-sewage" checked={editForm.sewage_connection} onCheckedChange={(c) => setEditForm({...editForm, sewage_connection: !!c})} />
+                      <Label htmlFor="edit-sewage">Sewage Connection</Label>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="nearby_facilities">
+                <AccordionTrigger>Nearby Facilities</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="grid gap-2">
+                      <Label>School Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.5" value={editForm.school_distance} onChange={(e) => setEditForm({...editForm, school_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>College Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 3.0" value={editForm.college_distance} onChange={(e) => setEditForm({...editForm, college_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Hospital Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 2.0" value={editForm.hospital_distance} onChange={(e) => setEditForm({...editForm, hospital_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bus Stop Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.5" value={editForm.bus_stop_distance} onChange={(e) => setEditForm({...editForm, bus_stop_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Railway Station (km)</Label>
+                      <Input type="number" placeholder="e.g. 5.0" value={editForm.railway_station_distance} onChange={(e) => setEditForm({...editForm, railway_station_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Airport Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 15.0" value={editForm.airport_distance} onChange={(e) => setEditForm({...editForm, airport_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Supermarket (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.0" value={editForm.supermarket_distance} onChange={(e) => setEditForm({...editForm, supermarket_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bank/ATM (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.2" value={editForm.bank_distance} onChange={(e) => setEditForm({...editForm, bank_distance: e.target.value})} />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
             <div className="grid gap-2">
               <Label>Virtual Tour Video (Optional, Max 10MB)</Label>

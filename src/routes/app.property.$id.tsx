@@ -53,6 +53,7 @@ function PropertyDetailsPage() {
   const [editVideo, setEditVideo] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   const openEditDialog = () => {
     let loc = {};
@@ -81,7 +82,11 @@ function PropertyDetailsPage() {
     const rentDetails = specs.rent_details || {};
     const amenities = (property as any)?.amenitiesData || {};
     const tenantPrefs = (property as any)?.tenantPreferencesData || {};
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs }));
+    const utilities = (property as any)?.utilitiesData || {};
+    const nearbyFacilities = (property as any)?.nearbyFacilitiesData || {};
+    const documents = (property as any)?.documentsData || {};
+    const contactDetails = (property as any)?.contactDetailsData || {};
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails }));
 
     let images = [];
     try {
@@ -174,9 +179,43 @@ function PropertyDetailsPage() {
     }
   };
 
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Document must be less than 10MB");
+      e.target.value = "";
+      return;
+    }
+
+    setIsUploadingDoc(true);
+    try {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+      const { error } = await supabase.storage
+        .from('property-documents')
+        .upload(`properties/${fileName}`, file, { cacheControl: '3600', upsert: false });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('property-documents')
+        .getPublicUrl(`properties/${fileName}`);
+
+      setEditForm((prev: any) => ({ ...prev, [fieldName]: publicUrlData.publicUrl }));
+      toast.success("Document uploaded successfully!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Failed to upload document: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsUploadingDoc(false);
+      e.target.value = "";
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editStep < 6) {
+    if (editStep < 10) {
       setEditStep(editStep + 1);
       return;
     }
@@ -258,6 +297,39 @@ function PropertyDetailsPage() {
         smoking_allowed: editForm.smoking_allowed === true,
         drinking_allowed: editForm.drinking_allowed === true,
         maximum_occupants: editForm.maximum_occupants
+      },
+      property_utilities: {
+        water_supply: editForm.water_supply,
+        electricity_connection: editForm.electricity_connection,
+        internet_available: editForm.internet_available === true,
+        gas_connection: editForm.gas_connection === true,
+        sewage_connection: editForm.sewage_connection === true
+      },
+      nearby_facilities: {
+        school_distance: editForm.school_distance,
+        college_distance: editForm.college_distance,
+        hospital_distance: editForm.hospital_distance,
+        bus_stop_distance: editForm.bus_stop_distance,
+        railway_station_distance: editForm.railway_station_distance,
+        airport_distance: editForm.airport_distance,
+        supermarket_distance: editForm.supermarket_distance,
+        bank_distance: editForm.bank_distance
+      },
+      property_documents: {
+        ownership_proof: editForm.ownership_proof,
+        tax_receipt: editForm.tax_receipt,
+        electricity_bill: editForm.electricity_bill,
+        encumbrance_certificate: editForm.encumbrance_certificate,
+        occupancy_certificate: editForm.occupancy_certificate,
+        property_insurance: editForm.property_insurance,
+        owner_government_id: editForm.owner_government_id
+      },
+      property_contact_details: {
+        landlord_name: editForm.landlord_name,
+        mobile_number: editForm.mobile_number,
+        email: editForm.email,
+        preferred_contact_time: editForm.preferred_contact_time,
+        whatsapp_number: editForm.whatsapp_number
       }
     };
     
@@ -449,7 +521,7 @@ function PropertyDetailsPage() {
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 7`}</DialogTitle>
+              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 11`}</DialogTitle>
             </DialogHeader>
             
             <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
@@ -826,7 +898,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(7)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : (
+              ) : editStep === 7 ? (
                 <>
                   {/* Tenant Preferences */}
                   <div>
@@ -895,8 +967,190 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(6)}>Back</Button>
-                    <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo}>
-                      {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
+                    <Button type="button" onClick={() => setEditStep(8)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : editStep === 8 ? (
+                <>
+                  {/* Utility Information */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Utility Information</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2 grid gap-2">
+                        <Label>Water Supply</Label>
+                        <Input placeholder="e.g. 24x7 Corporation Water" value={editForm.water_supply || ""} onChange={(e) => setEditForm({...editForm, water_supply: e.target.value})} />
+                      </div>
+                      <div className="col-span-2 grid gap-2">
+                        <Label>Electricity Connection</Label>
+                        <Input placeholder="e.g. Generator / Invertor" value={editForm.electricity_connection || ""} onChange={(e) => setEditForm({...editForm, electricity_connection: e.target.value})} />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_internet" checked={editForm.internet_available} onCheckedChange={(c) => setEditForm({...editForm, internet_available: !!c})} />
+                        <Label htmlFor="edit_internet" className="cursor-pointer">Internet Available</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_gas" checked={editForm.gas_connection} onCheckedChange={(c) => setEditForm({...editForm, gas_connection: !!c})} />
+                        <Label htmlFor="edit_gas" className="cursor-pointer">Gas Connection</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_sewage" checked={editForm.sewage_connection} onCheckedChange={(c) => setEditForm({...editForm, sewage_connection: !!c})} />
+                        <Label htmlFor="edit_sewage" className="cursor-pointer">Sewage Connection</Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(7)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(9)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : editStep === 9 ? (
+                <>
+                  {/* Nearby Facilities */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Nearby Facilities</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>School Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 1.5" value={editForm.school_distance || ""} onChange={(e) => setEditForm({...editForm, school_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>College Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 3.0" value={editForm.college_distance || ""} onChange={(e) => setEditForm({...editForm, college_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Hospital Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 2.0" value={editForm.hospital_distance || ""} onChange={(e) => setEditForm({...editForm, hospital_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Bus Stop Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 0.5" value={editForm.bus_stop_distance || ""} onChange={(e) => setEditForm({...editForm, bus_stop_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Railway Station (km)</Label>
+                        <Input type="number" placeholder="e.g. 5.0" value={editForm.railway_station_distance || ""} onChange={(e) => setEditForm({...editForm, railway_station_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Airport Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 15.0" value={editForm.airport_distance || ""} onChange={(e) => setEditForm({...editForm, airport_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Supermarket (km)</Label>
+                        <Input type="number" placeholder="e.g. 1.0" value={editForm.supermarket_distance || ""} onChange={(e) => setEditForm({...editForm, supermarket_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Bank/ATM (km)</Label>
+                        <Input type="number" placeholder="e.g. 0.2" value={editForm.bank_distance || ""} onChange={(e) => setEditForm({...editForm, bank_distance: e.target.value})} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(8)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(10)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : editStep === 10 ? (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Upload relevant property documents. Only PDFs and Images (max 10MB) are allowed.</p>
+                    
+                    <div className="grid gap-2">
+                      <Label>Ownership Proof *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'ownership_proof', true)} disabled={isUploadingDoc} />
+                        {editForm.ownership_proof && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Tax Receipt *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'tax_receipt', true)} disabled={isUploadingDoc} />
+                        {editForm.tax_receipt && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Electricity Bill *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'electricity_bill', true)} disabled={isUploadingDoc} />
+                        {editForm.electricity_bill && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Encumbrance Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'encumbrance_certificate', true)} disabled={isUploadingDoc} />
+                        {editForm.encumbrance_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Occupancy Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'occupancy_certificate', true)} disabled={isUploadingDoc} />
+                        {editForm.occupancy_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Government ID of Owner *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'owner_government_id', true)} disabled={isUploadingDoc} />
+                        {editForm.owner_government_id && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Property Insurance (Optional)</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'property_insurance', true)} disabled={isUploadingDoc} />
+                        {editForm.property_insurance && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(9)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(11)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Update contact details for the landlord or property manager.</p>
+                    <div className="grid gap-2">
+                      <Label>Landlord Name *</Label>
+                      <Input placeholder="e.g. John Smith" value={editForm.landlord_name || ""} onChange={(e) => setEditForm({...editForm, landlord_name: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Mobile Number *</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={editForm.mobile_number || ""} onChange={(e) => setEditForm({...editForm, mobile_number: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="e.g. john@email.com" value={editForm.email || ""} onChange={(e) => setEditForm({...editForm, email: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Preferred Contact Time</Label>
+                      <Select value={editForm.preferred_contact_time || "Anytime"} onValueChange={(val) => setEditForm({...editForm, preferred_contact_time: val})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Contact Time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Morning">Morning</SelectItem>
+                          <SelectItem value="Afternoon">Afternoon</SelectItem>
+                          <SelectItem value="Evening">Evening</SelectItem>
+                          <SelectItem value="Anytime">Anytime</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>WhatsApp Number (Optional)</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={editForm.whatsapp_number || ""} onChange={(e) => setEditForm({...editForm, whatsapp_number: e.target.value})} />
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(10)}>Back</Button>
+                    <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc}>
+                      {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
                     </Button>
                   </DialogFooter>
                 </>
@@ -1332,6 +1586,235 @@ function PropertyDetailsPage() {
                       elements.push(
                         <div key="no_data" className="col-span-2 sm:col-span-3 md:col-span-4">
                           <span className="text-muted-foreground italic">Tenant preferences not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Utility Information Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="utility_info" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Utility Information
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const utData = (property as any)?.utilitiesData || {};
+                    let elements = [];
+
+                    if (utData.water_supply) {
+                      elements.push(
+                        <div key="water_supply" className="col-span-2 sm:col-span-3 md:col-span-4 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Water Supply</span>
+                          <span className="font-medium text-base">{utData.water_supply}</span>
+                        </div>
+                      );
+                    }
+                    if (utData.electricity_connection) {
+                      elements.push(
+                        <div key="electricity_connection" className="col-span-2 sm:col-span-3 md:col-span-4 mb-4">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Electricity Connection</span>
+                          <span className="font-medium text-base">{utData.electricity_connection}</span>
+                        </div>
+                      );
+                    }
+
+                    const utBools = [
+                      { id: "internet_available", label: "Internet Available" },
+                      { id: "gas_connection", label: "Gas Connection" },
+                      { id: "sewage_connection", label: "Sewage Connection" }
+                    ];
+
+                    const present = utBools.filter(b => utData[b.id] === true);
+                    if (present.length > 0) {
+                      elements.push(...present.map(b => (
+                        <div key={b.id} className="flex items-center space-x-2 text-muted-foreground">
+                          <CheckCircle className="h-4 w-4 text-primary" />
+                          <span>{b.label}</span>
+                        </div>
+                      )));
+                    } else if (Object.keys(utData).length > 0 && elements.length === 0) {
+                      elements.push(
+                        <div key="no_utils" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">No utilities specified</span>
+                        </div>
+                      );
+                    } else if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_utils" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Utility information not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Nearby Facilities Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="nearby_facilities" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Nearby Facilities
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const nfData = (property as any)?.nearbyFacilitiesData || {};
+                    let elements = [];
+
+                    const distances = [
+                      { id: "school_distance", label: "School" },
+                      { id: "college_distance", label: "College" },
+                      { id: "hospital_distance", label: "Hospital" },
+                      { id: "bus_stop_distance", label: "Bus Stop" },
+                      { id: "railway_station_distance", label: "Railway Station" },
+                      { id: "airport_distance", label: "Airport" },
+                      { id: "supermarket_distance", label: "Supermarket" },
+                      { id: "bank_distance", label: "Bank/ATM" }
+                    ];
+
+                    distances.forEach(d => {
+                      if (nfData[d.id]) {
+                        elements.push(
+                          <div key={d.id} className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                            <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">{d.label}</span>
+                            <span className="font-medium text-base">{nfData[d.id]} km</span>
+                          </div>
+                        );
+                      }
+                    });
+
+                    if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_nf" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Nearby facilities not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Property Documents Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="property_documents" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Property Documents
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const docData = (property as any)?.documentsData || {};
+                    let elements = [];
+
+                    const docs = [
+                      { id: "ownership_proof", label: "Ownership Proof" },
+                      { id: "tax_receipt", label: "Tax Receipt" },
+                      { id: "electricity_bill", label: "Electricity Bill" },
+                      { id: "encumbrance_certificate", label: "Encumbrance Certificate" },
+                      { id: "occupancy_certificate", label: "Occupancy Certificate" },
+                      { id: "property_insurance", label: "Property Insurance" },
+                      { id: "owner_government_id", label: "Owner Government ID" }
+                    ];
+
+                    docs.forEach(d => {
+                      if (docData[d.id]) {
+                        elements.push(
+                          <div key={d.id} className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                            <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">{d.label}</span>
+                            <a href={docData[d.id]} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium text-base truncate block w-full">View Document</a>
+                          </div>
+                        );
+                      }
+                    });
+
+                    if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_doc" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Property documents not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Contact Details Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="contact_details" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Contact Details
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const contactData = (property as any)?.contactDetailsData || {};
+                    let elements = [];
+
+                    if (contactData.landlord_name) {
+                      elements.push(
+                        <div key="landlord_name" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Landlord Name</span>
+                          <span className="font-medium text-base">{contactData.landlord_name}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.mobile_number) {
+                      elements.push(
+                        <div key="mobile_number" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Mobile Number</span>
+                          <span className="font-medium text-base">{contactData.mobile_number}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.email) {
+                      elements.push(
+                        <div key="email" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Email</span>
+                          <span className="font-medium text-base">{contactData.email}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.preferred_contact_time) {
+                      elements.push(
+                        <div key="preferred_contact_time" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Preferred Time</span>
+                          <span className="font-medium text-base">{contactData.preferred_contact_time}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.whatsapp_number) {
+                      elements.push(
+                        <div key="whatsapp_number" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">WhatsApp Number</span>
+                          <span className="font-medium text-base">{contactData.whatsapp_number}</span>
+                        </div>
+                      );
+                    }
+
+                    if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_contact" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Contact details not specified</span>
                         </div>
                       );
                     }

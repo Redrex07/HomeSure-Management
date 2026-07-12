@@ -9,6 +9,7 @@ import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 
+
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
@@ -38,7 +39,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute()({
   head: () => ({
     meta: [
       { title: "HomeSure Management — Property & Home Warranty Platform" },
@@ -300,9 +301,7 @@ function Landing() {
         }`}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <Logo />
-          </Link>
+          
           <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
             <a href="#features" className="hover:text-blue-600 transition-colors relative group py-2">
               Features

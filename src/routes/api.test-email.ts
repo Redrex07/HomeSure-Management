@@ -3,7 +3,7 @@ import { sendTestEmail } from "@/core/email/email.service.server";
 
 /**
  * TEMPORARY: Remove this route before production deployment.
- * POST /api/test-email — sends a test email via Resend.
+ * POST /api/test-email — sends a test email via Gmail SMTP.
  */
 export const Route = createFileRoute("/api/test-email")({
   server: {
@@ -36,3 +36,4 @@ export const Route = createFileRoute("/api/test-email")({
     },
   },
 });
+

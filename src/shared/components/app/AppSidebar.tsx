@@ -103,6 +103,7 @@ export const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
     {
       label: "Activity",
       items: [
+        { title: "Browse Properties", url: "/app/properties", icon: Building2 },
         { title: "Rent Payments", url: "/app/invoices", icon: Receipt },
         { title: "Maintenance", url: "/app/service-requests", icon: Wrench },
         { title: "Appointments", url: "/app/appointments", icon: Calendar },
@@ -214,7 +215,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Back to site">
-              <Link to="/" className="flex items-center gap-2">
+             <Link to="/app/dashboard" params={{}}>
                 <Home className="h-4 w-4" />
                 <span>Back to site</span>
               </Link>

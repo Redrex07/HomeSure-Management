@@ -182,8 +182,9 @@ export function testEmailTemplate(): string {
     title: "Test email successful",
     bodyHtml: `
       <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #334155;">
-        This is a test email from <strong>HomeSure Management</strong>. Your Resend integration is working correctly.
+        This is a test email from <strong>HomeSure Management</strong>. Your email integration is working correctly.
       </p>
     `,
   });
 }
+
