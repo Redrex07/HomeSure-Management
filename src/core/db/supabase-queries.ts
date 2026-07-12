@@ -73,7 +73,7 @@
     try {
       console.log("🔍 Fetching ALL properties...");
 
-      const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*)");
+      const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_verification(*)");
 
       console.log("📊 DATA:", data);
       console.log("❌ ERROR:", error);
@@ -93,7 +93,7 @@
     try {
       const { data, error } = await supabase
         .from("properties")
-        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_additional_information(*)")
+        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_additional_information(*), property_verification(*)")
         .eq("landlord_id", landlordId)
         .order("property_id", { ascending: false });
 
@@ -316,6 +316,18 @@
             .insert([contactPayload]);
           if (contactError) console.error("Error creating property contact details:", contactError);
         }
+
+        // Add Property Verification Default Record
+        const verificationPayload = {
+          property_id: propertyId,
+          property_verified: false,
+          admin_approval: 'Pending',
+          featured_property: false
+        };
+        const { error: verificationError } = await supabase
+          .from("property_verification")
+          .insert([verificationPayload]);
+        if (verificationError) console.error("Error creating property verification:", verificationError);
       }
 
       return data;
@@ -721,7 +733,7 @@
     try {
       const { data, error } = await supabase
         .from("properties")
-        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_additional_information(*)")
+        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_additional_information(*), property_verification(*)")
         .eq("property_id", id)
         .single();
 
