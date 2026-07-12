@@ -406,7 +406,7 @@ function PropertiesPage() {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 13) {
+    if (step < 14) {
       setStep(step + 1);
       return;
     }
@@ -1085,7 +1085,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 13: Basic Property Information" : step === 2 ? "Step 2 of 13: Location Details" : step === 3 ? "Step 3 of 13: Images & Media" : step === 4 ? "Step 4 of 13: Property Specifications" : step === 5 ? "Step 5 of 13: Rent Details" : step === 6 ? "Step 6 of 13: Amenities" : step === 7 ? "Step 7 of 13: Tenant Preferences" : step === 8 ? "Step 8 of 13: Utility Information" : step === 9 ? "Step 9 of 13: Nearby Facilities" : step === 10 ? "Step 10 of 13: Property Documents" : step === 11 ? "Step 11 of 13: Contact Details" : step === 12 ? "Step 12 of 13: Availability" : "Step 13 of 13: Additional Information"}
+              {step === 1 ? "Step 1 of 14: Basic Property Information" : step === 2 ? "Step 2 of 14: Location Details" : step === 3 ? "Step 3 of 14: Images & Media" : step === 4 ? "Step 4 of 14: Property Specifications" : step === 5 ? "Step 5 of 14: Rent Details" : step === 6 ? "Step 6 of 14: Amenities" : step === 7 ? "Step 7 of 14: Tenant Preferences" : step === 8 ? "Step 8 of 14: Utility Information" : step === 9 ? "Step 9 of 14: Nearby Facilities" : step === 10 ? "Step 10 of 14: Property Documents" : step === 11 ? "Step 11 of 14: Contact Details" : step === 12 ? "Step 12 of 14: Availability" : step === 13 ? "Step 13 of 14: Additional Information" : "Step 14 of 14: Verification Status (Admin)"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -1704,40 +1704,42 @@ function PropertiesPage() {
                       <Label>Maintenance Instructions</Label>
                       <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={form.maintenance_instructions} onChange={(e) => setForm({...form, maintenance_instructions: e.target.value})} />
                     </div>
-                    
-                    <div className="pt-4 mt-6 border-t border-border grid gap-4">
-                      <h4 className="text-sm font-semibold">Verification Status (Admin)</h4>
-                      <div className="grid gap-2">
-                        <Label>Property Verified</Label>
-                        <Select value={form.property_verified ? "Yes" : "No"} onValueChange={(val) => setForm({...form, property_verified: val === "Yes"})}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Yes">Yes</SelectItem>
-                            <SelectItem value="No">No</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Admin Approval</Label>
-                        <Select value={form.admin_approval} onValueChange={(val) => setForm({...form, admin_approval: val})}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="Approved">Approved</SelectItem>
-                            <SelectItem value="Rejected">Rejected</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Featured Property</Label>
-                        <Select value={form.featured_property ? "Yes" : "No"} onValueChange={(val) => setForm({...form, featured_property: val === "Yes"})}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Yes">Yes</SelectItem>
-                            <SelectItem value="No">No</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  </div>
+                </>
+              ) : step === 14 ? (
+                <>
+                  <div className="grid gap-4">
+                    <h4 className="text-sm font-semibold">Verification Status (Admin)</h4>
+                    <div className="grid gap-2">
+                      <Label>Property Verified</Label>
+                      <Select value={form.property_verified ? "Yes" : "No"} onValueChange={(val) => setForm({...form, property_verified: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Admin Approval</Label>
+                      <Select value={form.admin_approval} onValueChange={(val) => setForm({...form, admin_approval: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Approved">Approved</SelectItem>
+                          <SelectItem value="Rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Featured Property</Label>
+                      <Select value={form.featured_property ? "Yes" : "No"} onValueChange={(val) => setForm({...form, featured_property: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </>
@@ -1828,9 +1830,16 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(13)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 13 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(12)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(14)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(13)}>
                     Back
                   </Button>
                   <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc}>
@@ -2394,39 +2403,43 @@ function PropertiesPage() {
                       <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={editForm.maintenance_instructions || ""} onChange={(e) => setEditForm({...editForm, maintenance_instructions: e.target.value})} />
                     </div>
 
-                    <div className="pt-4 mt-6 border-t border-border grid gap-4">
-                      <h4 className="text-sm font-semibold">Verification Status (Admin)</h4>
-                      <div className="grid gap-2">
-                        <Label>Property Verified</Label>
-                        <Select value={editForm.property_verified ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, property_verified: val === "Yes"})}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Yes">Yes</SelectItem>
-                            <SelectItem value="No">No</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Admin Approval</Label>
-                        <Select value={editForm.admin_approval} onValueChange={(val) => setEditForm({...editForm, admin_approval: val})}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="Approved">Approved</SelectItem>
-                            <SelectItem value="Rejected">Rejected</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Featured Property</Label>
-                        <Select value={editForm.featured_property ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, featured_property: val === "Yes"})}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Yes">Yes</SelectItem>
-                            <SelectItem value="No">No</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="verification">
+                <AccordionTrigger>Verification Status (Admin)</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid gap-4 pt-4">
+                    <div className="grid gap-2">
+                      <Label>Property Verified</Label>
+                      <Select value={editForm.property_verified ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, property_verified: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Admin Approval</Label>
+                      <Select value={editForm.admin_approval} onValueChange={(val) => setEditForm({...editForm, admin_approval: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Approved">Approved</SelectItem>
+                          <SelectItem value="Rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Featured Property</Label>
+                      <Select value={editForm.featured_property ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, featured_property: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </AccordionContent>
