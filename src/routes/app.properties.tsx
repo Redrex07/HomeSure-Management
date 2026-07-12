@@ -835,9 +835,9 @@ function PropertiesPage() {
       water_charges: "",
       parking_charges: "",
       advance_payment: "",
-      available_from: "",
-      visit_timing: "",
-      open_house_date: "",
+      available_from: (p as any).availabilityData?.available_from || "",
+      visit_timing: (p as any).availabilityData?.visit_timing || "",
+      open_house_date: (p as any).availabilityData?.open_house_date || "",
       lease_duration: "",
       wifi: false,
       power_backup: false,
@@ -1053,15 +1053,16 @@ function PropertiesPage() {
 
             <div className="grid gap-2">
               <Label>Status</Label>
-              <select
-                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                value={form.availability_status}
-                onChange={(e) => setForm({ ...form, availability_status: e.target.value })}
-              >
-                <option value="Available">Available</option>
-                <option value="Occupied">Occupied</option>
-                <option value="Under Maintenance">Under Maintenance</option>
-              </select>
+              <Select value={form.availability_status} onValueChange={(val) => setForm({ ...form, availability_status: val })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Available">Available</SelectItem>
+                  <SelectItem value="Occupied">Occupied</SelectItem>
+                  <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">
@@ -2031,20 +2032,16 @@ function PropertiesPage() {
 
             <div className="grid gap-2">
               <Label>Status</Label>
-              <select
-                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
-                value={editForm.availability_status}
-                onChange={(e) =>
-                  setEditForm({
-                    ...editForm,
-                    availability_status: e.target.value,
-                  })
-                }
-              >
-                <option value="Available">Available</option>
-                <option value="Occupied">Occupied</option>
-                <option value="Under Maintenance">Under Maintenance</option>
-              </select>
+              <Select value={editForm.availability_status} onValueChange={(val) => setEditForm({ ...editForm, availability_status: val })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Available">Available</SelectItem>
+                  <SelectItem value="Occupied">Occupied</SelectItem>
+                  <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">

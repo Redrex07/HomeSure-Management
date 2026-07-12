@@ -216,7 +216,7 @@ function PropertyDetailsPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editStep < 10) {
+    if (editStep < 12) {
       setEditStep(editStep + 1);
       return;
     }
@@ -547,26 +547,28 @@ function PropertyDetailsPage() {
                       </div>
                       <div className="grid gap-2">
                         <Label>Category</Label>
-                        <select
-                          className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
-                          value={editForm.Category || ""}
-                          onChange={(e) => setEditForm({ ...editForm, Category: e.target.value })}
-                        >
-                          <option value="Residential">Residential</option>
-                          <option value="Commercial">Commercial</option>
-                        </select>
+                        <Select value={editForm.Category || ""} onValueChange={(val) => setEditForm({ ...editForm, Category: val })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Residential">Residential</SelectItem>
+                            <SelectItem value="Commercial">Commercial</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="grid gap-2 col-span-2">
                         <Label>Status</Label>
-                        <select
-                          className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
-                          value={editForm.availability_status || "Available"}
-                          onChange={(e) => setEditForm({ ...editForm, availability_status: e.target.value })}
-                        >
-                          <option value="Available">Available</option>
-                          <option value="Occupied">Occupied</option>
-                          <option value="Under Maintenance">Under Maintenance</option>
-                        </select>
+                        <Select value={editForm.availability_status || "Available"} onValueChange={(val) => setEditForm({ ...editForm, availability_status: val })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Available">Available</SelectItem>
+                            <SelectItem value="Occupied">Occupied</SelectItem>
+                            <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="grid gap-2 col-span-2">
                         <Label>Description</Label>
