@@ -641,6 +641,13 @@ function PropertiesPage() {
       email: "",
       preferred_contact_time: "Anytime",
       whatsapp_number: "",
+      house_rules: "",
+      noise_restrictions: "",
+      visitor_policy: "",
+      society_rules: "",
+      pets_policy: "Allowed",
+      smoking_policy: "Allowed",
+      maintenance_instructions: "",
     });
     setStep(1);
     setUploadedImages([]);

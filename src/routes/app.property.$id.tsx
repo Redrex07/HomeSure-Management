@@ -1166,7 +1166,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(12)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : (
+              ) : editStep === 12 ? (
                 <>
                   <div className="grid gap-4">
                     <p className="text-sm text-muted-foreground mb-2">Update property availability details.</p>
@@ -1244,7 +1244,7 @@ function PropertyDetailsPage() {
                     </Button>
                   </DialogFooter>
                 </>
-              )}
+              ) : null}
             </form>
           </DialogContent>
         </Dialog>
