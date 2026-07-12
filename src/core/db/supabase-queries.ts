@@ -321,7 +321,7 @@
         const verificationPayload = {
           property_id: propertyId,
           property_verified: payload.property_verified ?? false,
-          admin_approval: payload.admin_approval ?? 'Pending',
+          "admin approval": payload.admin_approval ?? 'Pending',
           featured_property: payload.featured_property ?? false
         };
         const { error: verificationError } = await supabase
@@ -710,7 +710,7 @@
       if (payload.property_verified !== undefined || payload.admin_approval !== undefined || payload.featured_property !== undefined) {
         const verificationUpdate = {
           ...(payload.property_verified !== undefined && { property_verified: payload.property_verified }),
-          ...(payload.admin_approval !== undefined && { admin_approval: payload.admin_approval }),
+          ...(payload.admin_approval !== undefined && { "admin approval": payload.admin_approval }),
           ...(payload.featured_property !== undefined && { featured_property: payload.featured_property })
         };
         
@@ -728,7 +728,7 @@
            await supabase.from("property_verification").insert([{
              property_id: id,
              property_verified: payload.property_verified ?? false,
-             admin_approval: payload.admin_approval ?? 'Pending',
+             "admin approval": payload.admin_approval ?? 'Pending',
              featured_property: payload.featured_property ?? false
            }]);
         }

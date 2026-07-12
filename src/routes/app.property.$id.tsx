@@ -89,7 +89,7 @@ function PropertyDetailsPage() {
     const availability = (property as any)?.availabilityData || {};
     const additionalInformation = (property as any)?.additionalInformationData || {};
     const propertyVerified = (property as any)?.property_verification?.[0]?.property_verified ?? false;
-    const adminApproval = (property as any)?.property_verification?.[0]?.admin_approval ?? "Pending";
+    const adminApproval = (property as any)?.property_verification?.[0]?.['admin approval'] ?? "Pending";
     const featuredProperty = (property as any)?.property_verification?.[0]?.featured_property ?? false;
     
     setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails, ...availability, ...additionalInformation, property_verified: propertyVerified, admin_approval: adminApproval, featured_property: featuredProperty }));
@@ -2043,9 +2043,6 @@ function PropertyDetailsPage() {
             <AccordionItem value="verification" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
               <AccordionTrigger className="hover:no-underline py-4">
                 <div className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-primary" />
-                  </div>
                   <span className="font-semibold text-lg">Verification Status (Admin)</span>
                 </div>
               </AccordionTrigger>
@@ -2057,7 +2054,7 @@ function PropertyDetailsPage() {
                   </div>
                   <div>
                     <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Admin Approval</span>
-                    <span className="font-medium text-base">{(property as any)?.property_verification?.[0]?.admin_approval || "Pending"}</span>
+                    <span className="font-medium text-base">{(property as any)?.property_verification?.[0]?.['admin approval'] || "Pending"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Featured Property</span>

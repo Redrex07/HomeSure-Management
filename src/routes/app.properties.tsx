@@ -935,7 +935,7 @@ function PropertiesPage() {
       smoking_policy: (p as any).additionalInformationData?.smoking_policy || "Allowed",
       maintenance_instructions: (p as any).additionalInformationData?.maintenance_instructions || "",
       property_verified: (p as any).property_verification?.[0]?.property_verified ?? false,
-      admin_approval: (p as any).property_verification?.[0]?.admin_approval ?? "Pending",
+      admin_approval: (p as any).property_verification?.[0]?.['admin approval'] ?? "Pending",
       featured_property: (p as any).property_verification?.[0]?.featured_property ?? false,
     });
     setEditImages(parseImageUrls(p.image_url));
