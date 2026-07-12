@@ -88,7 +88,11 @@ function PropertyDetailsPage() {
     const contactDetails = (property as any)?.contactDetailsData || {};
     const availability = (property as any)?.availabilityData || {};
     const additionalInformation = (property as any)?.additionalInformationData || {};
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails, ...availability, ...additionalInformation }));
+    const propertyVerified = (property as any)?.property_verification?.[0]?.property_verified ?? false;
+    const adminApproval = (property as any)?.property_verification?.[0]?.admin_approval ?? "Pending";
+    const featuredProperty = (property as any)?.property_verification?.[0]?.featured_property ?? false;
+    
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails, ...availability, ...additionalInformation, property_verified: propertyVerified, admin_approval: adminApproval, featured_property: featuredProperty }));
 
     let images = [];
     try {
@@ -217,7 +221,7 @@ function PropertyDetailsPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editStep < 12) {
+    if (editStep < 13) {
       setEditStep(editStep + 1);
       return;
     }
@@ -346,7 +350,10 @@ function PropertyDetailsPage() {
         pets_policy: editForm.pets_policy,
         smoking_policy: editForm.smoking_policy,
         maintenance_instructions: editForm.maintenance_instructions
-      }
+      },
+      property_verified: editForm.property_verified,
+      admin_approval: editForm.admin_approval,
+      featured_property: editForm.featured_property
     };
     
     try {
@@ -537,7 +544,7 @@ function PropertyDetailsPage() {
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 13`}</DialogTitle>
+              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 14`}</DialogTitle>
             </DialogHeader>
             
             <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
@@ -1239,6 +1246,46 @@ function PropertyDetailsPage() {
                   
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(12)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(14)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : editStep === 14 ? (
+                <>
+                  <div className="grid gap-6 sm:grid-cols-2 mt-2">
+                    <div className="space-y-2">
+                      <Label>Property Verified</Label>
+                      <Select value={editForm.property_verified ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, property_verified: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Admin Approval</Label>
+                      <Select value={editForm.admin_approval} onValueChange={(val) => setEditForm({...editForm, admin_approval: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Approved">Approved</SelectItem>
+                          <SelectItem value="Rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Featured Property</Label>
+                      <Select value={editForm.featured_property ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, featured_property: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(13)}>Back</Button>
                     <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc}>
                       {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
                     </Button>
@@ -1990,6 +2037,32 @@ function PropertyDetailsPage() {
                       <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
                     </div>
                   )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="verification" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                  </div>
+                  <span className="font-semibold text-lg">Verification Status (Admin)</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-6">
+                <div className="grid gap-6 sm:grid-cols-2 mt-2">
+                  <div>
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Property Verified</span>
+                    <span className="font-medium text-base">{(property as any)?.property_verification?.[0]?.property_verified ? "Yes" : "No"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Admin Approval</span>
+                    <span className="font-medium text-base">{(property as any)?.property_verification?.[0]?.admin_approval || "Pending"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Featured Property</span>
+                    <span className="font-medium text-base">{(property as any)?.property_verification?.[0]?.featured_property ? "Yes" : "No"}</span>
+                  </div>
                 </div>
               </AccordionContent>
             </AccordionItem>
