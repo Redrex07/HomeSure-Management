@@ -221,10 +221,6 @@ function PropertyDetailsPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editStep < 13) {
-      setEditStep(editStep + 1);
-      return;
-    }
     if (!property) return;
     setIsUpdating(true);
     
@@ -598,10 +594,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
                   
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                    <Button type="button" onClick={() => setEditStep(2)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 2 ? (
                 <>
@@ -652,10 +645,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(1)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(3)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 3 ? (
                 <>
@@ -732,10 +722,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(2)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(4)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 4 ? (
                 <>
@@ -802,10 +789,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(3)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(5)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 5 ? (
                 <>
@@ -848,10 +832,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(4)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(6)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 6 ? (
                 <>
@@ -914,10 +895,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(5)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(7)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 7 ? (
                 <>
@@ -986,10 +964,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(6)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(8)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 8 ? (
                 <>
@@ -1020,10 +995,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(7)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(9)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 9 ? (
                 <>
@@ -1066,10 +1038,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(8)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(10)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 10 ? (
                 <>
@@ -1127,10 +1096,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(9)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(11)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 11 ? (
                 <>
@@ -1168,10 +1134,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(10)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(12)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 12 ? (
                 <>
@@ -1191,10 +1154,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(11)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(13)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 13 ? (
                 <>
@@ -1244,10 +1204,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
                   
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(12)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(14)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 14 ? (
                 <>
@@ -1284,15 +1241,29 @@ function PropertyDetailsPage() {
                       </Select>
                     </div>
                   </div>
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(13)}>Back</Button>
-                    <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc}>
-                      {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </DialogFooter>
+                  
                 </>
               ) : null}
-            </form>
+            
+              <DialogFooter className="mt-6 pt-4 border-t flex sm:justify-between items-center w-full">
+                <div>
+                   {editStep > 1 && (
+                     <Button type="button" variant="outline" onClick={() => setEditStep(editStep - 1)}>Back</Button>
+                   )}
+                   {editStep === 1 && (
+                     <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                   )}
+                </div>
+                <div className="flex gap-2">
+                   <Button type="button" variant="secondary" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc}>
+                     {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
+                   </Button>
+                   {editStep < 14 && (
+                     <Button type="button" onClick={() => setEditStep(editStep + 1)}>Next</Button>
+                   )}
+                </div>
+              </DialogFooter>
+</form>
           </DialogContent>
         </Dialog>
 
