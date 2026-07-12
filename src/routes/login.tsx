@@ -103,7 +103,7 @@ function LoginPage() {
       footer={
         <>
           Don't have an account?{" "}
-          <Link to="/signup" className="font-medium text-primary hover:underline">
+          <Link to="/signup" search={(prev: any) => prev} className="font-medium text-primary hover:underline">
             Create one
           </Link>
         </>

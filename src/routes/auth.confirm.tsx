@@ -9,6 +9,6 @@ export const Route = createFileRoute("/auth/confirm")({
     if (search.token) {
       throw redirect({ to: "/auth/verify", search: { token: search.token } });
     }
-    throw redirect({ to: "/verify-email" });
+    throw redirect({ to: "/verify-email", search: (prev: any) => prev });
   },
 });

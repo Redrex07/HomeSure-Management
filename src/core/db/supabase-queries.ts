@@ -1362,14 +1362,20 @@ function mapInvoiceRow(i: any) {
     rawId: i.invoice_id,
     source: "invoices",
     request: i.service_request_id ? `SR-${i.service_request_id}` : "General Billing",
+    propertyId: null,
+    tenantId: null,
     amount: Number(i.invoice_amount || 0),
     status: i.payment_status || "Pending",
+    paymentStatus: i.payment_status || "Pending",
     issued: i.invoice_date || todayIsoDate(),
     due: i.invoice_date
       ? new Date(new Date(i.invoice_date).getTime() + 14 * 24 * 60 * 60 * 1000)
           .toISOString()
           .split("T")[0]
       : todayIsoDate(),
+    paymentMethod: "",
+    paymentReference: "",
+    receiptUrl: "",
     reason: "",
   };
 }
@@ -2336,7 +2342,7 @@ export async function getTenantLeaseAgreements(tenantId: number) {
 
     const leases = data || [];
     const propertyIds = [...new Set(leases.map((l) => l.property_id).filter(Boolean))];
-    const propertyMap = new Map<number, { property_name?: string; address?: string }>();
+    const propertyMap = new Map<number, { property_name?: string; address?: string; city?: string; state?: string }>();
 
     if (propertyIds.length > 0) {
       const { data: properties } = await supabase

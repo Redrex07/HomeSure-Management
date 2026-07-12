@@ -375,6 +375,11 @@ function PropertiesPage() {
     occupancy_certificate: "",
     property_insurance: "",
     owner_government_id: "",
+    landlord_name: "",
+    mobile_number: "",
+    email: "",
+    preferred_contact_time: "Anytime",
+    whatsapp_number: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
@@ -868,6 +873,18 @@ function PropertiesPage() {
       airport_distance: (p as any).nearbyFacilitiesData?.airport_distance || "",
       supermarket_distance: (p as any).nearbyFacilitiesData?.supermarket_distance || "",
       bank_distance: (p as any).nearbyFacilitiesData?.bank_distance || "",
+      ownership_proof: (p as any).documentsData?.ownership_proof || "",
+      tax_receipt: (p as any).documentsData?.tax_receipt || "",
+      electricity_bill: (p as any).documentsData?.electricity_bill || "",
+      encumbrance_certificate: (p as any).documentsData?.encumbrance_certificate || "",
+      occupancy_certificate: (p as any).documentsData?.occupancy_certificate || "",
+      property_insurance: (p as any).documentsData?.property_insurance || "",
+      owner_government_id: (p as any).documentsData?.owner_government_id || "",
+      landlord_name: (p as any).contactDetailsData?.landlord_name || "",
+      mobile_number: (p as any).contactDetailsData?.mobile_number || "",
+      email: (p as any).contactDetailsData?.email || "",
+      preferred_contact_time: (p as any).contactDetailsData?.preferred_contact_time || "Anytime",
+      whatsapp_number: (p as any).contactDetailsData?.whatsapp_number || "",
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);
@@ -1649,7 +1666,6 @@ function PropertiesPage() {
                     Back
                   </Button>
                   <Button type="button" onClick={() => setStep(11)}>Next</Button>
-                </>
                 </>
               ) : step === 11 ? (
                 <>

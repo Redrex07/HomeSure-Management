@@ -54,7 +54,7 @@ function EstimatesPage() {
 
   const { data: serviceRequests = [] } = useQuery({
     queryKey: ["service-requests"],
-    queryFn: getServiceRequests,
+    queryFn: () => getServiceRequests(),
   });
 
   const { data: contractors = [] } = useQuery({

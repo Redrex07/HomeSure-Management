@@ -1113,7 +1113,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(11)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : (
+              ) : editStep === 11 ? (
                 <>
                   <div className="grid gap-4">
                     <p className="text-sm text-muted-foreground mb-2">Update contact details for the landlord or property manager.</p>
@@ -1154,7 +1154,7 @@ function PropertyDetailsPage() {
                     <Button type="button" onClick={() => setEditStep(12)}>Next</Button>
                   </DialogFooter>
                 </>
-              ) : editStep === 12 ? (
+              ) : (
                 <>
                   <div className="grid gap-4">
                     <p className="text-sm text-muted-foreground mb-2">Update property availability details.</p>
