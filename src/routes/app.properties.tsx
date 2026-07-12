@@ -287,6 +287,9 @@ function PropertiesPage() {
     pets_policy: "Allowed",
     smoking_policy: "Allowed",
     maintenance_instructions: "",
+    property_verified: false,
+    admin_approval: "Pending",
+    featured_property: false,
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -394,6 +397,9 @@ function PropertiesPage() {
     pets_policy: "Allowed",
     smoking_policy: "Allowed",
     maintenance_instructions: "",
+    property_verified: false,
+    admin_approval: "Pending",
+    featured_property: false,
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
@@ -531,7 +537,10 @@ function PropertiesPage() {
           pets_policy: form.pets_policy,
           smoking_policy: form.smoking_policy,
           maintenance_instructions: form.maintenance_instructions
-        }
+        },
+        property_verified: form.property_verified,
+        admin_approval: form.admin_approval,
+        featured_property: form.featured_property
       };
       if (uploadedVideo) {
         payload.Virtual_Tour = uploadedVideo;
@@ -648,6 +657,9 @@ function PropertiesPage() {
       pets_policy: "Allowed",
       smoking_policy: "Allowed",
       maintenance_instructions: "",
+      property_verified: false,
+      admin_approval: "Pending",
+      featured_property: false,
     });
     setStep(1);
     setUploadedImages([]);
@@ -922,6 +934,9 @@ function PropertiesPage() {
       pets_policy: (p as any).additionalInformationData?.pets_policy || "Allowed",
       smoking_policy: (p as any).additionalInformationData?.smoking_policy || "Allowed",
       maintenance_instructions: (p as any).additionalInformationData?.maintenance_instructions || "",
+      property_verified: (p as any).property_verification?.[0]?.property_verified ?? false,
+      admin_approval: (p as any).property_verification?.[0]?.admin_approval ?? "Pending",
+      featured_property: (p as any).property_verification?.[0]?.featured_property ?? false,
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);
@@ -1028,7 +1043,10 @@ function PropertiesPage() {
             pets_policy: editForm.pets_policy,
             smoking_policy: editForm.smoking_policy,
             maintenance_instructions: editForm.maintenance_instructions
-          }
+          },
+          property_verified: editForm.property_verified,
+          admin_approval: editForm.admin_approval,
+          featured_property: editForm.featured_property
         };
         await updateSupabaseProperty(editingProperty.property_id, supabasePayload);
         toast.success("Property updated successfully!");
@@ -1686,6 +1704,41 @@ function PropertiesPage() {
                       <Label>Maintenance Instructions</Label>
                       <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={form.maintenance_instructions} onChange={(e) => setForm({...form, maintenance_instructions: e.target.value})} />
                     </div>
+                    
+                    <div className="pt-4 mt-6 border-t border-border grid gap-4">
+                      <h4 className="text-sm font-semibold">Verification Status (Admin)</h4>
+                      <div className="grid gap-2">
+                        <Label>Property Verified</Label>
+                        <Select value={form.property_verified ? "Yes" : "No"} onValueChange={(val) => setForm({...form, property_verified: val === "Yes"})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Yes">Yes</SelectItem>
+                            <SelectItem value="No">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Admin Approval</Label>
+                        <Select value={form.admin_approval} onValueChange={(val) => setForm({...form, admin_approval: val})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Pending">Pending</SelectItem>
+                            <SelectItem value="Approved">Approved</SelectItem>
+                            <SelectItem value="Rejected">Rejected</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Featured Property</Label>
+                        <Select value={form.featured_property ? "Yes" : "No"} onValueChange={(val) => setForm({...form, featured_property: val === "Yes"})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Yes">Yes</SelectItem>
+                            <SelectItem value="No">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   </div>
                 </>
               ) : null}
@@ -2339,6 +2392,41 @@ function PropertiesPage() {
                     <div className="grid gap-2">
                       <Label>Maintenance Instructions</Label>
                       <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={editForm.maintenance_instructions || ""} onChange={(e) => setEditForm({...editForm, maintenance_instructions: e.target.value})} />
+                    </div>
+
+                    <div className="pt-4 mt-6 border-t border-border grid gap-4">
+                      <h4 className="text-sm font-semibold">Verification Status (Admin)</h4>
+                      <div className="grid gap-2">
+                        <Label>Property Verified</Label>
+                        <Select value={editForm.property_verified ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, property_verified: val === "Yes"})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Yes">Yes</SelectItem>
+                            <SelectItem value="No">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Admin Approval</Label>
+                        <Select value={editForm.admin_approval} onValueChange={(val) => setEditForm({...editForm, admin_approval: val})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Pending">Pending</SelectItem>
+                            <SelectItem value="Approved">Approved</SelectItem>
+                            <SelectItem value="Rejected">Rejected</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Featured Property</Label>
+                        <Select value={editForm.featured_property ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, featured_property: val === "Yes"})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Yes">Yes</SelectItem>
+                            <SelectItem value="No">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 </AccordionContent>

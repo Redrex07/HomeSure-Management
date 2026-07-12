@@ -320,9 +320,9 @@
         // Add Property Verification Default Record
         const verificationPayload = {
           property_id: propertyId,
-          property_verified: false,
-          admin_approval: 'Pending',
-          featured_property: false
+          property_verified: payload.property_verified ?? false,
+          admin_approval: payload.admin_approval ?? 'Pending',
+          featured_property: payload.featured_property ?? false
         };
         const { error: verificationError } = await supabase
           .from("property_verification")
@@ -703,6 +703,34 @@
             .from("property_contact_details")
             .insert([contactPayload]);
           if (insError) console.error("Error inserting property contact details:", insError);
+        }
+      }
+
+      // Update Property Verification
+      if (payload.property_verified !== undefined || payload.admin_approval !== undefined || payload.featured_property !== undefined) {
+        const verificationUpdate = {
+          ...(payload.property_verified !== undefined && { property_verified: payload.property_verified }),
+          ...(payload.admin_approval !== undefined && { admin_approval: payload.admin_approval }),
+          ...(payload.featured_property !== undefined && { featured_property: payload.featured_property })
+        };
+        
+        // Try to update existing record
+        const { data: updateData, error: updateError } = await supabase
+          .from("property_verification")
+          .update(verificationUpdate)
+          .eq("property_id", id)
+          .select();
+          
+        if (updateError) console.error("Error updating property verification:", updateError);
+        
+        // If no record exists yet, insert one
+        if (!updateError && (!updateData || updateData.length === 0)) {
+           await supabase.from("property_verification").insert([{
+             property_id: id,
+             property_verified: payload.property_verified ?? false,
+             admin_approval: payload.admin_approval ?? 'Pending',
+             featured_property: payload.featured_property ?? false
+           }]);
         }
       }
 
