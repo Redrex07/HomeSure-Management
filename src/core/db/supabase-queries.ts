@@ -215,7 +215,7 @@ export async function createProperty(payload: any) {
           smoking_allowed: tenantPreferencesObj.smoking_allowed,
           drinking_allowed: tenantPreferencesObj.drinking_allowed,
           // maximum_occupants column does not exist in schema
-          // maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
+          maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
         };
         const { error: tpError } = await supabase
           .from("tenant_preferences")
@@ -416,7 +416,7 @@ export async function updateProperty(id: number, payload: any) {
         smoking_allowed: tenantPreferencesObj.smoking_allowed,
         drinking_allowed: tenantPreferencesObj.drinking_allowed,
         // maximum_occupants column does not exist in schema
-        // maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
+        maximum_occupants: tenantPreferencesObj.maximum_occupants ? Number(tenantPreferencesObj.maximum_occupants) : null
       };
 
       const { data: existingPref } = await supabase
