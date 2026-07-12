@@ -1021,7 +1021,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 11: Basic Property Information" : step === 2 ? "Step 2 of 11: Location Details" : step === 3 ? "Step 3 of 11: Images & Media" : step === 4 ? "Step 4 of 11: Property Specifications" : step === 5 ? "Step 5 of 11: Rent Details" : step === 6 ? "Step 6 of 11: Amenities" : step === 7 ? "Step 7 of 11: Tenant Preferences" : step === 8 ? "Step 8 of 11: Utility Information" : step === 9 ? "Step 9 of 11: Nearby Facilities" : step === 10 ? "Step 10 of 11: Property Documents" : "Step 11 of 11: Contact Details"}
+              {step === 1 ? "Step 1 of 12: Basic Property Information" : step === 2 ? "Step 2 of 12: Location Details" : step === 3 ? "Step 3 of 12: Images & Media" : step === 4 ? "Step 4 of 12: Property Specifications" : step === 5 ? "Step 5 of 12: Rent Details" : step === 6 ? "Step 6 of 12: Amenities" : step === 7 ? "Step 7 of 12: Tenant Preferences" : step === 8 ? "Step 8 of 12: Utility Information" : step === 9 ? "Step 9 of 12: Nearby Facilities" : step === 10 ? "Step 10 of 12: Property Documents" : step === 11 ? "Step 11 of 12: Contact Details" : "Step 12 of 12: Availability"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -2137,6 +2137,62 @@ function PropertiesPage() {
                     <div className="grid gap-2">
                       <Label>Bank/ATM (km)</Label>
                       <Input type="number" placeholder="e.g. 0.2" value={editForm.bank_distance} onChange={(e) => setEditForm({...editForm, bank_distance: e.target.value})} />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="contact_details">
+                <AccordionTrigger>Contact Details</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Landlord Name *</Label>
+                      <Input placeholder="e.g. John Smith" value={editForm.landlord_name || ""} onChange={(e) => setEditForm({...editForm, landlord_name: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Mobile Number *</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={editForm.mobile_number || ""} onChange={(e) => setEditForm({...editForm, mobile_number: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="e.g. john@email.com" value={editForm.email || ""} onChange={(e) => setEditForm({...editForm, email: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Preferred Contact Time</Label>
+                      <Select value={editForm.preferred_contact_time || "Anytime"} onValueChange={(val) => setEditForm({...editForm, preferred_contact_time: val})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Morning">Morning</SelectItem>
+                          <SelectItem value="Afternoon">Afternoon</SelectItem>
+                          <SelectItem value="Evening">Evening</SelectItem>
+                          <SelectItem value="Anytime">Anytime</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>WhatsApp Number</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={editForm.whatsapp_number || ""} onChange={(e) => setEditForm({...editForm, whatsapp_number: e.target.value})} />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="availability">
+                <AccordionTrigger>Availability</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="grid gap-2">
+                      <Label>Available From</Label>
+                      <Input placeholder="e.g. 1-Aug-26" type="date" value={editForm.available_from || ""} onChange={(e) => setEditForm({...editForm, available_from: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visit Timing</Label>
+                      <Input placeholder="e.g. 10 AM-6 PM" value={editForm.visit_timing || ""} onChange={(e) => setEditForm({...editForm, visit_timing: e.target.value})} />
+                    </div>
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Open House Date (Optional)</Label>
+                      <Input placeholder="e.g. Optional" type="date" value={editForm.open_house_date || ""} onChange={(e) => setEditForm({...editForm, open_house_date: e.target.value})} />
                     </div>
                   </div>
                 </AccordionContent>
