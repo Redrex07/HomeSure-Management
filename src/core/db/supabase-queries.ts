@@ -819,7 +819,7 @@
     try {
       const { data, error } = await supabase
         .from("properties")
-        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_additional_information(*), property_verification(*)")
+        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_additional_information(*), property_verification(*), property_parking(*)")
         .eq("property_id", id)
         .single();
 
