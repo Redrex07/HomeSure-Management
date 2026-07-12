@@ -406,7 +406,7 @@ function PropertiesPage() {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 14) {
+    if (step < 15) {
       setStep(step + 1);
       return;
     }
@@ -537,6 +537,20 @@ function PropertiesPage() {
           pets_policy: form.pets_policy,
           smoking_policy: form.smoking_policy,
           maintenance_instructions: form.maintenance_instructions
+        },
+        property_parking: {
+          parking_available: form.parking_available === true,
+          parking_type: form.parking_type,
+          number_of_parking_slots: form.number_of_parking_slots ? parseInt(form.number_of_parking_slots) : null,
+          vehicle_types_allowed: form.vehicle_types_allowed,
+          reserved_parking: form.reserved_parking === true,
+          visitor_parking_available: form.visitor_parking_available === true,
+          ev_charging_station: form.ev_charging_station === true,
+          parking_slot_numbers: form.parking_slot_numbers,
+          parking_area: form.parking_area,
+          parking_fee: form.parking_fee ? parseFloat(form.parking_fee) : null,
+          parking_availability_timing: form.parking_availability_timing,
+          additional_parking_rules: form.additional_parking_rules
         },
         property_verified: form.property_verified,
         admin_approval: form.admin_approval,
@@ -1044,6 +1058,20 @@ function PropertiesPage() {
             smoking_policy: editForm.smoking_policy,
             maintenance_instructions: editForm.maintenance_instructions
           },
+          property_parking: {
+            parking_available: editForm.parking_available === true,
+            parking_type: editForm.parking_type,
+            number_of_parking_slots: editForm.number_of_parking_slots ? parseInt(editForm.number_of_parking_slots) : null,
+            vehicle_types_allowed: editForm.vehicle_types_allowed,
+            reserved_parking: editForm.reserved_parking === true,
+            visitor_parking_available: editForm.visitor_parking_available === true,
+            ev_charging_station: editForm.ev_charging_station === true,
+            parking_slot_numbers: editForm.parking_slot_numbers,
+            parking_area: editForm.parking_area,
+            parking_fee: editForm.parking_fee ? parseFloat(editForm.parking_fee) : null,
+            parking_availability_timing: editForm.parking_availability_timing,
+            additional_parking_rules: editForm.additional_parking_rules
+          },
           property_verified: editForm.property_verified,
           admin_approval: editForm.admin_approval,
           featured_property: editForm.featured_property
@@ -1085,7 +1113,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 14: Basic Property Information" : step === 2 ? "Step 2 of 14: Location Details" : step === 3 ? "Step 3 of 14: Images & Media" : step === 4 ? "Step 4 of 14: Property Specifications" : step === 5 ? "Step 5 of 14: Rent Details" : step === 6 ? "Step 6 of 14: Amenities" : step === 7 ? "Step 7 of 14: Tenant Preferences" : step === 8 ? "Step 8 of 14: Utility Information" : step === 9 ? "Step 9 of 14: Nearby Facilities" : step === 10 ? "Step 10 of 14: Property Documents" : step === 11 ? "Step 11 of 14: Contact Details" : step === 12 ? "Step 12 of 14: Availability" : step === 13 ? "Step 13 of 14: Additional Information" : "Step 14 of 14: Verification Status (Admin)"}
+              {step === 1 ? "Step 1 of 15: Basic Property Information" : step === 2 ? "Step 2 of 15: Location Details" : step === 3 ? "Step 3 of 15: Images & Media" : step === 4 ? "Step 4 of 15: Property Specifications" : step === 5 ? "Step 5 of 15: Rent Details" : step === 6 ? "Step 6 of 15: Amenities" : step === 7 ? "Step 7 of 15: Tenant Preferences" : step === 8 ? "Step 8 of 15: Utility Information" : step === 9 ? "Step 9 of 15: Nearby Facilities" : step === 10 ? "Step 10 of 15: Property Documents" : step === 11 ? "Step 11 of 15: Contact Details" : step === 12 ? "Step 12 of 15: Availability" : step === 13 ? "Step 13 of 15: Additional Information" : step === 14 ? "Step 14 of 15: Verification Status (Admin)" : "Step 15 of 15: Parking Details"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -1743,6 +1771,71 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
+
+              ) : step === 15 ? (
+                <>
+                  <div className="grid gap-4">
+                    <h4 className="text-sm font-semibold">Parking Details</h4>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="parking_available" checked={form.parking_available} onCheckedChange={(c) => setForm({...form, parking_available: !!c})} />
+                      <Label htmlFor="parking_available">Parking Available</Label>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Type</Label>
+                      <Select value={form.parking_type || ""} onValueChange={(val) => setForm({...form, parking_type: val})}>
+                        <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Covered">Covered</SelectItem>
+                          <SelectItem value="Open">Open</SelectItem>
+                          <SelectItem value="Basement">Basement</SelectItem>
+                          <SelectItem value="Street">Street</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Number of Parking Slots</Label>
+                      <Input type="number" placeholder="e.g. 2" value={form.number_of_parking_slots || ""} onChange={(e) => setForm({...form, number_of_parking_slots: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Vehicle Types Allowed</Label>
+                      <Input placeholder="e.g. Car, Bike, Bicycle, EV" value={form.vehicle_types_allowed || ""} onChange={(e) => setForm({...form, vehicle_types_allowed: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="reserved_parking" checked={form.reserved_parking} onCheckedChange={(c) => setForm({...form, reserved_parking: !!c})} />
+                        <Label htmlFor="reserved_parking">Reserved Parking</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="visitor_parking_available" checked={form.visitor_parking_available} onCheckedChange={(c) => setForm({...form, visitor_parking_available: !!c})} />
+                        <Label htmlFor="visitor_parking_available">Visitor Parking</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="ev_charging_station" checked={form.ev_charging_station} onCheckedChange={(c) => setForm({...form, ev_charging_station: !!c})} />
+                        <Label htmlFor="ev_charging_station">EV Charging Station</Label>
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Slot Number(s)</Label>
+                      <Input placeholder="e.g. P12, B-04" value={form.parking_slot_numbers || ""} onChange={(e) => setForm({...form, parking_slot_numbers: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Area (sq.ft)</Label>
+                      <Input placeholder="e.g. 180 sq.ft" value={form.parking_area || ""} onChange={(e) => setForm({...form, parking_area: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Fee</Label>
+                      <Input type="number" placeholder="e.g. 500" value={form.parking_fee || ""} onChange={(e) => setForm({...form, parking_fee: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Availability Timing</Label>
+                      <Input placeholder="e.g. 24x7 / Restricted Hours" value={form.parking_availability_timing || ""} onChange={(e) => setForm({...form, parking_availability_timing: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Additional Rules</Label>
+                      <Input placeholder="e.g. No commercial vehicles" value={form.additional_parking_rules || ""} onChange={(e) => setForm({...form, additional_parking_rules: e.target.value})} />
+                    </div>
+                  </div>
+                </>
               ) : null}
 
             <SheetFooter className="mt-4 pb-12">
@@ -2333,6 +2426,69 @@ function PropertiesPage() {
                     <div className="grid gap-2">
                       <Label>WhatsApp Number</Label>
                       <Input placeholder="e.g. +91 9876543210" value={editForm.whatsapp_number || ""} onChange={(e) => setEditForm({...editForm, whatsapp_number: e.target.value})} />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="parking_details">
+                <AccordionTrigger>Parking Details</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="flex items-center space-x-2 col-span-2">
+                      <Checkbox id="edit_parking_available" checked={editForm.parking_available} onCheckedChange={(c) => setEditForm({...editForm, parking_available: !!c})} />
+                      <Label htmlFor="edit_parking_available">Parking Available</Label>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Type</Label>
+                      <Select value={editForm.parking_type || ""} onValueChange={(val) => setEditForm({...editForm, parking_type: val})}>
+                        <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Covered">Covered</SelectItem>
+                          <SelectItem value="Open">Open</SelectItem>
+                          <SelectItem value="Basement">Basement</SelectItem>
+                          <SelectItem value="Street">Street</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Number of Parking Slots</Label>
+                      <Input type="number" placeholder="e.g. 2" value={editForm.number_of_parking_slots || ""} onChange={(e) => setEditForm({...editForm, number_of_parking_slots: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Vehicle Types Allowed</Label>
+                      <Input placeholder="e.g. Car, Bike, Bicycle, EV" value={editForm.vehicle_types_allowed || ""} onChange={(e) => setEditForm({...editForm, vehicle_types_allowed: e.target.value})} />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit_reserved_parking" checked={editForm.reserved_parking} onCheckedChange={(c) => setEditForm({...editForm, reserved_parking: !!c})} />
+                      <Label htmlFor="edit_reserved_parking">Reserved Parking</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit_visitor_parking" checked={editForm.visitor_parking_available} onCheckedChange={(c) => setEditForm({...editForm, visitor_parking_available: !!c})} />
+                      <Label htmlFor="edit_visitor_parking">Visitor Parking</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit_ev_charging" checked={editForm.ev_charging_station} onCheckedChange={(c) => setEditForm({...editForm, ev_charging_station: !!c})} />
+                      <Label htmlFor="edit_ev_charging">EV Charging Station</Label>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Slot Number(s)</Label>
+                      <Input placeholder="e.g. P12, B-04" value={editForm.parking_slot_numbers || ""} onChange={(e) => setEditForm({...editForm, parking_slot_numbers: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Area (sq.ft)</Label>
+                      <Input placeholder="e.g. 180 sq.ft" value={editForm.parking_area || ""} onChange={(e) => setEditForm({...editForm, parking_area: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Fee</Label>
+                      <Input type="number" placeholder="e.g. 500" value={editForm.parking_fee || ""} onChange={(e) => setEditForm({...editForm, parking_fee: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Availability Timing</Label>
+                      <Input placeholder="e.g. 24x7 / Restricted Hours" value={editForm.parking_availability_timing || ""} onChange={(e) => setEditForm({...editForm, parking_availability_timing: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2 col-span-2">
+                      <Label>Additional Rules</Label>
+                      <Input placeholder="e.g. No commercial vehicles" value={editForm.additional_parking_rules || ""} onChange={(e) => setEditForm({...editForm, additional_parking_rules: e.target.value})} />
                     </div>
                   </div>
                 </AccordionContent>

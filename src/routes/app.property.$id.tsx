@@ -89,7 +89,7 @@ function PropertyDetailsPage() {
     const availability = (property as any)?.availabilityData || {};
     const additionalInformation = (property as any)?.additionalInformationData || {};
     const propertyVerified = (property as any)?.property_verification?.[0]?.property_verified ?? false;
-    const adminApproval = (property as any)?.property_verification?.[0]?.['admin approval'] ?? "Pending";
+    const adminApproval = (property as any)?.property_verification?.[0]?.admin_approval ?? "Pending";
     const featuredProperty = (property as any)?.property_verification?.[0]?.featured_property ?? false;
     
     setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails, ...availability, ...additionalInformation, property_verified: propertyVerified, admin_approval: adminApproval, featured_property: featuredProperty }));
@@ -347,6 +347,20 @@ function PropertyDetailsPage() {
         smoking_policy: editForm.smoking_policy,
         maintenance_instructions: editForm.maintenance_instructions
       },
+      property_parking: {
+        parking_available: editForm.parking_available === true,
+        parking_type: editForm.parking_type,
+        number_of_parking_slots: editForm.number_of_parking_slots ? parseInt(editForm.number_of_parking_slots) : null,
+        vehicle_types_allowed: editForm.vehicle_types_allowed,
+        reserved_parking: editForm.reserved_parking === true,
+        visitor_parking_available: editForm.visitor_parking_available === true,
+        ev_charging_station: editForm.ev_charging_station === true,
+        parking_slot_numbers: editForm.parking_slot_numbers,
+        parking_area: editForm.parking_area,
+        parking_fee: editForm.parking_fee ? parseFloat(editForm.parking_fee) : null,
+        parking_availability_timing: editForm.parking_availability_timing,
+        additional_parking_rules: editForm.additional_parking_rules
+      },
       property_verified: editForm.property_verified,
       admin_approval: editForm.admin_approval,
       featured_property: editForm.featured_property
@@ -540,7 +554,7 @@ function PropertyDetailsPage() {
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 14`}</DialogTitle>
+              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 15`}</DialogTitle>
             </DialogHeader>
             
             <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
@@ -1206,7 +1220,7 @@ function PropertyDetailsPage() {
                   
                   
                 </>
-              ) : editStep === 14 ? (
+              ) : editStep === 15 ? (
                 <>
                   <div className="grid gap-6 sm:grid-cols-2 mt-2">
                     <div className="space-y-2">
@@ -1258,7 +1272,7 @@ function PropertyDetailsPage() {
                    <Button type="button" variant="secondary" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc}>
                      {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
                    </Button>
-                   {editStep < 14 && (
+                   {editStep < 15 && (
                      <Button type="button" onClick={() => setEditStep(editStep + 1)}>Next</Button>
                    )}
                 </div>
@@ -2011,6 +2025,74 @@ function PropertyDetailsPage() {
                 </div>
               </AccordionContent>
             </AccordionItem>
+            <AccordionItem value="parking" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-lg">Parking Details</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-6">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-2">
+                  {(property as any)?.parkingData ? (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Available</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_available ? "Yes" : "No"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Type</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_type || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Number of Slots</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.number_of_parking_slots || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Vehicle Types</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.vehicle_types_allowed || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Reserved</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.reserved_parking ? "Yes" : "No"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Visitor Parking</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.visitor_parking_available ? "Yes" : "No"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">EV Charging</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.ev_charging_station ? "Yes" : "No"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Slot Numbers</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_slot_numbers || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Area</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_area || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Fee</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_fee ? `₹${(property as any).parkingData.parking_fee}` : "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Timing</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_availability_timing || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Additional Rules</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.additional_parking_rules || "—"}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2 md:col-span-3">
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Details</span>
+                      <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
             <AccordionItem value="verification" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
               <AccordionTrigger className="hover:no-underline py-4">
                 <div className="flex items-center gap-3">
@@ -2025,7 +2107,7 @@ function PropertyDetailsPage() {
                   </div>
                   <div>
                     <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Admin Approval</span>
-                    <span className="font-medium text-base">{(property as any)?.property_verification?.[0]?.['admin approval'] || "Pending"}</span>
+                    <span className="font-medium text-base">{(property as any)?.property_verification?.[0]?.admin_approval || "Pending"}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Featured Property</span>

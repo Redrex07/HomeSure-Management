@@ -73,7 +73,7 @@
     try {
       console.log("🔍 Fetching ALL properties...");
 
-      const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_verification(*)");
+      const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_verification(*), property_parking(*)");
 
       console.log("📊 DATA:", data);
       console.log("❌ ERROR:", error);
@@ -93,7 +93,7 @@
     try {
       const { data, error } = await supabase
         .from("properties")
-        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_additional_information(*), property_verification(*)")
+        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_additional_information(*), property_verification(*), property_parking(*)")
         .eq("landlord_id", landlordId)
         .order("property_id", { ascending: false });
 
@@ -135,6 +135,9 @@
 
       const propertyAdditionalInformationObj = payload.property_additional_information;
       delete payload.property_additional_information;
+
+      const propertyParkingObj = payload.property_parking;
+      delete payload.property_parking;
 
       const propertyVerified = payload.property_verified;
       delete payload.property_verified;
@@ -322,6 +325,18 @@
             .from("property_contact_details")
             .insert([contactPayload]);
           if (contactError) console.error("Error creating property contact details:", contactError);
+        }
+
+        // Add Property Parking Details
+        if (propertyParkingObj) {
+          const parkingPayload = {
+            property_id: propertyId,
+            ...propertyParkingObj
+          };
+          const { error: parkingError } = await supabase
+            .from("property_parking")
+            .insert([parkingPayload]);
+          if (parkingError) console.error("Error creating property parking:", parkingError);
         }
 
         // Add Property Verification Default Record
@@ -720,6 +735,32 @@
         }
       }
 
+      // Update Property Parking Details
+      if (propertyParkingObj) {
+        const parkingPayload = {
+          property_id: id,
+          ...propertyParkingObj
+        };
+        const { data: existingParking } = await supabase
+          .from("property_parking")
+          .select("parking_id")
+          .eq("property_id", id)
+          .maybeSingle();
+
+        if (existingParking) {
+          const { error: upError } = await supabase
+            .from("property_parking")
+            .update(parkingPayload)
+            .eq("property_id", id);
+          if (upError) console.error("Error updating parking details:", upError);
+        } else {
+          const { error: insError } = await supabase
+            .from("property_parking")
+            .insert([parkingPayload]);
+          if (insError) console.error("Error inserting parking details:", insError);
+        }
+      }
+
       // Update Property Verification
       if (propertyVerified !== undefined || adminApproval !== undefined || featuredProperty !== undefined) {
         const verificationUpdate = {
@@ -810,6 +851,9 @@
 
         data.additionalInformationData = data.property_additional_information?.[0] || data.property_additional_information || null;
         delete data.property_additional_information;
+
+        data.parkingData = data.property_parking?.[0] || data.property_parking || null;
+        delete data.property_parking;
 
         data.contactDetailsData = data.property_contact_details?.[0] || data.property_contact_details || null;
         delete data.property_contact_details;
