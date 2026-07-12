@@ -136,6 +136,13 @@
       const propertyAdditionalInformationObj = payload.property_additional_information;
       delete payload.property_additional_information;
 
+      const propertyVerified = payload.property_verified;
+      delete payload.property_verified;
+      const adminApproval = payload.admin_approval;
+      delete payload.admin_approval;
+      const featuredProperty = payload.featured_property;
+      delete payload.featured_property;
+
       let rentDetailsObj: any = null;
       if (payload.specifications) {
         try {
@@ -320,9 +327,9 @@
         // Add Property Verification Default Record
         const verificationPayload = {
           property_id: propertyId,
-          property_verified: payload.property_verified ?? false,
-          "admin approval": payload.admin_approval ?? 'Pending',
-          featured_property: payload.featured_property ?? false
+          property_verified: propertyVerified ?? false,
+          "admin approval": adminApproval ?? 'Pending',
+          featured_property: featuredProperty ?? false
         };
         const { error: verificationError } = await supabase
           .from("property_verification")
@@ -358,6 +365,13 @@
 
       const propertyAdditionalInformationObj = payload.property_additional_information;
       delete payload.property_additional_information;
+
+      const propertyVerified = payload.property_verified;
+      delete payload.property_verified;
+      const adminApproval = payload.admin_approval;
+      delete payload.admin_approval;
+      const featuredProperty = payload.featured_property;
+      delete payload.featured_property;
 
       const propertyContactDetailsObj = payload.property_contact_details;
       delete payload.property_contact_details;
@@ -707,11 +721,11 @@
       }
 
       // Update Property Verification
-      if (payload.property_verified !== undefined || payload.admin_approval !== undefined || payload.featured_property !== undefined) {
+      if (propertyVerified !== undefined || adminApproval !== undefined || featuredProperty !== undefined) {
         const verificationUpdate = {
-          ...(payload.property_verified !== undefined && { property_verified: payload.property_verified }),
-          ...(payload.admin_approval !== undefined && { "admin approval": payload.admin_approval }),
-          ...(payload.featured_property !== undefined && { featured_property: payload.featured_property })
+          ...(propertyVerified !== undefined && { property_verified: propertyVerified }),
+          ...(adminApproval !== undefined && { "admin approval": adminApproval }),
+          ...(featuredProperty !== undefined && { featured_property: featuredProperty })
         };
         
         // Try to update existing record
@@ -727,9 +741,9 @@
         if (!updateError && (!updateData || updateData.length === 0)) {
            await supabase.from("property_verification").insert([{
              property_id: id,
-             property_verified: payload.property_verified ?? false,
-             "admin approval": payload.admin_approval ?? 'Pending',
-             featured_property: payload.featured_property ?? false
+             property_verified: propertyVerified ?? false,
+             "admin approval": adminApproval ?? 'Pending',
+             featured_property: featuredProperty ?? false
            }]);
         }
       }
