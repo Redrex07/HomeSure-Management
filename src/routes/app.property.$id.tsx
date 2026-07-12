@@ -527,7 +527,7 @@ function PropertyDetailsPage() {
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 11`}</DialogTitle>
+              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 12`}</DialogTitle>
             </DialogHeader>
             
             <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
@@ -1493,37 +1493,6 @@ function PropertyDetailsPage() {
               </AccordionContent>
             </AccordionItem>
 
-            {/* Availability Accordion */}
-            <AccordionItem value="availability" className="border rounded-xl px-6 bg-card shadow-sm">
-              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Availability
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
-                  {(property as any).availabilityData ? (
-                    <>
-                      <div>
-                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Available From</span>
-                        <span className="font-medium text-base">{(property as any).availabilityData.available_from || "—"}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Visit Timing</span>
-                        <span className="font-medium text-base">{(property as any).availabilityData.visit_timing || "—"}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Open House Date</span>
-                        <span className="font-medium text-base">{(property as any).availabilityData.open_house_date || "—"}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="sm:col-span-2 md:col-span-3">
-                      <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Availability</span>
-                      <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
-                    </div>
-                  )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
           </Accordion>
 
           {/* Amenities Accordion */}
@@ -1872,6 +1841,40 @@ function PropertyDetailsPage() {
 
                     return elements;
                   })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Availability Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="availability" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Availability
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
+                  {(property as any).availabilityData ? (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Available From</span>
+                        <span className="font-medium text-base">{(property as any).availabilityData.available_from || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Visit Timing</span>
+                        <span className="font-medium text-base">{(property as any).availabilityData.visit_timing || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Open House Date</span>
+                        <span className="font-medium text-base">{(property as any).availabilityData.open_house_date || "—"}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2 md:col-span-3">
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Availability</span>
+                      <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
+                    </div>
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>
