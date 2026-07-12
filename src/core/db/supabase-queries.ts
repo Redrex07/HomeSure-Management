@@ -550,20 +550,6 @@
       // Handle Property Availability
       if (propertyAvailabilityObj) {
         const availabilityPayload = {
-          property_id: propertyId,
-          available_from: propertyAvailabilityObj.available_from || null,
-          visit_timing: propertyAvailabilityObj.visit_timing || null,
-          open_house_date: propertyAvailabilityObj.open_house_date || null,
-        };
-        const { error: availabilityError } = await supabase
-          .from("property_availability")
-          .insert([availabilityPayload]);
-        if (availabilityError) console.error("Error creating property availability:", availabilityError);
-      }
-
-      // Handle Property Contact Details
-      if (propertyAvailabilityObj) {
-        const availabilityPayload = {
           property_id: id,
           available_from: propertyAvailabilityObj.available_from || null,
           visit_timing: propertyAvailabilityObj.visit_timing || null,
