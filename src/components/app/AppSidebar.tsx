@@ -128,6 +128,16 @@ contractor: [
   ],
 };
 
+export function AppSidebar() {
+  const session = useSession();
+  const role: Role = session?.role ?? "tenant";
+  const groups = NAV_BY_ROLE[role] || NAV_BY_ROLE.tenant;
+  const path = useRouterState({ select: (r) => r.location.pathname });
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+
+  const isActive = (url: string) => path === url || path.startsWith(url + "/");
+
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
@@ -183,4 +193,4 @@ contractor: [
       </SidebarFooter>
     </Sidebar>
   );
-
+}
