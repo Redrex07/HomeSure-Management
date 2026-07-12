@@ -280,6 +280,13 @@ function PropertiesPage() {
     email: "",
     preferred_contact_time: "Anytime",
     whatsapp_number: "",
+    house_rules: "",
+    noise_restrictions: "",
+    visitor_policy: "",
+    society_rules: "",
+    pets_policy: "Allowed",
+    smoking_policy: "Allowed",
+    maintenance_instructions: "",
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -380,13 +387,20 @@ function PropertiesPage() {
     email: "",
     preferred_contact_time: "Anytime",
     whatsapp_number: "",
+    house_rules: "",
+    noise_restrictions: "",
+    visitor_policy: "",
+    society_rules: "",
+    pets_policy: "Allowed",
+    smoking_policy: "Allowed",
+    maintenance_instructions: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 12) {
+    if (step < 13) {
       setStep(step + 1);
       return;
     }
@@ -508,6 +522,15 @@ function PropertiesPage() {
           email: form.email,
           preferred_contact_time: form.preferred_contact_time,
           whatsapp_number: form.whatsapp_number
+        },
+        property_additional_information: {
+          house_rules: form.house_rules,
+          noise_restrictions: form.noise_restrictions,
+          visitor_policy: form.visitor_policy,
+          society_rules: form.society_rules,
+          pets_policy: form.pets_policy,
+          smoking_policy: form.smoking_policy,
+          maintenance_instructions: form.maintenance_instructions
         }
       };
       if (uploadedVideo) {
@@ -885,6 +908,13 @@ function PropertiesPage() {
       email: (p as any).contactDetailsData?.email || "",
       preferred_contact_time: (p as any).contactDetailsData?.preferred_contact_time || "Anytime",
       whatsapp_number: (p as any).contactDetailsData?.whatsapp_number || "",
+      house_rules: (p as any).additionalInformationData?.house_rules || "",
+      noise_restrictions: (p as any).additionalInformationData?.noise_restrictions || "",
+      visitor_policy: (p as any).additionalInformationData?.visitor_policy || "",
+      society_rules: (p as any).additionalInformationData?.society_rules || "",
+      pets_policy: (p as any).additionalInformationData?.pets_policy || "Allowed",
+      smoking_policy: (p as any).additionalInformationData?.smoking_policy || "Allowed",
+      maintenance_instructions: (p as any).additionalInformationData?.maintenance_instructions || "",
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);
@@ -982,6 +1012,15 @@ function PropertiesPage() {
             airport_distance: editForm.airport_distance,
             supermarket_distance: editForm.supermarket_distance,
             bank_distance: editForm.bank_distance
+          },
+          property_additional_information: {
+            house_rules: editForm.house_rules,
+            noise_restrictions: editForm.noise_restrictions,
+            visitor_policy: editForm.visitor_policy,
+            society_rules: editForm.society_rules,
+            pets_policy: editForm.pets_policy,
+            smoking_policy: editForm.smoking_policy,
+            maintenance_instructions: editForm.maintenance_instructions
           }
         };
         await updateSupabaseProperty(editingProperty.property_id, supabasePayload);
@@ -1021,7 +1060,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 12: Basic Property Information" : step === 2 ? "Step 2 of 12: Location Details" : step === 3 ? "Step 3 of 12: Images & Media" : step === 4 ? "Step 4 of 12: Property Specifications" : step === 5 ? "Step 5 of 12: Rent Details" : step === 6 ? "Step 6 of 12: Amenities" : step === 7 ? "Step 7 of 12: Tenant Preferences" : step === 8 ? "Step 8 of 12: Utility Information" : step === 9 ? "Step 9 of 12: Nearby Facilities" : step === 10 ? "Step 10 of 12: Property Documents" : step === 11 ? "Step 11 of 12: Contact Details" : "Step 12 of 12: Availability"}
+              {step === 1 ? "Step 1 of 13: Basic Property Information" : step === 2 ? "Step 2 of 13: Location Details" : step === 3 ? "Step 3 of 13: Images & Media" : step === 4 ? "Step 4 of 13: Property Specifications" : step === 5 ? "Step 5 of 13: Rent Details" : step === 6 ? "Step 6 of 13: Amenities" : step === 7 ? "Step 7 of 13: Tenant Preferences" : step === 8 ? "Step 8 of 13: Utility Information" : step === 9 ? "Step 9 of 13: Nearby Facilities" : step === 10 ? "Step 10 of 13: Property Documents" : step === 11 ? "Step 11 of 13: Contact Details" : step === 12 ? "Step 12 of 13: Availability" : "Step 13 of 13: Additional Information"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -1595,6 +1634,53 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
+              ) : step === 13 ? (
+                <>
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label>House Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. No loud music after 10 PM" value={form.house_rules} onChange={(e) => setForm({...form, house_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Noise Restrictions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Keep noise down during afternoon" value={form.noise_restrictions} onChange={(e) => setForm({...form, noise_restrictions: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visitor Policy</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Visitors allowed until 11 PM" value={form.visitor_policy} onChange={(e) => setForm({...form, visitor_policy: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Society Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Use service lift for moving furniture" value={form.society_rules} onChange={(e) => setForm({...form, society_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Pets Policy</Label>
+                      <Select value={form.pets_policy || "Allowed"} onValueChange={(val) => setForm({...form, pets_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Conditional">Conditional</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Smoking Policy</Label>
+                      <Select value={form.smoking_policy || "Allowed"} onValueChange={(val) => setForm({...form, smoking_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Designated Area">Designated Area</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Maintenance Instructions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={form.maintenance_instructions} onChange={(e) => setForm({...form, maintenance_instructions: e.target.value})} />
+                    </div>
+                  </div>
+                </>
               ) : null}
 
             <SheetFooter className="mt-4 pb-12">
@@ -1675,9 +1761,16 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(12)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 12 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(11)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(13)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(12)}>
                     Back
                   </Button>
                   <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc}>
@@ -2190,6 +2283,55 @@ function PropertiesPage() {
                     <div className="col-span-2 grid gap-2">
                       <Label>Open House Date (Optional)</Label>
                       <Input placeholder="e.g. Optional" type="date" value={editForm.open_house_date || ""} onChange={(e) => setEditForm({...editForm, open_house_date: e.target.value})} />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="additional_information">
+                <AccordionTrigger>Additional Information</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid gap-4 pt-4">
+                    <div className="grid gap-2">
+                      <Label>House Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. No loud music after 10 PM" value={editForm.house_rules || ""} onChange={(e) => setEditForm({...editForm, house_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Noise Restrictions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Keep noise down during afternoon" value={editForm.noise_restrictions || ""} onChange={(e) => setEditForm({...editForm, noise_restrictions: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visitor Policy</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Visitors allowed until 11 PM" value={editForm.visitor_policy || ""} onChange={(e) => setEditForm({...editForm, visitor_policy: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Society Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Use service lift for moving furniture" value={editForm.society_rules || ""} onChange={(e) => setEditForm({...editForm, society_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Pets Policy</Label>
+                      <Select value={editForm.pets_policy || "Allowed"} onValueChange={(val) => setEditForm({...editForm, pets_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Conditional">Conditional</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Smoking Policy</Label>
+                      <Select value={editForm.smoking_policy || "Allowed"} onValueChange={(val) => setEditForm({...editForm, smoking_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Designated Area">Designated Area</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Maintenance Instructions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={editForm.maintenance_instructions || ""} onChange={(e) => setEditForm({...editForm, maintenance_instructions: e.target.value})} />
                     </div>
                   </div>
                 </AccordionContent>

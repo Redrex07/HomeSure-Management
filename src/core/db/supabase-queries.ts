@@ -93,7 +93,7 @@
     try {
       const { data, error } = await supabase
         .from("properties")
-        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*)")
+        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_additional_information(*)")
         .eq("landlord_id", landlordId)
         .order("property_id", { ascending: false });
 
@@ -132,6 +132,9 @@
 
       const propertyDocumentsObj = payload.property_documents;
       delete payload.property_documents;
+
+      const propertyAdditionalInformationObj = payload.property_additional_information;
+      delete payload.property_additional_information;
 
       let rentDetailsObj: any = null;
       if (payload.specifications) {
@@ -279,6 +282,25 @@
           if (documentsError) console.error("Error creating property documents:", documentsError);
         }
 
+        // Add Property Additional Information
+        if (propertyAdditionalInformationObj) {
+          const additionalInfoPayload = {
+            property_id: propertyId,
+            house_rules: propertyAdditionalInformationObj.house_rules || null,
+            noise_restrictions: propertyAdditionalInformationObj.noise_restrictions || null,
+            visitor_policy: propertyAdditionalInformationObj.visitor_policy || null,
+            society_rules: propertyAdditionalInformationObj.society_rules || null,
+            pets_policy: propertyAdditionalInformationObj.pets_policy || null,
+            smoking_policy: propertyAdditionalInformationObj.smoking_policy || null,
+            maintenance_instructions: propertyAdditionalInformationObj.maintenance_instructions || null,
+          };
+          const { error: additionalInfoError } = await supabase
+            .from("property_additional_information")
+            .insert([additionalInfoPayload]);
+          if (additionalInfoError) console.error("Error creating property additional information:", additionalInfoError);
+        }
+
+
         // Add Property Contact Details
         if (propertyContactDetailsObj) {
           const contactPayload = {
@@ -321,6 +343,9 @@
 
       const propertyDocumentsObj = payload.property_documents;
       delete payload.property_documents;
+
+      const propertyAdditionalInformationObj = payload.property_additional_information;
+      delete payload.property_additional_information;
 
       const propertyContactDetailsObj = payload.property_contact_details;
       delete payload.property_contact_details;
@@ -547,6 +572,70 @@
         }
       }
 
+      if (propertyAdditionalInformationObj) {
+        const additionalInfoPayload = {
+          property_id: id,
+          house_rules: propertyAdditionalInformationObj.house_rules || null,
+          noise_restrictions: propertyAdditionalInformationObj.noise_restrictions || null,
+          visitor_policy: propertyAdditionalInformationObj.visitor_policy || null,
+          society_rules: propertyAdditionalInformationObj.society_rules || null,
+          pets_policy: propertyAdditionalInformationObj.pets_policy || null,
+          smoking_policy: propertyAdditionalInformationObj.smoking_policy || null,
+          maintenance_instructions: propertyAdditionalInformationObj.maintenance_instructions || null,
+        };
+
+        const { data: existingAdditionalInfo } = await supabase
+          .from("property_additional_information")
+          .select("information_id")
+          .eq("property_id", id)
+          .maybeSingle();
+
+        if (existingAdditionalInfo) {
+          const { error: upError } = await supabase
+            .from("property_additional_information")
+            .update(additionalInfoPayload)
+            .eq("property_id", id);
+          if (upError) console.error("Error updating property additional information:", upError);
+        } else {
+          const { error: insError } = await supabase
+            .from("property_additional_information")
+            .insert([additionalInfoPayload]);
+          if (insError) console.error("Error inserting property additional information:", insError);
+        }
+      }
+
+      if (propertyAdditionalInformationObj) {
+        const additionalInfoPayload = {
+          property_id: id,
+          house_rules: propertyAdditionalInformationObj.house_rules || null,
+          noise_restrictions: propertyAdditionalInformationObj.noise_restrictions || null,
+          visitor_policy: propertyAdditionalInformationObj.visitor_policy || null,
+          society_rules: propertyAdditionalInformationObj.society_rules || null,
+          pets_policy: propertyAdditionalInformationObj.pets_policy || null,
+          smoking_policy: propertyAdditionalInformationObj.smoking_policy || null,
+          maintenance_instructions: propertyAdditionalInformationObj.maintenance_instructions || null,
+        };
+
+        const { data: existingAdditionalInfo } = await supabase
+          .from("property_additional_information")
+          .select("information_id")
+          .eq("property_id", id)
+          .maybeSingle();
+
+        if (existingAdditionalInfo) {
+          const { error: upError } = await supabase
+            .from("property_additional_information")
+            .update(additionalInfoPayload)
+            .eq("property_id", id);
+          if (upError) console.error("Error updating property additional information:", upError);
+        } else {
+          const { error: insError } = await supabase
+            .from("property_additional_information")
+            .insert([additionalInfoPayload]);
+          if (insError) console.error("Error inserting property additional information:", insError);
+        }
+      }
+
       // Handle Property Availability
       if (propertyAvailabilityObj) {
         const availabilityPayload = {
@@ -632,7 +721,7 @@
     try {
       const { data, error } = await supabase
         .from("properties")
-        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*)")
+        .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*), property_additional_information(*)")
         .eq("property_id", id)
         .single();
 
@@ -664,6 +753,9 @@
 
         data.documentsData = data.property_documents?.[0] || data.property_documents || null;
         delete data.property_documents;
+
+        data.additionalInformationData = data.property_additional_information?.[0] || data.property_additional_information || null;
+        delete data.property_additional_information;
 
         data.contactDetailsData = data.property_contact_details?.[0] || data.property_contact_details || null;
         delete data.property_contact_details;

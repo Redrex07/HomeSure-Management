@@ -87,7 +87,8 @@ function PropertyDetailsPage() {
     const documents = (property as any)?.documentsData || {};
     const contactDetails = (property as any)?.contactDetailsData || {};
     const availability = (property as any)?.availabilityData || {};
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails, ...availability }));
+    const additionalInformation = (property as any)?.additionalInformationData || {};
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails, ...availability, ...additionalInformation }));
 
     let images = [];
     try {
@@ -336,6 +337,15 @@ function PropertyDetailsPage() {
         email: editForm.email,
         preferred_contact_time: editForm.preferred_contact_time,
         whatsapp_number: editForm.whatsapp_number
+      },
+      property_additional_information: {
+        house_rules: editForm.house_rules,
+        noise_restrictions: editForm.noise_restrictions,
+        visitor_policy: editForm.visitor_policy,
+        society_rules: editForm.society_rules,
+        pets_policy: editForm.pets_policy,
+        smoking_policy: editForm.smoking_policy,
+        maintenance_instructions: editForm.maintenance_instructions
       }
     };
     
@@ -527,7 +537,7 @@ function PropertyDetailsPage() {
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 12`}</DialogTitle>
+              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 13`}</DialogTitle>
             </DialogHeader>
             
             <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
@@ -1176,6 +1186,59 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(11)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(13)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : editStep === 13 ? (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Update property additional information.</p>
+                    <div className="grid gap-2">
+                      <Label>House Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. No loud music after 10 PM" value={editForm.house_rules || ""} onChange={(e) => setEditForm({...editForm, house_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Noise Restrictions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Keep noise down during afternoon" value={editForm.noise_restrictions || ""} onChange={(e) => setEditForm({...editForm, noise_restrictions: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visitor Policy</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Visitors allowed until 11 PM" value={editForm.visitor_policy || ""} onChange={(e) => setEditForm({...editForm, visitor_policy: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Society Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Use service lift for moving furniture" value={editForm.society_rules || ""} onChange={(e) => setEditForm({...editForm, society_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Pets Policy</Label>
+                      <Select value={editForm.pets_policy || "Allowed"} onValueChange={(val) => setEditForm({...editForm, pets_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Conditional">Conditional</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Smoking Policy</Label>
+                      <Select value={editForm.smoking_policy || "Allowed"} onValueChange={(val) => setEditForm({...editForm, smoking_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Designated Area">Designated Area</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Maintenance Instructions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={editForm.maintenance_instructions || ""} onChange={(e) => setEditForm({...editForm, maintenance_instructions: e.target.value})} />
+                    </div>
+                  </div>
+                  
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(12)}>Back</Button>
                     <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc}>
                       {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
                     </Button>
@@ -1874,6 +1937,56 @@ function PropertyDetailsPage() {
                   ) : (
                     <div className="sm:col-span-2 md:col-span-3">
                       <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Availability</span>
+                      <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Additional Information Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="additional_information" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Additional Information
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
+                  {(property as any).additionalInformationData ? (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">House Rules</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.house_rules || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Noise Restrictions</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.noise_restrictions || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Visitor Policy</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.visitor_policy || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Society Rules</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.society_rules || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Pets Policy</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.pets_policy || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Smoking Policy</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.smoking_policy || "—"}</span>
+                      </div>
+                      <div className="md:col-span-3">
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Maintenance Instructions</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.maintenance_instructions || "—"}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2 md:col-span-3">
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Additional Information</span>
                       <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
                     </div>
                   )}
