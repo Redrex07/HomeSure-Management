@@ -394,6 +394,9 @@
       const propertyAvailabilityObj = payload.property_availability;
       delete payload.property_availability;
 
+      const propertyParkingObj = payload.property_parking;
+      delete payload.property_parking;
+
       let rentDetailsObj: any = null;
       if (payload.specifications) {
         try {
