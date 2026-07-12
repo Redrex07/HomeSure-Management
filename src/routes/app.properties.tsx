@@ -214,6 +214,7 @@ function PropertiesPage() {
       toast.error("Could not save review: " + (err.message || String(err)));
     }
   };
+
   const [editForm, setEditForm] = useState({
     property_name: "",
     property_type: "",
@@ -281,15 +282,6 @@ function PropertiesPage() {
     preferred_contact_time: "Anytime",
     whatsapp_number: "",
     house_rules: "",
-    noise_restrictions: "",
-    visitor_policy: "",
-    society_rules: "",
-    pets_policy: "Allowed",
-    smoking_policy: "Allowed",
-    maintenance_instructions: "",
-    property_verified: false,
-    admin_approval: "Pending",
-    featured_property: false,
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
