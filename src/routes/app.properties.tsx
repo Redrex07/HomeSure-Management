@@ -1113,7 +1113,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 15: Basic Property Information" : step === 2 ? "Step 2 of 15: Location Details" : step === 3 ? "Step 3 of 15: Images & Media" : step === 4 ? "Step 4 of 15: Property Specifications" : step === 5 ? "Step 5 of 15: Rent Details" : step === 6 ? "Step 6 of 15: Amenities" : step === 7 ? "Step 7 of 15: Tenant Preferences" : step === 8 ? "Step 8 of 15: Utility Information" : step === 9 ? "Step 9 of 15: Nearby Facilities" : step === 10 ? "Step 10 of 15: Property Documents" : step === 11 ? "Step 11 of 15: Contact Details" : step === 12 ? "Step 12 of 15: Availability" : step === 13 ? "Step 13 of 15: Additional Information" : step === 14 ? "Step 14 of 15: Verification Status (Admin)" : "Step 15 of 15: Parking Details"}
+              {step === 1 ? "Step 1 of 15: Basic Property Information" : step === 2 ? "Step 2 of 15: Location Details" : step === 3 ? "Step 3 of 15: Images & Media" : step === 4 ? "Step 4 of 15: Property Specifications" : step === 5 ? "Step 5 of 15: Rent Details" : step === 6 ? "Step 6 of 15: Amenities" : step === 7 ? "Step 7 of 15: Tenant Preferences" : step === 8 ? "Step 8 of 15: Utility Information" : step === 9 ? "Step 9 of 15: Nearby Facilities" : step === 10 ? "Step 10 of 15: Property Documents" : step === 11 ? "Step 11 of 15: Contact Details" : step === 12 ? "Step 12 of 15: Availability" : step === 13 ? "Step 13 of 15: Additional Information" : step === 14 ? "Step 14 of 15: Parking Details" : "Step 15 of 15: Verification Status (Admin)"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -1737,44 +1737,6 @@ function PropertiesPage() {
               ) : step === 14 ? (
                 <>
                   <div className="grid gap-4">
-                    <h4 className="text-sm font-semibold">Verification Status (Admin)</h4>
-                    <div className="grid gap-2">
-                      <Label>Property Verified</Label>
-                      <Select value={form.property_verified ? "Yes" : "No"} onValueChange={(val) => setForm({...form, property_verified: val === "Yes"})}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Yes">Yes</SelectItem>
-                          <SelectItem value="No">No</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Admin Approval</Label>
-                      <Select value={form.admin_approval} onValueChange={(val) => setForm({...form, admin_approval: val})}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Pending">Pending</SelectItem>
-                          <SelectItem value="Approved">Approved</SelectItem>
-                          <SelectItem value="Rejected">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Featured Property</Label>
-                      <Select value={form.featured_property ? "Yes" : "No"} onValueChange={(val) => setForm({...form, featured_property: val === "Yes"})}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Yes">Yes</SelectItem>
-                          <SelectItem value="No">No</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </>
-
-              ) : step === 15 ? (
-                <>
-                  <div className="grid gap-4">
                     <h4 className="text-sm font-semibold">Parking Details</h4>
                     <div className="flex items-center space-x-2">
                       <Checkbox id="parking_available" checked={form.parking_available} onCheckedChange={(c) => setForm({...form, parking_available: !!c})} />
@@ -1836,6 +1798,44 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
+              ) : step === 15 ? (
+                <>
+                  <div className="grid gap-4">
+                    <h4 className="text-sm font-semibold">Verification Status (Admin)</h4>
+                    <div className="grid gap-2">
+                      <Label>Property Verified</Label>
+                      <Select value={form.property_verified ? "Yes" : "No"} onValueChange={(val) => setForm({...form, property_verified: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Admin Approval</Label>
+                      <Select value={form.admin_approval} onValueChange={(val) => setForm({...form, admin_approval: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Approved">Approved</SelectItem>
+                          <SelectItem value="Rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Featured Property</Label>
+                      <Select value={form.featured_property ? "Yes" : "No"} onValueChange={(val) => setForm({...form, featured_property: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </>
+
               ) : null}
 
             <SheetFooter className="mt-4 pb-12">

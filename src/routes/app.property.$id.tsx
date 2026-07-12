@@ -1220,6 +1220,70 @@ function PropertyDetailsPage() {
                   
                   
                 </>
+              ) : editStep === 14 ? (
+                <>
+                  <div className="grid gap-4">
+                    <h4 className="text-sm font-semibold">Parking Details</h4>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit_parking_available" checked={editForm.parking_available} onCheckedChange={(c) => setEditForm({...editForm, parking_available: !!c})} />
+                      <Label htmlFor="edit_parking_available">Parking Available</Label>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Type</Label>
+                      <Select value={editForm.parking_type || ""} onValueChange={(val) => setEditForm({...editForm, parking_type: val})}>
+                        <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Covered">Covered</SelectItem>
+                          <SelectItem value="Open">Open</SelectItem>
+                          <SelectItem value="Basement">Basement</SelectItem>
+                          <SelectItem value="Street">Street</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Number of Parking Slots</Label>
+                      <Input type="number" placeholder="e.g. 2" value={editForm.number_of_parking_slots || ""} onChange={(e) => setEditForm({...editForm, number_of_parking_slots: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Vehicle Types Allowed</Label>
+                      <Input placeholder="e.g. Car, Bike, Bicycle, EV" value={editForm.vehicle_types_allowed || ""} onChange={(e) => setEditForm({...editForm, vehicle_types_allowed: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_reserved_parking" checked={editForm.reserved_parking} onCheckedChange={(c) => setEditForm({...editForm, reserved_parking: !!c})} />
+                        <Label htmlFor="edit_reserved_parking">Reserved Parking</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_visitor_parking" checked={editForm.visitor_parking_available} onCheckedChange={(c) => setEditForm({...editForm, visitor_parking_available: !!c})} />
+                        <Label htmlFor="edit_visitor_parking">Visitor Parking</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_ev_charging" checked={editForm.ev_charging_station} onCheckedChange={(c) => setEditForm({...editForm, ev_charging_station: !!c})} />
+                        <Label htmlFor="edit_ev_charging">EV Charging Station</Label>
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Slot Number(s)</Label>
+                      <Input placeholder="e.g. P12, B-04" value={editForm.parking_slot_numbers || ""} onChange={(e) => setEditForm({...editForm, parking_slot_numbers: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Area (sq.ft)</Label>
+                      <Input placeholder="e.g. 180 sq.ft" value={editForm.parking_area || ""} onChange={(e) => setEditForm({...editForm, parking_area: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Fee</Label>
+                      <Input type="number" placeholder="e.g. 500" value={editForm.parking_fee || ""} onChange={(e) => setEditForm({...editForm, parking_fee: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Availability Timing</Label>
+                      <Input placeholder="e.g. 24x7 / Restricted Hours" value={editForm.parking_availability_timing || ""} onChange={(e) => setEditForm({...editForm, parking_availability_timing: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Additional Rules</Label>
+                      <Input placeholder="e.g. No commercial vehicles" value={editForm.additional_parking_rules || ""} onChange={(e) => setEditForm({...editForm, additional_parking_rules: e.target.value})} />
+                    </div>
+                  </div>
+                </>
               ) : editStep === 15 ? (
                 <>
                   <div className="grid gap-6 sm:grid-cols-2 mt-2">
@@ -1255,7 +1319,6 @@ function PropertyDetailsPage() {
                       </Select>
                     </div>
                   </div>
-                  
                 </>
               ) : null}
             
