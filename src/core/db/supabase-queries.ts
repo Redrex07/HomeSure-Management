@@ -727,22 +727,33 @@ function nextRealtorId() {
 
 export async function getContractors() {
   const { data, error } = await supabase
-    .from("contractors")
-    .select("*");
+    .from("Contractor")
+    .select(`
+      contractor_id,
+      company_name,
+      contact_person,
+      email,
+      mobile_number,
+      contractor_type,
+      ContractorProfile(
+        specialization,
+        years_of_experience
+      )
+    `);
 
   if (error) throw error;
 
   return (data || []).map((c: any) => ({
     id: c.contractor_id,
-    name: c.name,
+    name: c.contact_person,
     companyName: c.company_name,
-    trade: c.trade,
-    specialization: c.specialization,
+    trade: c.contractor_type,
+    specialization:
+      c.ContractorProfile?.[0]?.specialization ?? "",
+    experience:
+      c.ContractorProfile?.[0]?.years_of_experience ?? 0,
     email: c.email,
-    phone: c.phone,
-    available: c.available,
-    rating: c.rating,
-    jobs: c.jobs_completed,
+    phone: c.mobile_number,
   }));
 }
 // ================= APPOINTMENTS =================
@@ -750,11 +761,17 @@ export async function getContractors() {
 export async function getAppointments() {
   const { data, error } = await supabase
     .from("appointments")
-    .select("*")
+    .select(`
+      *,
+      service_requests(
+        title,
+        properties(property_name)
+      ),
+      users!contractor_id(
+        name
+      )
+    `)
     .order("appointment_date", { ascending: false });
-
-  console.log("Appointments:", data);
-  console.log("Appointments Error:", error);
 
   if (error) throw error;
 
@@ -763,8 +780,10 @@ export async function getAppointments() {
     title: a.title,
     date: a.appointment_date,
     time: a.appointment_time,
-    property: "",
-    contractor: "",
+    property:
+      a.service_requests?.properties?.property_name || "",
+    contractor:
+      a.users?.name || "",
     status: a.status,
   }));
 }
@@ -772,39 +791,31 @@ export async function getAppointments() {
 // ================= ESTIMATES =================
 
 export async function getEstimates() {
-  try {
-    const { data, error } = await supabase
-      .from("estimates")
-      .select(`
-        estimate_id,
-        service_request_id,
-        estimated_cost,
-        status,
-        submitted_date,
-        users!contractor_id (
-  name
-)
-        )
-      `)
-      .order("submitted_date", { ascending: false });
+  const { data, error } = await supabase
+    .from("ContractorQuotation")
+    .select(`
+      quotation_id,
+      request_id,
+      contractor_id,
+      estimated_amount,
+      quotation_status,
+      submitted_at,
+      Contractor(
+        contact_person
+      )
+    `);
 
-    if (error) {
-      console.error("Error fetching estimates:", error);
-      return [];
-    }
+  if (error) throw error;
 
-    return (data || []).map((e: any) => ({
-      id: `E-${e.estimate_id}`,
-      request: `SR-${e.service_request_id}`,
-     contractor: e.users?.name || "Unknown Contractor",
-      amount: Number(e.estimated_cost || 0),
-      status: e.status || "Pending",
-      submitted: e.submitted_date || new Date().toISOString().split("T")[0],
-    }));
-  } catch (err) {
-    console.error("Exception fetching estimates:", err);
-    return [];
-  }
+  return (data || []).map((q: any) => ({
+    id: `Q-${q.quotation_id}`,
+    request: `REQ-${q.request_id}`,
+    contractor:
+      q.Contractor?.contact_person,
+    amount: q.estimated_amount,
+    status: q.quotation_status,
+    submitted: q.submitted_at,
+  }));
 }
 
 export async function updateEstimateStatus(id: string, status: string) {
@@ -829,39 +840,31 @@ export async function updateEstimateStatus(id: string, status: string) {
 
 // ================= INVOICES =================
 
-export async function getInvoices() {
-  try {
-    const { data, error } = await supabase
-      .from("invoices")
-      .select(`
-        invoice_id,
-        service_request_id,
-        invoice_amount,
-        invoice_date,
-        payment_status
-      `)
-      .order("invoice_id", { ascending: false });
-      console.log("Invoices:", data);
-console.log("Invoice Error:", error);
+export async function getInvoices(){
 
-    if (error) {
-      console.error("Error fetching invoices:", error);
-      return [];
-    }
+const {data,error}=await supabase
+.from("ContractorInvoice")
+.select(`
+invoice_id,
+quotation_id,
+invoice_number,
+invoice_amount,
+invoice_status,
+uploaded_at
+`);
 
-    return (data || []).map((i: any) => ({
-      id: `INV-${i.invoice_id}`,
-      request: i.service_request_id ? `SR-${i.service_request_id}` : "General Billing",
-      amount: Number(i.invoice_amount || 0),
-      status: i.payment_status || "Pending",
-      issued: i.invoice_date || new Date().toISOString().split("T")[0],
-      due: i.invoice_date ? new Date(new Date(i.invoice_date).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-      reason: "",
-    }));
-  } catch (err) {
-    console.error("Exception fetching invoices:", err);
-    return [];
-  }
+if(error) throw error;
+
+return (data||[]).map(i=>({
+
+id:`INV-${i.invoice_id}`,
+request:`Q-${i.quotation_id}`,
+amount:i.invoice_amount,
+status:i.invoice_status,
+issued:i.uploaded_at
+
+}));
+
 }
 
 export async function updateInvoiceStatus(id: string, payload: { status: string; reason?: string }) {
@@ -956,43 +959,37 @@ export async function createSupportTicket(payload: {
   }
 }
 
-export async function createContractor(payload: {
-  name: string;
-  email: string;
-  phone: string;
-  companyName?: string;
-  trade?: string;
-  specialization?: string;
-  available?: boolean;
-}) {
-  try {
-    const contractor = {
-      id: nextContractorId(),
-      contractorId: nextContractorId(),
-      contractorName: payload.name,
-      companyName: payload.companyName || payload.name,
-      trade: payload.trade || "General",
-      specialization: payload.specialization || payload.trade || "General",
-      rating: 0,
-      jobs: 0,
-      available: payload.available ?? true,
-      availabilityStatus: payload.available ?? true ? "Available" : "Busy",
-      email: payload.email,
-      phone: payload.phone,
-    };
+export async function createContractor(payload:any){
 
-    mockContractors.unshift(contractor);
-    return normalizeContractor(contractor);
-  } catch (err) {
-    console.error("Exception creating contractor:", err);
-    throw err;
-  }
+const {data,error}=await supabase
+.from("contractors")
+.insert({
+name:payload.name,
+email:payload.email,
+phone:payload.phone,
+company_name:payload.companyName,
+trade:payload.trade,
+specialization:payload.specialization,
+available:payload.available
+})
+.select();
+
+if(error) throw error;
+
+return data;
 }
 
 // ================= REALTORS =================
 
 export async function getRealtors() {
-  return mockRealtors.map(normalizeRealtor);
+  const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("role_id",5);
+
+  if(error) throw error;
+
+  return data || [];
 }
 
 export async function createRealtor(payload: {
@@ -1001,22 +998,19 @@ export async function createRealtor(payload: {
   phone: string;
   agencyName?: string;
 }) {
-  try {
-    const realtor = {
-      id: nextRealtorId(),
-      realtorId: nextRealtorId(),
-      realtorName: payload.name,
-      agencyName: payload.agencyName || payload.name,
+  const { data, error } = await supabase
+    .from("realtors")
+    .insert({
+      name: payload.name,
       email: payload.email,
       phone: payload.phone,
-    };
+      agency_name: payload.agencyName,
+    })
+    .select();
 
-    mockRealtors.unshift(realtor);
-    return normalizeRealtor(realtor);
-  } catch (err) {
-    console.error("Exception creating realtor:", err);
-    throw err;
-  }
+  if (error) throw error;
+
+  return data;
 }
 
 function normalizeAiListingKeywords(keywords: unknown) {
@@ -1178,42 +1172,36 @@ export async function createAppointment(payload: any) {
 
   return data;
 }
-export async function updateAppointmentDateTime(
-  id: string,
-  payload: {
-    appointment_date: string;
-    appointment_time: string;
-  }
-) {
-  console.log("Reschedule:", id, payload);
+export async function updateAppointmentDateTime(id:string,payload:any){
 
-  return { success: true };
+const appointmentId=parseInt(id.replace("A-",""));
+
+const {data,error}=await supabase
+.from("appointments")
+.update(payload)
+.eq("appointment_id",appointmentId)
+.select();
+
+if(error) throw error;
+
+return data;
 }
-export async function createEstimate(payload: {
-  service_request_id: number;
-  contractor_id: number;
-  estimated_cost: number;
-}) {
 
-  console.log("PAYLOAD RECEIVED:", payload);
+export async function createEstimate(payload:any){
 
-  const { data, error } = await supabase
-    .from("estimates")
-    .insert({
-      service_request_id: payload.service_request_id,
-      contractor_id: payload.contractor_id,
-      estimated_cost: payload.estimated_cost,
-      status: "Pending",
-      submitted_date: new Date().toISOString().split("T")[0],
-    })
-    .select();
+const {data,error}=await supabase
+.from("ContractorQuotation")
+.insert({
+request_id:payload.request_id,
+contractor_id:payload.contractor_id,
+estimated_amount:payload.estimated_amount,
+quotation_status:"Pending"
+})
+.select();
 
-  console.log("DATA:", data);
-  console.log("ERROR:", error);
+if(error) throw error;
 
-  if (error) throw error;
-
-  return data;
+return data;
 }
 
 export async function getUsers() {
@@ -1375,6 +1363,93 @@ export async function updateSubscriptionData(
     .update(payload)
     .eq("subscription_id", id)
     .select();
+
+  if (error) throw error;
+
+  return data;
+}
+
+export async function getContractorProfile(contractorId: number) {
+  const { data, error } = await supabase
+    .from("Contractor")
+    .select(`
+      *,
+      ContractorProfile(*)
+    `)
+    .eq("contractor_id", contractorId)
+    .single();
+
+  if (error) throw error;
+
+  return {
+    ...data,
+    ...(Array.isArray(data.ContractorProfile)
+      ? data.ContractorProfile[0]
+      : data.ContractorProfile),
+  };
+}
+export async function getContractorServiceRequests(contractorId: number) {
+  const { data, error } = await supabase
+    .from("ContractorServiceRequest")
+    .select("*")
+    .eq("contractor_id", contractorId)
+    .order("assigned_date", { ascending: false });
+
+  if (error) throw error;
+
+  return data || [];
+}
+export async function getContractorAppointments(contractorId: number) {
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("*")
+    .eq("contractor_id", contractorId)
+    .order("appointment_date", { ascending: true });
+
+  if (error) throw error;
+
+  return data || [];
+}
+export async function getContractorEstimates(contractorId: number) {
+  const { data, error } = await supabase
+    .from("estimates")
+    .select("*")
+    .eq("contractor_id", contractorId)
+    .order("submitted_date", { ascending: false });
+
+  if (error) throw error;
+
+  return data || [];
+}
+export async function getContractorInvoices(contractorId: number) {
+  const { data, error } = await supabase
+    .from("ContractorInvoice")
+    .select("*")
+    .eq("contractor_id", contractorId)
+    .order("uploaded_at", { ascending: false });
+
+  if (error) throw error;
+
+  return data || [];
+}
+    export async function getContractorQuotations(contractorId: number) {
+  const { data, error } = await supabase
+    .from("ContractorQuotation")
+    .select("*")
+    .eq("contractor_id", contractorId)
+    .order("submitted_at", { ascending: false });
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+export async function getContractorAvailability(contractorId: number) {
+
+  const { data, error } = await supabase
+    .from("ContractorAvailability")
+    .select("*")
+    .eq("contractor_id", contractorId);
 
   if (error) throw error;
 

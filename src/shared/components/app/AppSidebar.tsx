@@ -111,18 +111,46 @@ export const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
       ],
     },
   ],
-  contractor: [
-    { label: "Workspace", items: COMMON },
+contractor: [
+  {
+    label: "Workspace",
+    items: COMMON,
+  },
+   {
+  label: "Jobs",
+  items: [
+    { title: "Assigned Jobs", url: "/app/service-requests", icon: Wrench },
+
+    { title: "Appointments", url: "/app/appointments", icon: Calendar },
+
     {
-      label: "Jobs",
-      items: [
-        { title: "Assigned Jobs", url: "/app/service-requests", icon: Wrench },
-        { title: "Appointments", url: "/app/appointments", icon: Calendar },
-        { title: "Estimates", url: "/app/estimates", icon: FileSpreadsheet },
-        { title: "Invoices", url: "/app/invoices", icon: Receipt },
-      ],
+      title: "Availability",
+      url: "/app/contractor-availability",
+      icon: Calendar,
+    },
+
+    { title: "Estimates", url: "/app/estimates", icon: FileSpreadsheet },
+
+    {
+      title: "Quotations",
+      url: "/app/contractor-quotations",
+      icon: FileText,
+    },
+
+    {
+      title: "Invoices",
+      url: "/app/contractor-invoices",
+      icon: Receipt,
     },
   ],
+},
+  {
+    label: "Profile",
+    items: [
+      { title: "My Profile", url: "/app/contractor-profile", icon: Users },
+    ],
+  },
+],
   realtor: [
     { label: "Overview", items: COMMON },
     {
