@@ -86,7 +86,8 @@ function PropertyDetailsPage() {
     const nearbyFacilities = (property as any)?.nearbyFacilitiesData || {};
     const documents = (property as any)?.documentsData || {};
     const contactDetails = (property as any)?.contactDetailsData || {};
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails }));
+    const availability = (property as any)?.availabilityData || {};
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails, ...availability }));
 
     let images = [];
     try {
@@ -323,6 +324,11 @@ function PropertyDetailsPage() {
         occupancy_certificate: editForm.occupancy_certificate,
         property_insurance: editForm.property_insurance,
         owner_government_id: editForm.owner_government_id
+      },
+      property_availability: {
+        available_from: editForm.available_from,
+        visit_timing: editForm.visit_timing,
+        open_house_date: editForm.open_house_date
       },
       property_contact_details: {
         landlord_name: editForm.landlord_name,
@@ -817,10 +823,6 @@ function PropertyDetailsPage() {
                         <Input placeholder="e.g. 2 Months" value={editForm.advance_payment || ""} onChange={(e) => setEditForm({...editForm, advance_payment: e.target.value})} />
                       </div>
                       <div className="grid gap-2">
-                        <Label>Available From</Label>
-                        <Input type="date" placeholder="e.g. 1-Aug-26" value={editForm.available_from || ""} onChange={(e) => setEditForm({...editForm, available_from: e.target.value})} />
-                      </div>
-                      <div className="grid gap-2">
                         <Label>Lease Duration</Label>
                         <Input placeholder="e.g. 11 Months" value={editForm.lease_duration || ""} onChange={(e) => setEditForm({...editForm, lease_duration: e.target.value})} />
                       </div>
@@ -1149,6 +1151,29 @@ function PropertyDetailsPage() {
 
                   <DialogFooter className="mt-6 pt-4 border-t">
                     <Button type="button" variant="outline" onClick={() => setEditStep(10)}>Back</Button>
+                    <Button type="button" onClick={() => setEditStep(12)}>Next</Button>
+                  </DialogFooter>
+                </>
+              ) : editStep === 12 ? (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Update property availability details.</p>
+                    <div className="grid gap-2">
+                      <Label>Available From</Label>
+                      <Input type="date" placeholder="e.g. 1-Aug-26" value={editForm.available_from || ""} onChange={(e) => setEditForm({...editForm, available_from: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visit Timing</Label>
+                      <Input placeholder="e.g. 10 AM-6 PM" value={editForm.visit_timing || ""} onChange={(e) => setEditForm({...editForm, visit_timing: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Open House Date (Optional)</Label>
+                      <Input type="date" placeholder="e.g. Optional" value={editForm.open_house_date || ""} onChange={(e) => setEditForm({...editForm, open_house_date: e.target.value})} />
+                    </div>
+                  </div>
+
+                  <DialogFooter className="mt-6 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={() => setEditStep(11)}>Back</Button>
                     <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc}>
                       {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
                     </Button>
@@ -1416,10 +1441,7 @@ function PropertyDetailsPage() {
                         <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Advance Payment</span>
                         <span className="font-medium text-base">{parsedSpecs?.rent_details?.advance_payment || "—"}</span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Available From</span>
-                        <span className="font-medium text-base">{(property as any).rentDetailsData.available_from || "—"}</span>
-                      </div>
+
                       <div>
                         <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Lease Duration</span>
                         <span className="font-medium text-base">{(property as any).rentDetailsData.lease_duration || "—"}</span>
@@ -1455,10 +1477,7 @@ function PropertyDetailsPage() {
                         <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Advance Payment</span>
                         <span className="font-medium text-base">{parsedSpecs.rent_details.advance_payment || "—"}</span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Available From</span>
-                        <span className="font-medium text-base">{parsedSpecs.rent_details.available_from || "—"}</span>
-                      </div>
+
                       <div>
                         <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Lease Duration</span>
                         <span className="font-medium text-base">{parsedSpecs.rent_details.lease_duration || "—"}</span>
@@ -1467,6 +1486,38 @@ function PropertyDetailsPage() {
                   ) : (
                     <div className="sm:col-span-2 md:col-span-3">
                       <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Rent Details</span>
+                      <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Availability Accordion */}
+            <AccordionItem value="availability" className="border rounded-xl px-6 bg-card shadow-sm">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                Availability
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
+                  {(property as any).availabilityData ? (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Available From</span>
+                        <span className="font-medium text-base">{(property as any).availabilityData.available_from || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Visit Timing</span>
+                        <span className="font-medium text-base">{(property as any).availabilityData.visit_timing || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Open House Date</span>
+                        <span className="font-medium text-base">{(property as any).availabilityData.open_house_date || "—"}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2 md:col-span-3">
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Availability</span>
                       <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
                     </div>
                   )}

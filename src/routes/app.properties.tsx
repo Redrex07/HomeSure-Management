@@ -231,6 +231,8 @@ function PropertiesPage() {
     parking_charges: "",
     advance_payment: "",
     available_from: "",
+    visit_timing: "",
+    open_house_date: "",
     lease_duration: "",
     wifi: false,
     power_backup: false,
@@ -329,6 +331,8 @@ function PropertiesPage() {
     parking_charges: "",
     advance_payment: "",
     available_from: "",
+    visit_timing: "",
+    open_house_date: "",
     lease_duration: "",
     wifi: false,
     power_backup: false,
@@ -377,7 +381,7 @@ function PropertiesPage() {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 11) {
+    if (step < 12) {
       setStep(step + 1);
       return;
     }
@@ -488,6 +492,11 @@ function PropertiesPage() {
           property_insurance: form.property_insurance,
           owner_government_id: form.owner_government_id
         },
+        property_availability: {
+          available_from: form.available_from,
+          visit_timing: form.visit_timing,
+          open_house_date: form.open_house_date
+        },
         property_contact_details: {
           landlord_name: form.landlord_name,
           mobile_number: form.mobile_number,
@@ -555,6 +564,8 @@ function PropertiesPage() {
       parking_charges: "",
       advance_payment: "",
       available_from: "",
+      visit_timing: "",
+      open_house_date: "",
       lease_duration: "",
       wifi: false,
       power_backup: false,
@@ -820,6 +831,8 @@ function PropertiesPage() {
       parking_charges: "",
       advance_payment: "",
       available_from: "",
+      visit_timing: "",
+      open_house_date: "",
       lease_duration: "",
       wifi: false,
       power_backup: false,
@@ -1269,10 +1282,6 @@ function PropertiesPage() {
                     <Input placeholder="e.g. 2 Months" value={form.advance_payment} onChange={(e) => setForm({...form, advance_payment: e.target.value})} />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Available From</Label>
-                    <Input placeholder="e.g. 1-Aug-26" type="date" value={form.available_from} onChange={(e) => setForm({...form, available_from: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2">
                     <Label>Lease Duration</Label>
                     <Input placeholder="e.g. 11 Months" value={form.lease_duration} onChange={(e) => setForm({...form, lease_duration: e.target.value})} />
                   </div>
@@ -1551,6 +1560,23 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
+              ) : step === 12 ? (
+                <>
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label>Available From</Label>
+                      <Input placeholder="e.g. 1-Aug-26" type="date" value={form.available_from} onChange={(e) => setForm({...form, available_from: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visit Timing</Label>
+                      <Input placeholder="e.g. 10 AM-6 PM" value={form.visit_timing} onChange={(e) => setForm({...form, visit_timing: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Open House Date (Optional)</Label>
+                      <Input placeholder="e.g. Optional" type="date" value={form.open_house_date} onChange={(e) => setForm({...form, open_house_date: e.target.value})} />
+                    </div>
+                  </div>
+                </>
               ) : null}
 
             <SheetFooter className="mt-4 pb-12">
@@ -1624,9 +1650,17 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(11)}>Next</Button>
                 </>
-              ) : (
+                </>
+              ) : step === 11 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(10)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(12)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(11)}>
                     Back
                   </Button>
                   <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc}>

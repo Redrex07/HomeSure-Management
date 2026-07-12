@@ -73,7 +73,7 @@ export async function getAllProperties() {
   try {
     console.log("🔍 Fetching ALL properties...");
 
-    const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*)");
+    const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*)");
 
     console.log("📊 DATA:", data);
     console.log("❌ ERROR:", error);
@@ -93,7 +93,7 @@ export async function getLandlordProperties(landlordId: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*)")
+      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*)")
       .eq("landlord_id", landlordId)
       .order("property_id", { ascending: false });
 
@@ -129,6 +129,9 @@ export async function createProperty(payload: any) {
 
     const propertyDocumentsObj = payload.property_documents;
     delete payload.property_documents;
+
+    const propertyAvailabilityObj = payload.property_availability;
+    delete payload.property_availability;
 
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -276,6 +279,20 @@ export async function createProperty(payload: any) {
         if (documentsError) console.error("Error creating property documents:", documentsError);
       }
 
+      // Add Property Availability
+      if (propertyAvailabilityObj) {
+        const availabilityPayload = {
+          property_id: propertyId,
+          available_from: propertyAvailabilityObj.available_from || null,
+          visit_timing: propertyAvailabilityObj.visit_timing || null,
+          open_house_date: propertyAvailabilityObj.open_house_date || null,
+        };
+        const { error: availabilityError } = await supabase
+          .from("property_availability")
+          .insert([availabilityPayload]);
+        if (availabilityError) console.error("Error creating property availability:", availabilityError);
+      }
+
       // Add Property Contact Details
       if (propertyContactDetailsObj) {
         const contactPayload = {
@@ -321,6 +338,9 @@ export async function updateProperty(id: number, payload: any) {
 
     const propertyContactDetailsObj = payload.property_contact_details;
     delete payload.property_contact_details;
+
+    const propertyAvailabilityObj = payload.property_availability;
+    delete payload.property_availability;
 
     let rentDetailsObj: any = null;
     if (payload.specifications) {
@@ -572,6 +592,35 @@ export async function updateProperty(id: number, payload: any) {
       }
     }
 
+    // Handle Property Availability
+    if (propertyAvailabilityObj) {
+      const availabilityPayload = {
+        property_id: id,
+        available_from: propertyAvailabilityObj.available_from || null,
+        visit_timing: propertyAvailabilityObj.visit_timing || null,
+        open_house_date: propertyAvailabilityObj.open_house_date || null,
+      };
+
+      const { data: existingAvailability } = await supabase
+        .from("property_availability")
+        .select("availability_id")
+        .eq("property_id", id)
+        .maybeSingle();
+
+      if (existingAvailability) {
+        const { error: upError } = await supabase
+          .from("property_availability")
+          .update(availabilityPayload)
+          .eq("property_id", id);
+        if (upError) console.error("Error updating property availability:", upError);
+      } else {
+        const { error: insError } = await supabase
+          .from("property_availability")
+          .insert([availabilityPayload]);
+        if (insError) console.error("Error inserting property availability:", insError);
+      }
+    }
+
     return data;
   } catch (err) {
     console.error("Error updating property:", err);
@@ -599,7 +648,7 @@ export async function getPropertyById(id: string) {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*)")
+      .select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*), property_availability(*)")
       .eq("property_id", id)
       .single();
 
@@ -634,6 +683,9 @@ export async function getPropertyById(id: string) {
 
       data.contactDetailsData = data.property_contact_details?.[0] || data.property_contact_details || null;
       delete data.property_contact_details;
+
+      data.availabilityData = data.property_availability?.[0] || data.property_availability || null;
+      delete data.property_availability;
     }
     return data;
   } catch (err) {
