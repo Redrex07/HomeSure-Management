@@ -9,7 +9,6 @@ import {
 } from "@/shared/components/charts/Charts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Progress } from "@/shared/components/ui/progress";
-import { revenueSeries, requestsSeries, categoryBreakdown } from "@/shared/utils/mock-data";
 import { DollarSign, Building2, Users, Wrench } from "lucide-react";
 import { formatINR } from "@/shared/utils/utils";
 import { useQuery } from "@tanstack/react-query";
