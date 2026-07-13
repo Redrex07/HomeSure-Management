@@ -1979,9 +1979,16 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(14)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 14 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(13)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(15)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(14)}>
                     Back
                   </Button>
                   <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc}>

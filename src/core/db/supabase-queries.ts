@@ -1632,6 +1632,7 @@ export async function getContractorEstimates(contractorId: number) {
       amount: Number(i.invoice_amount || 0),
 
       status: i.payment_status || "Pending",
+      paymentStatus: i.payment_status || "Pending",
 
       issued: i.invoice_date || todayIsoDate(),
 
@@ -1641,6 +1642,9 @@ export async function getContractorEstimates(contractorId: number) {
             .split("T")[0]
         : todayIsoDate(),
 
+      paymentMethod: "",
+      paymentReference: "",
+      receiptUrl: "",
       reason: "",
     };
   }
