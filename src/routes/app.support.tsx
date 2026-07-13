@@ -5,8 +5,8 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getSupportTickets, createSupportTicket, getUsers } from "@/core/db/supabase-queries";
-import { Plus } from "lucide-react";
+import { getSupportTickets, createSupportTicket, getUsers, updateSupportTicket } from "@/core/db/supabase-queries";
+import { Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -40,11 +40,31 @@ function SupportPage() {
   const [priority, setPriority] = useState("Medium");
   const [userId, setUserId] = useState("");
 
+  const [editingTicket, setEditingTicket] = useState<any | null>(null);
+  const [resolutionNotes, setResolutionNotes] = useState("");
+  const [ticketStatus, setTicketStatus] = useState("Open");
+  const [assignedTo, setAssignedTo] = useState("");
+
   const queryClient = useQueryClient();
 
   const { data: ticketList = [], isLoading } = useQuery({
     queryKey: ["support-tickets"],
     queryFn: getSupportTickets,
+  });
+
+  const updateTicketMutation = useMutation({
+    mutationFn: ({ id, status, notes, assignedTo }: { id: string; status: string; notes?: string; assignedTo?: string }) =>
+      updateSupportTicket(id, { status, notes, assignedTo }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["support-tickets"] });
+      toast.success("Ticket updated successfully!");
+      setEditingTicket(null);
+      setResolutionNotes("");
+      setAssignedTo("");
+    },
+    onError: (err: any) => {
+      toast.error("Error updating ticket: " + (err.message || String(err)));
+    }
   });
 
   const { data: usersList = [] } = useQuery({
@@ -211,9 +231,100 @@ function SupportPage() {
             },
             { key: "created", header: "Created" },
             { key: "status", header: "Status", render: (t) => <StatusBadge value={t.status} /> },
+            {
+              key: "actions",
+              header: "",
+              render: (t) => (
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => {
+                      setEditingTicket(t);
+                      setTicketStatus(t.status);
+                      setResolutionNotes(t.resolutionNotes || "");
+                      setAssignedTo(t.assignedTo || "");
+                    }}
+                    title="Edit Resolution / Status"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
+              ),
+            },
           ]}
         />
       )}
+
+      <Dialog open={!!editingTicket} onOpenChange={(open) => !open && setEditingTicket(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resolve Ticket {editingTicket?.id}</DialogTitle>
+            <DialogDescription>
+              Assign the ticket or write resolution notes to resolve/close it.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editingTicket) return;
+              updateTicketMutation.mutate({
+                id: editingTicket.id,
+                status: ticketStatus,
+                notes: resolutionNotes,
+                assignedTo: assignedTo
+              });
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-1.5">
+              <Label htmlFor="ticketStatusSelect">Ticket Status</Label>
+              <Select value={ticketStatus} onValueChange={setTicketStatus}>
+                <SelectTrigger id="ticketStatusSelect">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Open">Open</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Resolved">Resolved</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="assigneeInput">Assigned To</Label>
+              <Input
+                id="assigneeInput"
+                placeholder="e.g. support-agent-1"
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="resNotes">Resolution Notes</Label>
+              <Textarea
+                id="resNotes"
+                placeholder="Describe how the issue was resolved..."
+                value={resolutionNotes}
+                onChange={(e) => setResolutionNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setEditingTicket(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateTicketMutation.isPending}>
+                {updateTicketMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/shared/components/ui/card";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { Badge } from "@/shared/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getContractors, createContractor } from "@/core/db/supabase-queries";
+import { getContractors, createContractor, getServiceRequests, assignContractor } from "@/core/db/supabase-queries";
 import { Plus, Star, Phone, BriefcaseBusiness, BadgeCheck, HardHat, Mail } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -48,12 +48,32 @@ function ContractorsPage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"name-asc" | "name-desc" | "status-available" | "status-busy" | "highest-rated">("name-asc");
   const [assigningContractor, setAssigningContractor] = useState<any | null>(null);
+  const [selectedRequestId, setSelectedRequestId] = useState<string>("");
 
   const queryClient = useQueryClient();
 
   const { data: contractorList = [], isLoading } = useQuery({
     queryKey: ["contractors"],
     queryFn: getContractors,
+  });
+
+  const { data: requestList = [] } = useQuery({
+    queryKey: ["serviceRequests"],
+    queryFn: getServiceRequests,
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: assignContractor,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contractors"] });
+      queryClient.invalidateQueries({ queryKey: ["serviceRequests"] });
+      toast.success("Contractor assigned successfully!");
+      setAssigningContractor(null);
+      setSelectedRequestId("");
+    },
+    onError: (err: any) => {
+      toast.error("Error assigning contractor: " + (err.message || String(err)));
+    }
   });
 
   const inviteMutation = useMutation({
@@ -482,23 +502,63 @@ function ContractorsPage() {
       )}
 
       {/* Assign Job Confirmation Dialog */}
-      <Dialog open={!!assigningContractor} onOpenChange={(open) => !open && setAssigningContractor(null)}>
+      <Dialog open={!!assigningContractor} onOpenChange={(open) => {
+        if (!open) {
+          setAssigningContractor(null);
+          setSelectedRequestId("");
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Assign Contractor</DialogTitle>
             <DialogDescription>
-              This workflow will connect to Appointment Scheduling after backend integration.
+              Assign this job request to {assigningContractor?.companyName || assigningContractor?.name}.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label htmlFor="activeRequestSelect">Select Active Service Request</Label>
+            <Select value={selectedRequestId} onValueChange={setSelectedRequestId}>
+              <SelectTrigger id="activeRequestSelect" aria-label="Select request">
+                <SelectValue placeholder="Select service request..." />
+              </SelectTrigger>
+              <SelectContent>
+                {requestList
+                  .filter((r) => r.status === "Pending" || r.status === "Open")
+                  .map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.id} — {r.title} ({r.property})
+                    </SelectItem>
+                  ))}
+                {requestList.filter((r) => r.status === "Pending" || r.status === "Open").length === 0 && (
+                  <SelectItem value="none" disabled>
+                    No pending service requests
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setAssigningContractor(null)}>
+            <Button variant="outline" onClick={() => {
+              setAssigningContractor(null);
+              setSelectedRequestId("");
+            }}>
               Cancel
             </Button>
-            <Button onClick={() => {
-              setAssigningContractor(null);
-              toast.success("Workflow proceeded");
-            }}>
-              Continue
+            <Button
+              onClick={() => {
+                if (!selectedRequestId || selectedRequestId === "none") {
+                  toast.error("Please select a request first");
+                  return;
+                }
+                const reqId = parseInt(selectedRequestId.replace("SR-", ""), 10);
+                assignMutation.mutate({
+                  service_request_id: reqId,
+                  contractor_id: parseInt(assigningContractor.id.replace("C-", ""), 10)
+                });
+              }}
+              disabled={assignMutation.isPending}
+            >
+              {assignMutation.isPending ? "Assigning..." : "Assign"}
             </Button>
           </DialogFooter>
         </DialogContent>

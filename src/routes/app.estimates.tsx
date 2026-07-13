@@ -222,6 +222,7 @@ function EstimatesPage() {
               header: "Estimate",
               render: (e) => <span className="font-mono text-xs">{e.id}</span>,
             },
+
             {
               key: "request",
               header: "Request",
@@ -230,10 +231,13 @@ function EstimatesPage() {
             { key: "contractor", header: "Contractor" },
             { key: "submitted", header: "Submitted" },
             {
-              key: "amount",
-              header: "Amount",
-              sortable: true,
-              render: (e) => <span className="font-medium">{formatINR(e.amount)}</span>,
+              key: "document",
+              header: "Document",
+              render: (e) => e.documentUrl ? (
+                <a href={e.documentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline font-medium hover:text-primary/80">
+                  {e.documentName || "View Estimate"}
+                </a>
+              ) : <span className="text-slate-400 text-xs">—</span>
             },
             { key: "status", header: "Status", render: (e) => <StatusBadge value={e.status} /> },
             {

@@ -11,6 +11,7 @@ import {
   getTenantServiceRequests,
 } from "@/core/db/supabase-queries";
 import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
+import { getServiceRequests, createServiceRequest, updateServiceRequest, deleteServiceRequest } from "@/core/db/supabase-queries";
 import {
   Select,
   SelectContent,
@@ -30,7 +31,7 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/service-requests")({
@@ -49,6 +50,11 @@ function ServiceRequestsPage() {
   const [newPriority, setNewPriority] = useState("Medium");
   const [newDesc, setNewDesc] = useState("");
 
+  const [editingRequest, setEditingRequest] = useState<any | null>(null);
+  const [editCategory, setEditCategory] = useState("Plumbing");
+  const [editPriority, setEditPriority] = useState("Medium");
+  const [editStatus, setEditStatus] = useState("Pending");
+
   const queryClient = useQueryClient();
   const tenantContext = useTenantContext();
   const isTenant = tenantContext.isTenant;
@@ -63,6 +69,30 @@ function ServiceRequestsPage() {
         ? getTenantServiceRequests(tenantId, serviceTenantId)
         : getServiceRequests(),
     enabled: !isTenant || (!!tenantId && !!serviceTenantId),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, category, priority, status }: { id: string; category: string; priority: string; status: string }) =>
+      updateServiceRequest(id, { category, priority, status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service-requests"] });
+      toast.success("Request updated successfully!");
+      setEditingRequest(null);
+    },
+    onError: (err: any) => {
+      toast.error("Error updating request: " + (err.message || String(err)));
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteServiceRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service-requests"] });
+      toast.success("Request deleted successfully!");
+    },
+    onError: (err: any) => {
+      toast.error("Error deleting request: " + (err.message || String(err)));
+    }
   });
 
   // Create request mutation
@@ -286,9 +316,125 @@ function ServiceRequestsPage() {
                 r.contractor ?? <span className="text-muted-foreground">Unassigned</span>,
             },
             { key: "status", header: "Status", render: (r) => <StatusBadge value={r.status} /> },
+            {
+              key: "actions",
+              header: "",
+              render: (r) => (
+                <div className="flex items-center gap-1 justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-primary-soft hover:text-primary"
+                    onClick={() => {
+                      setEditingRequest(r);
+                      setEditCategory(r.category || "Plumbing");
+                      setEditPriority(r.priority || "Medium");
+                      setEditStatus(r.status || "Pending");
+                    }}
+                    title="Edit Request"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      if (confirm("Are you sure you want to delete this service request?")) {
+                        deleteMutation.mutate(r.id);
+                      }
+                    }}
+                    title="Delete Request"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ),
+            },
           ]}
         />
       )}
+
+      <Dialog open={!!editingRequest} onOpenChange={(open) => !open && setEditingRequest(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Service Request {editingRequest?.id}</DialogTitle>
+            <DialogDescription>
+              Update category, priority level, or work progress status.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editingRequest) return;
+              updateMutation.mutate({
+                id: editingRequest.id,
+                category: editCategory,
+                priority: editPriority,
+                status: editStatus
+              });
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-1.5">
+              <Label htmlFor="editCategorySelect">Category</Label>
+              <Select value={editCategory} onValueChange={setEditCategory}>
+                <SelectTrigger id="editCategorySelect">
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Plumbing", "Electrical", "HVAC", "Landscaping", "Painting", "Appliance", "Locksmith"].map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="editPrioritySelect">Priority</Label>
+              <Select value={editPriority} onValueChange={setEditPriority}>
+                <SelectTrigger id="editPrioritySelect">
+                  <SelectValue placeholder="Select Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Low", "Medium", "High", "Urgent"].map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="editStatusSelect">Status</Label>
+              <Select value={editStatus} onValueChange={setEditStatus}>
+                <SelectTrigger id="editStatusSelect">
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Pending", "Assigned", "In Progress", "Completed", "Resolved"].map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setEditingRequest(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

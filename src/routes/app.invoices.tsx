@@ -18,6 +18,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/shared/components/ui/dialog";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatCard } from "@/shared/components/common/StatCard";
@@ -31,6 +32,8 @@ import {
 } from "@/core/db/supabase-queries";
 import { createRazorpayOrder, verifyRazorpayPayment } from "@/core/api/razorpay.functions";
 import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil, CreditCard } from "lucide-react";
+import { getInvoices, updateInvoiceStatus as updateSupabaseInvoice, getServiceRequests, getContractors, createInvoice } from "@/core/db/supabase-queries";
+import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
 const formatUsd = new Intl.NumberFormat("en-US", {
@@ -84,15 +87,51 @@ function InvoicesPage() {
 
   const queryClient = useQueryClient();
 
+  const [openCreate, setOpenCreate] = useState(false);
+  const [createRequestId, setCreateRequestId] = useState("");
+  const [createContractorId, setCreateContractorId] = useState("");
+  const [createAmount, setCreateAmount] = useState("");
+  const [createMethod, setCreateMethod] = useState("Bank Transfer");
+  const [createReference, setCreateReference] = useState("");
+
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["invoices"],
     queryFn: getInvoices,
   });
 
+<<<<<<< HEAD
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
+=======
+  const { data: serviceRequests = [] } = useQuery({
+    queryKey: ["service-requests"],
+    queryFn: getServiceRequests,
+  });
+
+  const { data: contractors = [] } = useQuery({
+    queryKey: ["contractors"],
+    queryFn: getContractors,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: createInvoice,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success("Payment created successfully!");
+      setOpenCreate(false);
+      setCreateRequestId("");
+      setCreateContractorId("");
+      setCreateAmount("");
+      setCreateReference("");
+    },
+    onError: (err: any) => {
+      toast.error("Error creating payment: " + (err.message || String(err)));
+    }
+  });
+
+>>>>>>> aa4fdbe (feat(service-admin): migrate module to finalized Supabase schema)
   const updateMutation = useMutation({
     mutationFn: ({ id, status, reason }: { id: string; status: string; reason?: string }) =>
-      updateSupabaseInvoice(id.replace("INV-", ""), { status, reason }),
+      updateSupabaseInvoice(id, { status, reason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       toast.success("Invoice status updated successfully!");
@@ -108,6 +147,21 @@ function InvoicesPage() {
   const overdue = invoices.filter((i) => i.status === "Overdue").reduce((s, i) => s + i.amount, 0);
 
   const [editingInvoice, setEditingInvoice] = useState<any | null>(null);
+
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createRequestId || !createContractorId || !createAmount) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    createMutation.mutate({
+      service_request_id: parseInt(createRequestId.replace("SR-", ""), 10),
+      contractor_id: parseInt(createContractorId.replace("C-", ""), 10),
+      amount: parseFloat(createAmount),
+      payment_method: createMethod,
+      payment_reference: createReference,
+    });
+  };
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -341,7 +395,98 @@ function InvoicesPage() {
 
   return (
     <>
-      <PageHeader title="Invoices" description="Track billing, payments and overdue accounts." />
+      <PageHeader
+        title="Invoices"
+        description="Track billing, payments and overdue accounts."
+        actions={
+          <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Receipt className="mr-2 h-4 w-4" /> Create payment
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Payment</DialogTitle>
+                <DialogDescription>
+                  Generate a billing record for a completed request.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label>Service Request</Label>
+                  <Select value={createRequestId} onValueChange={setCreateRequestId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select service request" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceRequests.map((sr: any) => (
+                        <SelectItem key={sr.id} value={sr.id}>
+                          {sr.id}: {sr.title} ({sr.property})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Contractor</Label>
+                  <Select value={createContractorId} onValueChange={setCreateContractorId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select contractor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contractors.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name} ({c.trade})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Amount (INR)</Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 7500"
+                    required
+                    value={createAmount}
+                    onChange={(e) => setCreateAmount(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Payment Method</Label>
+                  <Select value={createMethod} onValueChange={setCreateMethod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Credit Card">Credit Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Reference</Label>
+                  <Input
+                    placeholder="e.g. TXN-129038, Check #402"
+                    value={createReference}
+                    onChange={(e) => setCreateReference(e.target.value)}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setOpenCreate(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? "Creating..." : "Create"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        }
+      />
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="Paid (mo)"

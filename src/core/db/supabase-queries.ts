@@ -844,208 +844,134 @@
 
   // ================= SERVICE REQUESTS =================
 
-  function mapLegacyServiceRequestRow(r: {
-    service_request_id: number;
-    title?: string | null;
-    description?: string | null;
-    category?: string | null;
-    priority?: string | null;
-    status?: string | null;
-    created_at?: string | null;
-    property_id?: number | null;
-    tenant_id?: number | null;
-    properties?: { property_name?: string | null } | { property_name?: string | null }[] | null;
-  }) {
-    const propertyRecord = Array.isArray(r.properties) ? r.properties[0] : r.properties;
+export async function getServiceRequests() {
+  try {
+    const { data, error } = await supabase
+      .from("service_request_management")
+      .select(`
+        service_request_id,
+        maintenance_request_id,
+        service_admin_id,
+        landlord_id,
+        tenant_id,
+        property_id,
+        contractor_id,
+        request_category,
+        priority,
+        request_status,
+        assigned_date,
+        completed_date,
+        properties (property_name),
+        tenant (first_name, last_name),
+        contractors (name)
+      `)
+      .order("service_request_id", { ascending: false });
 
-    return {
-      id: `SR-${r.service_request_id}`,
-      requestId: r.service_request_id,
-      source: "service_requests",
-      propertyId: r.property_id ?? null,
-      tenantId: r.tenant_id ?? null,
-      title: r.title || "Untitled Request",
-      description: r.description || "",
-      property:
-        propertyRecord?.property_name ||
-        (r.property_id ? `Property #${r.property_id}` : "Unassigned Property"),
-      tenant: r.tenant_id ? `Tenant #${r.tenant_id}` : "Unassigned Tenant",
-      category: r.category || "General",
-      priority: r.priority || "Medium",
-      status: r.status || "Pending",
-      contractor: null,
-      created: r.created_at ? new Date(r.created_at).toISOString().split("T")[0] : todayIsoDate(),
-    };
-  }
-
-  function mapMaintenanceRequestRow(r: any) {
-    return {
-      id: `MR-${r.request_id}`,
-      requestId: r.request_id,
-      source: "maintenance_request",
-      propertyId: r.property_id ?? null,
-      tenantId: r.tenant_id ?? null,
-      title:
-        String(r.issue_description || "").split("\n")[0] || r.issue_category || "Maintenance request",
-      description: r.issue_description || "",
-      property: r.property_id ? `Property #${r.property_id}` : "Unassigned Property",
-      tenant: r.tenant_id ? `Tenant #${r.tenant_id}` : "Unassigned Tenant",
-      category: r.issue_category || "General",
-      priority: r.priority || "Medium",
-      status: r.request_status || "Pending",
-      contractor: r.assigned_to || null,
-      created: r.request_date || todayIsoDate(),
-      resolutionNotes: r.resolution_notes || "",
-    };
-  }
-
-  export async function getServiceRequests(filters?: { tenantId?: number; legacyTenantId?: number }) {
-    try {
-      let maintenanceQuery = supabase
-        .from("maintenance_request")
-        .select("*")
-        .order("request_date", { ascending: false });
-      if (filters?.tenantId) maintenanceQuery = maintenanceQuery.eq("tenant_id", filters.tenantId);
-      const tenantTable = await maintenanceQuery;
-
-      if (tenantTable.error && !isSupabaseSchemaError(tenantTable.error)) {
-        console.error("Error fetching maintenance requests:", tenantTable.error);
-      }
-
-      let legacyQuery = supabase
-        .from("service_requests")
-        .select(
-          `
-          *,
-          properties (
-            property_name
-          )
-        `,
-        )
-        .order("created_at", { ascending: false });
-      if (filters?.legacyTenantId || filters?.tenantId) {
-        legacyQuery = legacyQuery.eq("tenant_id", filters.legacyTenantId || filters.tenantId);
-      }
-      const { data, error } = await legacyQuery;
-
-      if (error && !isSupabaseSchemaError(error)) {
-        console.error(error);
-      }
-
-      const maintenanceRows = tenantTable.error
-        ? []
-        : (tenantTable.data || []).map(mapMaintenanceRequestRow);
-      const legacyRows = error ? [] : (data || []).map(mapLegacyServiceRequestRow);
-
-      return [...maintenanceRows, ...legacyRows].sort((a, b) => {
-        const aDate = a.created || "";
-        const bDate = b.created || "";
-        return bDate.localeCompare(aDate);
-      });
-    } catch (err) {
-      console.error(err);
+    if (error) {
+      console.error("Error fetching service requests:", error);
       return [];
     }
+
+    return (data || []).map((r: any) => ({
+      id: `SR-${r.service_request_id}`,
+      title: r.request_category || "General Maintenance",
+      category: r.request_category || "General",
+      property: r.properties?.property_name || "Unassigned Property",
+      tenant: r.tenant ? `${r.tenant.first_name || ""} ${r.tenant.last_name || ""}`.trim() : "Unassigned Tenant",
+      priority: r.priority || "Medium",
+      status: r.request_status || "Pending",
+      contractor: r.contractors?.name || null,
+      created: r.assigned_date ? new Date(r.assigned_date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    }));
+  } catch (err) {
+    console.error("Exception fetching service requests:", err);
+    return [];
   }
+}
 
-  export async function createServiceRequest(payload: {
-    title: string;
-    category: string;
-    priority: string;
-    description: string;
-    property_id?: number;
-    tenant_id?: number;
-    created_by?: number;
-  }) {
-    try {
-      const legacyPayload = {
-        title: payload.title,
-        category: payload.category,
-        priority: payload.priority,
-        description: payload.description,
-        status: "Pending",
-        property_id: payload.property_id || DEFAULT_PROPERTY_ID,
-        tenant_id: payload.tenant_id || DEFAULT_TENANT_ID,
-        created_by: payload.created_by || payload.tenant_id || DEFAULT_TENANT_ID,
-      };
+export async function createServiceRequest(payload: {
+  title: string;
+  category: string;
+  priority: string;
+  description: string;
+  property_id?: number;
+  tenant_id?: number;
+  created_by?: number;
+}) {
+  try {
+    // 1. Insert raw maintenance_request
+    const { data: srvData, error: srvError } = await supabase
+      .from("maintenance_request")
+      .insert([
+        {
+          tenant_id: payload.tenant_id || 1,
+          property_id: payload.property_id || 1,
+          issue_category: payload.category,
+          issue_description: payload.description,
+          priority: payload.priority,
+          request_status: "Pending"
+        }
+      ])
+      .select();
 
-      const legacyResult = await supabase.from("service_requests").insert([legacyPayload]).select();
-
-      if (!legacyResult.error) {
-        return (legacyResult.data || []).map(mapLegacyServiceRequestRow);
-      }
-
-      if (!isSupabaseSchemaError(legacyResult.error)) {
-        console.error("Error creating service request:", legacyResult.error);
-      }
-
-      const tenantTablePayload = {
-        tenant_id: payload.tenant_id || DEFAULT_TENANT_ID,
-        property_id: payload.property_id || DEFAULT_PROPERTY_ID,
-        issue_category: payload.category || payload.title || "General",
-        issue_description: [payload.title, payload.description].filter(Boolean).join("\n\n"),
-        priority: payload.priority || "Medium",
-        request_date: todayIsoDate(),
-        assigned_to: null,
-        request_status: "Pending",
-      };
-
-      const tenantTableResult = await supabase
-        .from("maintenance_request")
-        .insert([tenantTablePayload])
-        .select();
-
-      if (tenantTableResult.error) {
-        console.error("Error creating maintenance request:", tenantTableResult.error);
-        throw tenantTableResult.error;
-      }
-
-      return (tenantTableResult.data || []).map(mapMaintenanceRequestRow);
-    } catch (err) {
-      console.error("Exception creating service request:", err);
-      throw err;
+    if (srvError) {
+      console.error("Error creating maintenance request:", srvError);
+      throw srvError;
     }
+    const reqId = srvData[0].request_id;
+
+    // 2. Insert triage service_request_management
+    const { data, error } = await supabase
+      .from("service_request_management")
+      .insert([
+        {
+          maintenance_request_id: reqId,
+          service_admin_id: 1,
+          landlord_id: payload.created_by || 4,
+          tenant_id: payload.tenant_id || 1,
+          property_id: payload.property_id || 1,
+          request_category: payload.category,
+          priority: payload.priority,
+          request_status: "Pending"
+        }
+      ])
+      .select();
+
+    if (error) {
+      console.error("Error creating service request management:", error);
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception creating service request:", err);
+    throw err;
   }
+}
 
-  export async function updateServiceRequest(
-    id: string,
-    payload: {
-      title?: string;
-      category?: string;
-      priority?: string;
-      status?: string;
-      description?: string;
-    },
-  ) {
-    try {
-      const numericId = parseInt(id.replace("SR-", ""), 10);
-      const tenantTablePayload: Record<string, string> = {};
-      if (payload.category) tenantTablePayload.issue_category = payload.category;
-      if (payload.description) tenantTablePayload.issue_description = payload.description;
-      if (payload.priority) tenantTablePayload.priority = payload.priority;
-      if (payload.status) tenantTablePayload.request_status = payload.status;
+export async function updateServiceRequest(
+  id: string,
+  payload: {
+    title?: string;
+    category?: string;
+    priority?: string;
+    status?: string;
+    description?: string;
+    contractor_id?: number;
+  }
+) {
+  try {
+    const numericId = parseInt(id.replace("SR-", ""), 10);
+    const mapped: any = {};
+    if (payload.status) mapped.request_status = payload.status;
+    if (payload.priority) mapped.priority = payload.priority;
+    if (payload.category) mapped.request_category = payload.category;
+    if (payload.contractor_id) mapped.contractor_id = payload.contractor_id;
 
-      if (Object.keys(tenantTablePayload).length > 0) {
-        const tenantTableResult = await supabase
-          .from("maintenance_request")
-          .update(tenantTablePayload)
-          .eq("request_id", numericId)
-          .select();
-
-        if (!tenantTableResult.error) {
-          return tenantTableResult.data;
-        }
-
-        if (!isSupabaseSchemaError(tenantTableResult.error)) {
-          console.error("Error updating maintenance request:", tenantTableResult.error);
-        }
-      }
-
-      const { data, error } = await supabase
-        .from("service_requests")
-        .update(payload)
-        .eq("service_request_id", numericId)
-        .select();
+    const { data, error } = await supabase
+      .from("service_request_management")
+      .update(mapped)
+      .eq("service_request_id", numericId)
+      .select();
 
       if (error) {
         console.error("Error updating service request:", error);
@@ -1058,158 +984,73 @@
     }
   }
 
-  export async function deleteServiceRequest(id: string) {
-    try {
-      const numericId = parseInt(id.replace("SR-", ""), 10);
-      const tenantTableResult = await supabase
-        .from("maintenance_request")
-        .delete()
-        .eq("request_id", numericId)
-        .select();
+export async function deleteServiceRequest(id: string) {
+  try {
+    const numericId = parseInt(id.replace("SR-", ""), 10);
+    
+    const { data: srmData } = await supabase
+      .from("service_request_management")
+      .select("maintenance_request_id")
+      .eq("service_request_id", numericId)
+      .single();
 
-      if (!tenantTableResult.error) {
-        return tenantTableResult.data;
-      }
-
-      if (!isSupabaseSchemaError(tenantTableResult.error)) {
-        console.error("Error deleting maintenance request:", tenantTableResult.error);
-      }
-
-      const { data, error } = await supabase
-        .from("service_requests")
-        .delete()
-        .eq("service_request_id", numericId)
-        .select();
-
-      if (error) {
-        console.error("Error deleting service request:", error);
-        throw error;
-      }
-      return data;
-    } catch (err) {
-      console.error("Exception deleting service request:", err);
-      throw err;
+    if (srmData) {
+      await supabase.from("service_request_management").delete().eq("service_request_id", numericId);
+      await supabase.from("maintenance_request").delete().eq("request_id", srmData.maintenance_request_id);
     }
+    return { success: true };
+  } catch (err) {
+    console.error("Exception deleting service request:", err);
+    throw err;
   }
-
-  // ================= CONTRACTORS =================
-export async function getContractorInvoices(contractorId: number) {
-  const { data, error } = await supabase
-    .from("Invoice")
-    .select("*")
-    .eq("contractor_id", contractorId);
-
-  if (error) throw error;
-
-  return data ?? [];
-}
-export async function getContractorQuotations(contractorId: number) {
-  const { data, error } = await supabase
-    .from("ContractorQuotation")
-    .select("*")
-    .eq("contractor_id", contractorId);
-
-  if (error) throw error;
-
-  return data ?? [];
-}
-export async function getContractorServiceRequests(contractorId: number) {
-  const { data, error } = await supabase
-    .from("ServiceRequest")
-    .select("*")
-    .eq("contractor_id", contractorId);
-
-  if (error) throw error;
-
-  return data ?? [];
-}
-export async function getContractorAppointments(contractorId: number) {
-  const { data, error } = await supabase
-    .from("Appointment")
-    .select("*")
-    .eq("contractor_id", contractorId);
-
-  if (error) throw error;
-
-  return data ?? [];
-}
-export async function getContractorEstimates(contractorId: number) {
-  const { data, error } = await supabase
-    .from("Estimate")
-    .select("*")
-    .eq("contractor_id", contractorId);
-
-  if (error) throw error;
-
-  return data ?? [];
 }
 
+// ================= CONTRACTORS =================
 
-  export async function getContractorProfile(contractorId: number) {
-  const { data, error } = await supabase
-    .from("contractors")
-    .select("*")
-    .eq("contractor_id", contractorId)
-    .single();
-
-  if (error) throw error;
-
-  return data;
+function normalizeRealtor(realtor: (typeof mockRealtors)[number]) {
+  return {
+    ...realtor,
+    name: realtor.realtorName,
+  };
 }
-  
-  function normalizeContractor(contractor: (typeof mockContractors)[number]) {
-    return {
-      ...contractor,
-      name: contractor.contractorName,
-    };
-  }
-
-  function normalizeRealtor(realtor: (typeof mockRealtors)[number]) {
-    return {
-      ...realtor,
-      name: realtor.realtorName,
-    };
-  }
-
-  function nextContractorId() {
-    return `C-${301 + mockContractors.length}`;
-  }
 
   function nextRealtorId() {
     return `R-${401 + mockRealtors.length}`;
   }
 
-  export async function getContractors() {
-    const { data, error } = await supabase.from("contractors").select("*");
+export async function getContractors() {
+  try {
+    const { data, error } = await supabase
+      .from("contractors")
+      .select("*")
+      .order("contractor_id", { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching contractors:", error);
+      return [];
+    }
 
     return (data || []).map((c: any) => ({
-      id: c.contractor_id,
-      name: c.contact_person,
-      companyName: c.company_name,
-      trade: c.contractor_type,
-      specialization:
-        c.ContractorProfile?.[0]?.specialization ?? "",
-      experience:
-        c.ContractorProfile?.[0]?.years_of_experience ?? 0,
-      email: c.email,
-      phone: c.mobile_number,
+      id: `C-${c.contractor_id}`,
+      contractorId: `C-${c.contractor_id}`,
+      name: c.name,
+      companyName: c.company_name || c.name,
+      trade: c.trade || "General",
+      specialization: c.trade || "General",
+      rating: Number(c.rating || 0),
+      jobs: c.jobs_completed || 0,
+      available: c.available ?? true,
+      availabilityStatus: c.available ?? true ? "Available" : "Busy",
+      email: c.email || "",
+      phone: c.phone || "",
     }));
+  } catch (err) {
+    console.error("Exception fetching contractors:", err);
+    return [];
   }
-  export async function getContractorAvailability(contractorId: number) {
-  const { data, error } = await supabase
-    .from("ContractorAvailability")
-    .select("*")
-    .eq("contractor_id", contractorId)
-    .order("available_date", { ascending: true });
-
-  if (error) throw error;
-
-  return data ?? [];
-  
 }
-  // ================= APPOINTMENTS =================
+
+// ================= APPOINTMENTS =================
 
   export async function getAppointments() {
     const tenantTable = await supabase
@@ -1222,69 +1063,38 @@ export async function getContractorEstimates(contractorId: number) {
     }
 
     const { data, error } = await supabase
-      .from("appointments")
+      .from("service_schedule")
       .select(`
-        *,
-        service_requests(
-          title,
-          properties(property_name)
-        ),
-        users!contractor_id(
-          name
-        )
+        schedule_id,
+        assignment_id,
+        contractor_id,
+        service_admin_id,
+        property_id,
+        service_date,
+        start_time,
+        end_time,
+        schedule_status,
+        notes,
+        properties (property_name),
+        contractors (name)
       `)
-      .order("appointment_date", { ascending: false });
+      .order("service_date", { ascending: true });
 
-    if (error) throw error;
-
-    const serviceRequestIds = [
-      ...new Set((data || []).map((a) => a.service_request_id).filter(Boolean)),
-    ];
-    const requestMap = new Map<number, { tenant_id?: number | null; property_id?: number | null }>();
-
-    if (serviceRequestIds.length > 0) {
-      const { data: linkedRequests } = await supabase
-        .from("service_requests")
-        .select("service_request_id, tenant_id, property_id")
-        .in("service_request_id", serviceRequestIds);
-
-      for (const request of linkedRequests || []) {
-        requestMap.set(request.service_request_id, request);
-      }
+    if (error) {
+      console.error("Error fetching appointments:", error);
+      return [];
     }
 
-    const visitScheduleRows = tenantTable.error
-      ? []
-      : (tenantTable.data || []).map((a: any) => ({
-          id: `VS-${a.visit_id}`,
-          visitId: a.visit_id,
-          tenantId: a.tenant_id ?? null,
-          propertyId: a.property_id ?? null,
-          landlordId: a.landlord_id ?? null,
-          title: a.remarks || "Property visit",
-          date: a.visit_date,
-          time: a.visit_time,
-          property: a.property_id ? `Property #${a.property_id}` : "Unassigned Property",
-          contractor: a.landlord_id ? `Landlord #${a.landlord_id}` : "",
-          status: a.visit_status || "Pending",
-          source: "visit_schedule",
-        }));
-
-    const appointmentRows = (data || []).map((a: any) => ({
-      id: `A-${a.appointment_id}`,
-      appointmentId: a.appointment_id,
-      serviceRequestId: a.service_request_id ?? null,
-      tenantId: requestMap.get(a.service_request_id)?.tenant_id ?? null,
-      propertyId: requestMap.get(a.service_request_id)?.property_id ?? null,
-      title: a.title,
-      date: a.appointment_date,
-      time: a.appointment_time,
-      property: requestMap.get(a.service_request_id)?.property_id
-        ? `Property #${requestMap.get(a.service_request_id)?.property_id}`
-        : "",
-      contractor: a.contractor_id ? `Contractor #${a.contractor_id}` : "",
-      status: a.status,
-      source: "appointments",
+    return (data || []).map((s: any) => ({
+      id: `A-${s.schedule_id}`,
+      title: s.notes || "Service Appointment",
+      date: s.service_date || new Date().toISOString().split("T")[0],
+      time: s.start_time ? s.start_time.slice(0, 5) : "12:00",
+      endTime: s.end_time ? s.end_time.slice(0, 5) : "13:00",
+      property: s.properties?.property_name || "Unassigned Property",
+      contractor: s.contractors?.name || "Unassigned",
+      status: s.schedule_status || "Scheduled",
+      assignmentId: s.assignment_id,
     }));
 
     return [...visitScheduleRows, ...appointmentRows].sort((a, b) => {
@@ -1296,224 +1106,132 @@ export async function getContractorEstimates(contractorId: number) {
 
   // ================= ESTIMATES =================
 
-  export async function getEstimates() {
-    try {
-      const { data, error } = await supabase
-        .from("estimates")
-        .select(
-          `
-          estimate_id,
-          service_request_id,
-          estimated_cost,
-          status,
-          submitted_date,
-          users!contractor_id (
-    name
-  )
-          )
-        `,
-        )
-        .order("submitted_date", { ascending: false });
+export async function getEstimates() {
+  try {
+    const { data, error } = await supabase
+      .from("service_document")
+      .select(`
+        document_id,
+        service_request_id,
+        document_name,
+        document_url,
+        document_status,
+        uploaded_date,
+        contractors (name)
+      `)
+      .eq("document_type", "Estimate")
+      .order("uploaded_date", { ascending: false });
 
     if (error) throw error;
 
-      return (data || []).map((e: any) => ({
-        id: `E-${e.estimate_id}`,
-        request: `SR-${e.service_request_id}`,
-        contractor: e.users?.name || "Unknown Contractor",
-        amount: Number(e.estimated_cost || 0),
-        status: e.status || "Pending",
-        submitted: e.submitted_date || new Date().toISOString().split("T")[0],
-      }));
-    } catch (err) {
-      console.error("Exception fetching estimates:", err);
-      return [];
-    }
+    return (data || []).map((e: any) => ({
+      id: `E-${e.document_id}`,
+      request: `SR-${e.service_request_id}`,
+      contractor: e.contractors?.name || "Unknown Contractor",
+      amount: 0,
+      status: e.document_status || "Pending",
+      submitted: e.uploaded_date ? new Date(e.uploaded_date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      documentUrl: e.document_url,
+      documentName: e.document_name,
+    }));
+  } catch (err) {
+    console.error("Exception fetching estimates:", err);
+    return [];
   }
+}
 
-  export async function updateEstimateStatus(id: string, status: string) {
-    try {
-      const numericId = parseInt(id.replace("E-", ""), 10);
-      const { data, error } = await supabase
-        .from("estimates")
-        .update({ status })
-        .eq("estimate_id", numericId)
-        .select();
+export async function updateEstimateStatus(id: string, status: string) {
+  try {
+    const numericId = parseInt(id.replace("E-", ""), 10);
+    const { data, error } = await supabase
+      .from("service_document")
+      .update({ document_status: status })
+      .eq("document_id", numericId)
+      .select();
 
-      if (error) {
-        console.error("Error updating estimate status:", error);
-        throw error;
-      }
-      return data;
-    } catch (err) {
-      console.error("Exception updating estimate status:", err);
-      throw err;
+    if (error) {
+      console.error("Error updating estimate status:", error);
+      throw error;
     }
+
+    if (data && data.length > 0 && status === "Approved") {
+      const doc = data[0];
+      await supabase
+        .from("contractor_assignment")
+        .update({ assignment_status: "Accepted" })
+        .eq("service_request_id", doc.service_request_id)
+        .eq("contractor_id", doc.contractor_id);
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception updating estimate status:", err);
+    throw err;
   }
+}
 
   // ================= INVOICES =================
 
-
-  function mapRentPaymentRow(payment: any) {
-    const id = payment.payment_id ?? payment.rent_payment_id ?? payment.id;
-    const amount = Number(
-      payment.payment_amount ??
-        payment.amount ??
-        payment.rent_amount ??
-        payment.monthly_rent ??
-        payment.total_amount ??
-        0,
-    );
-    const paymentDate = payment.payment_date || payment.created_at || todayIsoDate();
-    const status = normalizePaymentStatus(payment.payment_status);
-
-    return {
-      id: id ? `RP-${id}` : `RP-${payment.payment_reference || Date.now()}`,
-      rawId: id ?? null,
-      source: "rent_payments",
-      request: payment.property_id ? `Property #${payment.property_id}` : "Monthly Rent",
-      propertyId: payment.property_id ?? null,
-      tenantId: payment.tenant_id ?? null,
-      amount,
-      status,
-      paymentStatus: payment.payment_status || "Pending",
-      issued: paymentDate,
-      due: paymentDate,
-      paymentMethod: payment.payment_method || "",
-      paymentReference: payment.payment_reference || "",
-      receiptUrl: payment.receipt_url || "",
-      reason: "",
-    };
-  }
-
-
-  function mapInvoiceRow(i: any) {
-    return {
-      id: `INV-${i.invoice_id}`,
-      rawId: i.invoice_id,
-      source: "invoices",
-
-      request: i.service_request_id
-        ? `SR-${i.service_request_id}`
-        : "General Billing",
-
-      propertyId: i.property_id ?? null,
-      tenantId: i.tenant_id ?? null,
-
-      amount: Number(i.invoice_amount || 0),
-
-      status: i.payment_status || "Pending",
-
-      issued: i.invoice_date || todayIsoDate(),
-
-      due: i.invoice_date
-        ? new Date(new Date(i.invoice_date).getTime() + 14 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0]
-        : todayIsoDate(),
-
-      reason: "",
-    };
-  }
-
-  async function updateRentPaymentById(
-    rawId: string | number | null | undefined,
-    payload: Record<string, unknown>,
-  ) {
-    if (rawId == null || rawId === "") {
-      throw new Error("Missing rent payment id.");
-    }
-
-    let lastError: any = null;
-    for (const idColumn of ["payment_id", "rent_payment_id", "id"]) {
-      const result = await supabase
-        .from("rent_payments")
-        .update(payload)
-        .eq(idColumn, rawId)
-        .select();
-
-      if (!result.error) {
-        return result.data;
-      }
-
-      lastError = result.error;
-      if (!isSupabaseSchemaError(result.error)) {
-        break;
-      }
-    }
-
-    throw lastError;
-  }
-
-  export async function getRentPayments() {
-    try {
-      const { data, error } = await supabase
-        .from("rent_payments")
-        .select("*")
-        .order("payment_date", { ascending: false });
-
-      if (error) {
-        if (!isSupabaseSchemaError(error)) {
-          console.error("Error fetching rent payments:", error);
-        }
-        return [];
-      }
-
-      return (data || []).map(mapRentPaymentRow);
-    } catch (err) {
-      console.error("Exception fetching rent payments:", err);
-      return [];
-    }
-  }
-  export async function getInvoices() {
-    try {
-      // First try rent payments
-      const rentPayments = await getRentPayments();
-      if (rentPayments.length > 0) {
-        return rentPayments;
-      }
-
-      // Otherwise fetch invoices table
-      const { data, error } = await supabase
-        .from("invoices")
-        .select("*")
-        .order("invoice_date", { ascending: false });
+export async function getInvoices() {
+  try {
+    const { data, error } = await supabase
+      .from("payment_management")
+      .select(`
+        payment_management_id,
+        service_request_id,
+        contractor_id,
+        landlord_id,
+        tenant_id,
+        property_id,
+        payment_amount,
+        payment_method,
+        payment_reference,
+        payment_status,
+        payment_date,
+        receipt_document,
+        service_request_management (request_category)
+      `)
+      .order("payment_management_id", { ascending: false });
 
       if (error) {
         console.error("Error fetching invoices:", error);
         return [];
       }
 
-      return (data || []).map(mapInvoiceRow);
-    } catch (err) {
-      console.error("Exception fetching invoices:", err);
-      return [];
-    }
+    return (data || []).map((p: any) => ({
+      id: `INV-${p.payment_management_id}`,
+      request: p.service_request_id ? `SR-${p.service_request_id}` : "General Billing",
+      amount: Number(p.payment_amount || 0),
+      status: p.payment_status || "Pending",
+      issued: p.payment_date ? new Date(p.payment_date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      due: p.payment_date ? new Date(new Date(p.payment_date).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      reason: p.payment_method ? `Method: ${p.payment_method} | Ref: ${p.payment_reference || "—"}` : "",
+      method: p.payment_method,
+      reference: p.payment_reference,
+      receipt: p.receipt_document,
+      title: p.service_request_management?.request_category || "Maintenance Invoice",
+    }));
+  } catch (err) {
+    console.error("Exception fetching invoices:", err);
+    return [];
   }
+}
 
-  export async function updateInvoiceStatus(
-    id: string,
-    payload: { status: string; reason?: string },
-  ) {
-    try {
-      const rentPaymentId = parsePrefixedId(id, "RP-");
-      if (String(id).startsWith("RP-") && rentPaymentId) {
-        const paymentStatus = payload.status === "Paid" ? "Successful" : payload.status;
-        try {
-          return await updateRentPaymentById(rentPaymentId, { payment_status: paymentStatus });
-        } catch (rentError) {
-          if (!isSupabaseSchemaError(rentError)) {
-            console.error("Error updating rent payment:", rentError);
-          }
-        }
-      }
+export async function updateInvoiceStatus(id: string, payload: { status: string; reason?: string }) {
+  try {
+    const numericId = parseInt(id.replace("INV-", ""), 10);
+    const updatePayload: any = { payment_status: payload.status };
+    if (payload.reason) {
+      const methodMatch = payload.reason.match(/Method:\s*([^|]+)/i);
+      const refMatch = payload.reason.match(/Ref:\s*(.+)/i);
+      if (methodMatch) updatePayload.payment_method = methodMatch[1].trim();
+      if (refMatch) updatePayload.payment_reference = refMatch[1].trim();
+    }
 
-      const numericId = parsePrefixedId(id, "INV-");
-      const { data, error } = await supabase
-        .from("invoices")
-        .update({ payment_status: payload.status })
-        .eq("invoice_id", numericId)
-        .select();
+    const { data, error } = await supabase
+      .from("payment_management")
+      .update(updatePayload)
+      .eq("payment_management_id", numericId)
+      .select();
 
       if (error) {
         console.error("Error updating invoice status:", error);
@@ -1567,114 +1285,284 @@ export async function getContractorEstimates(contractorId: number) {
 
   // ================= SUPPORT TICKETS =================
 
-  export async function getSupportTickets() {
-    try {
-      const { data, error } = await supabase
-        .from("support_tickets")
-        .select(
-          `
-          ticket_id,
-          subject,
-          status,
-          created_at,
-          priority,
-          user:users!user_id (
-            name,
-            roles (
-              role_name
-            )
-          )
-        `,
-        )
-        .order("ticket_id", { ascending: false });
+export async function getSupportTickets() {
+  try {
+    const { data, error } = await supabase
+      .from("support_tickets")
+      .select(`
+        ticket_id,
+        user_id,
+        subject,
+        description,
+        status,
+        created_at,
+        priority,
+        service_admin_id,
+        landlord_id,
+        tenant_id,
+        property_id,
+        contractor_id,
+        ticket_category,
+        assigned_to,
+        resolution_notes,
+        resolved_at,
+        updated_at,
+        users (name)
+      `)
+      .order("ticket_id", { ascending: false });
 
       if (error) {
         console.error("Error fetching support tickets:", error);
         return [];
       }
 
-      return (data || []).map((t: any) => ({
-        id: `TK-${t.ticket_id}`,
-        subject: t.subject,
-        user: t.user?.name || "Unknown User",
-        role: t.user?.roles?.role_name || "Reporter",
-        priority:
-          t.priority || (t.ticket_id % 3 === 0 ? "High" : t.ticket_id % 2 === 0 ? "Low" : "Medium"),
-        status: t.status || "Open",
-        created: t.created_at
-          ? new Date(t.created_at).toISOString().split("T")[0]
-          : new Date().toISOString().split("T")[0],
-      }));
-    } catch (err) {
-      console.error("Exception fetching support tickets:", err);
-      return [];
-    }
+    return (data || []).map((t: any) => ({
+      id: `TK-${t.ticket_id}`,
+      subject: t.subject,
+      description: t.description || "",
+      user: t.users?.name || "Reporter",
+      role: t.ticket_category || "General Inquiry",
+      priority: t.priority || "Medium",
+      status: t.status || "Open",
+      created: t.created_at ? new Date(t.created_at).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      assignedTo: t.assigned_to || "",
+      resolutionNotes: t.resolution_notes || "",
+      resolvedAt: t.resolved_at || "",
+      updatedAt: t.updated_at || "",
+    }));
+  } catch (err) {
+    console.error("Exception fetching support tickets:", err);
+    return [];
   }
+}
 
-  export async function createSupportTicket(payload: {
-    user_id: number;
-    subject: string;
-    description: string;
-    priority: string;
-  }) {
-    try {
-      const { data, error } = await supabase
-        .from("support_tickets")
+export async function createSupportTicket(payload: {
+  user_id: number;
+  subject: string;
+  description: string;
+  priority: string;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from("support_tickets")
+      .insert([
+        {
+          user_id: payload.user_id,
+          subject: payload.subject,
+          description: payload.description,
+          priority: payload.priority,
+          status: "Open",
+          service_admin_id: 1,
+          ticket_category: "General Inquiry",
+        },
+      ])
+      .select();
+
+    if (error) {
+      console.error("Error creating support ticket:", error);
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception creating support ticket:", err);
+    throw err;
+  }
+}
+
+export async function updateSupportTicket(
+  id: string,
+  payload: {
+    status: string;
+    notes?: string;
+    assignedTo?: string;
+  }
+) {
+  try {
+    const numericId = parseInt(id.replace("TK-", ""), 10);
+    const updatePayload: any = { status: payload.status };
+    if (payload.notes) updatePayload.resolution_notes = payload.notes;
+    if (payload.assignedTo) updatePayload.assigned_to = payload.assignedTo;
+    if (payload.status === "Resolved") updatePayload.resolved_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from("support_tickets")
+      .update(updatePayload)
+      .eq("ticket_id", numericId)
+      .select();
+
+    if (error) {
+      console.error("Error updating support ticket:", error);
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception updating support ticket:", err);
+    throw err;
+  }
+}
+
+export async function createContractor(payload: {
+  name: string;
+  email: string;
+  phone: string;
+  companyName?: string;
+  trade?: string;
+  specialization?: string;
+  available?: boolean;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from("contractors")
+      .insert([
+        {
+          name: payload.name,
+          email: payload.email,
+          phone: payload.phone,
+          company_name: payload.companyName || payload.name,
+          trade: payload.trade || "General",
+          available: payload.available ?? true,
+          jobs_completed: 0,
+          rating: 5.0,
+        },
+      ])
+      .select();
+
+    if (error) {
+      console.error("Error creating contractor record:", error);
+      throw error;
+    }
+
+    const c = data[0];
+    return {
+      id: `C-${c.contractor_id}`,
+      contractorId: `C-${c.contractor_id}`,
+      name: c.name,
+      companyName: c.company_name,
+      trade: c.trade,
+      specialization: c.trade,
+      rating: Number(c.rating),
+      jobs: c.jobs_completed,
+      available: c.available,
+      email: c.email,
+      phone: c.phone,
+    };
+  } catch (err) {
+    console.error("Exception creating contractor:", err);
+    throw err;
+  }
+}
+
+export async function assignContractor(payload: {
+  service_request_id: number;
+  contractor_id: number;
+  remarks?: string;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from("contractor_assignment")
+      .insert([
+        {
+          service_request_id: payload.service_request_id,
+          contractor_id: payload.contractor_id,
+          service_admin_id: 1,
+          landlord_id: 4,
+          assigned_date: new Date().toISOString(),
+          assignment_status: "Pending",
+          remarks: payload.remarks || "",
+        },
+      ])
+      .select();
+
+    if (error) {
+      console.error("Error creating contractor assignment:", error);
+      throw error;
+    }
+
+    await supabase
+      .from("service_request_management")
+      .update({ contractor_id: payload.contractor_id, request_status: "Assigned" })
+      .eq("service_request_id", payload.service_request_id);
+
+    return data;
+  } catch (err) {
+    console.error("Exception assigning contractor:", err);
+    throw err;
+  }
+}
+
+export async function createAppointment(payload: {
+  service_request_id: number;
+  contractor_id: number;
+  title: string;
+  appointment_date: string;
+  appointment_time: string;
+}) {
+  try {
+    let assignmentId = null;
+    const { data: assignData } = await supabase
+      .from("contractor_assignment")
+      .select("assignment_id")
+      .eq("service_request_id", payload.service_request_id)
+      .eq("contractor_id", payload.contractor_id)
+      .limit(1);
+
+    if (assignData && assignData.length > 0) {
+      assignmentId = assignData[0].assignment_id;
+    } else {
+      const { data: newAssign, error: assignErr } = await supabase
+        .from("contractor_assignment")
         .insert([
           {
-            user_id: payload.user_id,
-            subject: payload.subject,
-            description: payload.description,
-            priority: payload.priority,
-            status: "Open",
+            service_request_id: payload.service_request_id,
+            contractor_id: payload.contractor_id,
+            service_admin_id: 1,
+            landlord_id: 4,
+            assigned_date: new Date().toISOString(),
+            assignment_status: "Pending",
           },
         ])
         .select();
 
-      if (error) {
-        console.error("Error creating support ticket:", error);
-        throw error;
-      }
-      return data;
-    } catch (err) {
-      console.error("Exception creating support ticket:", err);
-      throw err;
+      if (assignErr) throw assignErr;
+      assignmentId = newAssign[0].assignment_id;
     }
-  }
 
+    const { data: srmData } = await supabase
+      .from("service_request_management")
+      .select("property_id")
+      .eq("service_request_id", payload.service_request_id)
+      .single();
 
-  export async function createContractor(payload: {
-    name: string;
-    email: string;
-    phone: string;
-    companyName?: string;
-    trade?: string;
-    specialization?: string;
-    available?: boolean;
-  }) {
-    try {
-      const { data, error } = await supabase
-        .from("contractors")
-        .insert({
-          name: payload.name,
-          email: payload.email,
-          phone: payload.phone,
-          company_name: payload.companyName,
-          trade: payload.trade,
-          specialization: payload.specialization,
-          available: payload.available,
-        })
-        .select();
+    const propertyId = srmData ? srmData.property_id : 1;
 
-      if (error) throw error;
+    const { data, error } = await supabase
+      .from("service_schedule")
+      .insert([
+        {
+          assignment_id: assignmentId,
+          contractor_id: payload.contractor_id,
+          service_admin_id: 1,
+          property_id: propertyId,
+          service_date: payload.appointment_date,
+          start_time: payload.appointment_time,
+          notes: payload.title,
+          schedule_status: "Scheduled",
+        },
+      ])
+      .select();
 
-      return data;
-    } catch (err) {
-      console.error("Exception creating contractor:", err);
-      throw err;
+    if (error) {
+      console.error("Error creating service schedule appointment:", error);
+      throw error;
     }
+    return data;
+  } catch (err) {
+    console.error("Exception creating appointment:", err);
+    throw err;
   }
-  // ================= REALTORS =================
+}
+
+// ================= REALTORS =================
 
   export async function getRealtors() {
     const { data, error } = await supabase
@@ -1974,22 +1862,30 @@ export async function getContractorEstimates(contractorId: number) {
     if (error) throw error;
     return data;
   }
-  export async function createEstimate(payload: {
-    service_request_id: number;
-    contractor_id: number;
-    estimated_cost: number;
-  }) {
-    console.log("PAYLOAD RECEIVED:", payload);
+}
 
-  const {data,error}=await supabase
-  .from("ContractorQuotation")
-  .insert({
-    service_request_id: payload.service_request_id,
-    contractor_id: payload.contractor_id,
-    estimated_cost: payload.estimated_cost,
-    quotation_status: "Pending",
-  })
-  .select();
+export async function createEstimate(payload: {
+  service_request_id: number;
+  contractor_id: number;
+  estimated_cost: number;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from("service_document")
+      .insert([
+        {
+          service_request_id: payload.service_request_id,
+          contractor_id: payload.contractor_id,
+          service_admin_id: 1,
+          document_type: "Estimate",
+          document_name: `Estimate Quote - INR ${payload.estimated_cost}`,
+          document_url: "https://czgwxokoxjkkqonpkgyl.supabase.co/storage/v1/object/public/service-documents/sample_estimate.pdf",
+          document_status: "Pending",
+          uploaded_by: "Contractor",
+          uploaded_date: new Date().toISOString(),
+        },
+      ])
+      .select();
 
   if(error) throw error;
 
@@ -2014,13 +1910,119 @@ export async function getContractorEstimates(contractorId: number) {
     }
   }
 
-  export async function getServiceAdminDashboard() {
-    const activeRequests = mockServiceRequests.filter((request) => request.status !== "Completed");
-    const completedRequests = mockServiceRequests.filter((request) => request.status === "Completed");
-    const pendingRequests = mockServiceRequests.filter((request) => request.status === "Pending");
-    const assignedRequests = mockServiceRequests.filter(
-      (request) => request.status === "Assigned" || request.status === "In Progress",
-    );
+export async function getServiceAdminDashboard() {
+  console.log("🔌 getServiceAdminDashboard executing in finalized queries layer...");
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  try {
+    const [requestsRes, contractorsRes, activeRequestsRes, appointmentsRes] = await Promise.all([
+      supabase.from("service_request_management").select("request_status, assigned_date"),
+      supabase.from("contractors").select("contractor_id, name, email, trade, rating, available").limit(5),
+      supabase.from("service_request_management").select(`
+        service_request_id,
+        request_category,
+        priority,
+        request_status,
+        properties (property_name),
+        tenant (first_name, last_name)
+      `).order("service_request_id", { ascending: false }).limit(5),
+      supabase.from("service_schedule").select(`
+        schedule_id,
+        notes,
+        service_date,
+        start_time,
+        schedule_status,
+        properties (property_name),
+        contractors (name)
+      `).eq("service_date", todayStr)
+    ]);
+
+    if (requestsRes.error) {
+      console.error("Error loading dashboard requests:", requestsRes.error);
+      throw requestsRes.error;
+    }
+    if (contractorsRes.error) {
+      console.error("Error loading dashboard contractors:", contractorsRes.error);
+      throw contractorsRes.error;
+    }
+    if (activeRequestsRes.error) {
+      console.error("Error loading dashboard active requests:", activeRequestsRes.error);
+      throw activeRequestsRes.error;
+    }
+    if (appointmentsRes.error) {
+      console.error("Error loading dashboard schedule appointments:", appointmentsRes.error);
+      throw appointmentsRes.error;
+    }
+
+    const allRequests = requestsRes.data || [];
+    const dbContractors = contractorsRes.data || [];
+    const activeRequests = activeRequestsRes.data || [];
+    const dbAppointments = appointmentsRes.data || [];
+
+    // Calculate Stat Cards
+    const totalRequests = allRequests.length;
+    const pending = allRequests.filter(r => r.request_status === "Pending").length;
+    const assigned = allRequests.filter(r => r.request_status === "Assigned" || r.request_status === "In Progress").length;
+    const completed = allRequests.filter(r => r.request_status === "Completed" || r.request_status === "Resolved").length;
+
+    // Calculate last 7 days chart
+    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const requestsSeries = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dayName = daysOfWeek[d.getDay()];
+      const dateStr = d.toISOString().split("T")[0];
+      
+      const createdCount = allRequests.filter(r => {
+        if (!r.assigned_date) return false;
+        return r.assigned_date.startsWith(dateStr);
+      }).length;
+
+      const completedCount = allRequests.filter(r => {
+        if (!r.assigned_date) return false;
+        return r.assigned_date.startsWith(dateStr) && (r.request_status === "Completed" || r.request_status === "Resolved");
+      }).length;
+
+      requestsSeries.push({
+        day: dayName,
+        created: createdCount,
+        completed: completedCount
+      });
+    }
+
+    // Format Top Contractors
+    const formattedContractors = dbContractors.map(c => ({
+      id: `C-${c.contractor_id}`,
+      name: c.name,
+      email: c.email || "",
+      status: c.available ? "Active" : "Busy",
+      trade: c.trade || "General",
+      rating: c.rating ? Number(c.rating).toFixed(1) : "5.0",
+      available: c.available ?? true
+    }));
+
+    // Format Active Service Requests
+    const formattedActiveRequests = activeRequests.map((r: any) => ({
+      id: `SR-${r.service_request_id}`,
+      title: r.request_category || "Maintenance Task",
+      priority: r.priority || "Medium",
+      status: r.request_status || "Pending",
+      property: r.properties?.property_name || "—",
+      tenant: r.tenant ? `${r.tenant.first_name || ""} ${r.tenant.last_name || ""}`.trim() : "—",
+      contractor: null
+    }));
+
+    // Format Appointments
+    const formattedAppointments = dbAppointments.map((a: any) => ({
+      id: `A-${a.schedule_id}`,
+      title: a.notes || "Service Appointment",
+      date: a.service_date,
+      time: a.start_time ? a.start_time.slice(0, 5) : "12:00",
+      property: a.properties?.property_name || "—",
+      contractor: a.contractors?.name || "—",
+      status: a.schedule_status || "Scheduled"
+    }));
 
     return {
       stats: {
@@ -2029,33 +2031,16 @@ export async function getContractorEstimates(contractorId: number) {
         assigned: assignedRequests.length,
         completed: completedRequests.length,
       },
-      requestsSeries: mockRequestsSeries,
-      contractors: mockContractors.map((contractor) => ({
-        id: contractor.id,
-        name: contractor.contractorName,
-        trade: contractor.trade,
-        rating: contractor.rating,
-        available: contractor.available,
-      })),
-      activeRequests: activeRequests.slice(0, 5).map((request) => ({
-        id: request.id,
-        title: request.title,
-        priority: request.priority,
-        status: request.status,
-        property: request.property,
-        contractor: request.contractor,
-      })),
-      appointments: mockAppointments.slice(0, 5).map((appointment) => ({
-        id: appointment.id,
-        title: appointment.title,
-        date: appointment.date,
-        time: appointment.time,
-        property: appointment.property,
-        contractor: appointment.contractor,
-        status: appointment.status,
-      })),
+      requestsSeries,
+      contractors: formattedContractors,
+      activeRequests: formattedActiveRequests,
+      appointments: formattedAppointments
     };
+  } catch (err) {
+    console.error("Error in getServiceAdminDashboard:", err);
+    throw err;
   }
+}
 
   export interface PlatformUser {
     id: string;
