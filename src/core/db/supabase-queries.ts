@@ -1522,7 +1522,7 @@ export async function assignContractor(payload: {
           service_admin_id: 1,
           landlord_id: 4,
           assigned_date: new Date().toISOString(),
-          assignment_status: "Pending",
+          assignment_status: "Assigned",
           remarks: payload.remarks || "",
         },
       ])
@@ -2781,5 +2781,126 @@ export async function getContractorAvailability(contractorId: number) {
   if (error) throw error;
 
   return data;
+}
+
+export async function getContractorAssignments() {
+  try {
+    const { data, error } = await supabase
+      .from("contractor_assignment")
+      .select(`
+        *,
+        contractors (name, company_name, trade),
+        service_request_management (
+          request_category,
+          properties (property_name),
+          tenant (first_name, last_name)
+        )
+      `)
+      .order("assigned_date", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching contractor assignments:", error);
+      return [];
+    }
+
+    return (data || []).map((a: any) => ({
+      assignmentId: a.assignment_id,
+      requestId: a.service_request_id,
+      contractorId: a.contractor_id,
+      assignedBy: a.service_admin_id,
+      status: a.assignment_status || "Assigned",
+      assignedDate: a.assigned_date,
+      acceptedDate: a.accepted_date,
+      remarks: a.remarks || "",
+      contractorName: a.contractors?.company_name || a.contractors?.name || "Unknown Contractor",
+      contractorTrade: a.contractors?.trade || "General",
+      requestCategory: a.service_request_management?.request_category || "General Maintenance",
+      propertyName: a.service_request_management?.properties?.property_name || "—",
+      tenantName: a.service_request_management?.tenant 
+        ? `${a.service_request_management.tenant.first_name || ""} ${a.service_request_management.tenant.last_name || ""}`.trim()
+        : "—"
+    }));
+  } catch (err) {
+    console.error("Exception in getContractorAssignments:", err);
+    return [];
+  }
+}
+
+export async function updateAssignmentStatus(assignmentId: number, status: string) {
+  try {
+    const updates: any = { assignment_status: status };
+    if (status === "Accepted") {
+      updates.accepted_date = new Date().toISOString();
+    }
+
+    const { data, error } = await supabase
+      .from("contractor_assignment")
+      .update(updates)
+      .eq("assignment_id", assignmentId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    let reqStatus = "Assigned";
+    if (status === "Accepted") {
+      reqStatus = "In Progress";
+    } else if (status === "Rejected") {
+      reqStatus = "Pending";
+    } else if (status === "Completed") {
+      reqStatus = "Completed";
+    }
+
+    const srmPayload: any = { request_status: reqStatus };
+    if (status === "Rejected") {
+      srmPayload.contractor_id = null;
+    }
+    if (status === "Completed") {
+      srmPayload.completed_date = new Date().toISOString();
+    }
+
+    await supabase
+      .from("service_request_management")
+      .update(srmPayload)
+      .eq("service_request_id", data.service_request_id);
+
+    return data;
+  } catch (err) {
+    console.error("Exception in updateAssignmentStatus:", err);
+    throw err;
+  }
+}
+
+export async function reassignContractor(payload: {
+  assignment_id: number;
+  contractor_id: number;
+  remarks?: string;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from("contractor_assignment")
+      .update({
+        contractor_id: payload.contractor_id,
+        assignment_status: "Assigned",
+        assigned_date: new Date().toISOString(),
+        accepted_date: null,
+        remarks: payload.remarks || "",
+      })
+      .eq("assignment_id", payload.assignment_id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    await supabase
+      .from("service_request_management")
+      .update({ contractor_id: payload.contractor_id, request_status: "Assigned" })
+      .eq("service_request_id", data.service_request_id);
+
+    return data;
+  } catch (err) {
+    console.error("Exception in reassignContractor:", err);
+    throw err;
+  }
 }
 

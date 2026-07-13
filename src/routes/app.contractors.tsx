@@ -6,8 +6,17 @@ import { Card, CardContent } from "@/shared/components/ui/card";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { Badge } from "@/shared/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getContractors, createContractor, getServiceRequests, assignContractor } from "@/core/db/supabase-queries";
-import { Plus, Star, Phone, BriefcaseBusiness, BadgeCheck, HardHat, Mail } from "lucide-react";
+import {
+  getContractors,
+  createContractor,
+  getServiceRequests,
+  assignContractor,
+  getContractorAssignments,
+  updateAssignmentStatus,
+  reassignContractor,
+} from "@/core/db/supabase-queries";
+import { Plus, Star, Phone, BriefcaseBusiness, BadgeCheck, HardHat, Mail, RefreshCw, CheckCircle, XCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { toast } from "sonner";
 import {
   Dialog,
