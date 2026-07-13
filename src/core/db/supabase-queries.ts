@@ -882,6 +882,10 @@ export async function getServiceRequests() {
       status: r.request_status || "Pending",
       contractor: r.contractors?.name || null,
       created: r.assigned_date ? new Date(r.assigned_date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      tenantId: r.tenant_id,
+      propertyId: r.property_id,
+      requestId: r.service_request_id,
+      source: "maintenance_request",
     }));
   } catch (err) {
     console.error("Exception fetching service requests:", err);
@@ -1076,7 +1080,13 @@ export async function getContractors() {
         schedule_status,
         notes,
         properties (property_name),
-        contractors (name)
+        contractors (name),
+        contractor_assignment (
+          service_request_id,
+          service_request_management (
+            tenant_id
+          )
+        )
       `)
       .order("service_date", { ascending: true });
 
@@ -1085,22 +1095,30 @@ export async function getContractors() {
       return [];
     }
 
-    return (data || []).map((s: any) => ({
-      id: `A-${s.schedule_id}`,
-      title: s.notes || "Service Appointment",
-      date: s.service_date || new Date().toISOString().split("T")[0],
-      time: s.start_time ? s.start_time.slice(0, 5) : "12:00",
-      endTime: s.end_time ? s.end_time.slice(0, 5) : "13:00",
-      property: s.properties?.property_name || "Unassigned Property",
-      contractor: s.contractors?.name || "Unassigned",
-      status: s.schedule_status || "Scheduled",
-      assignmentId: s.assignment_id,
-    }));
+    return (data || []).map((s: any) => {
+      const assignment = Array.isArray(s.contractor_assignment)
+        ? s.contractor_assignment[0]
+        : s.contractor_assignment;
+      const srm = assignment?.service_request_management;
+      const srmObj = Array.isArray(srm) ? srm[0] : srm;
+      const tenantId = srmObj?.tenant_id || null;
+      const requestId = assignment?.service_request_id || null;
 
-    return [...visitScheduleRows, ...appointmentRows].sort((a, b) => {
-      const aDate = `${a.date || ""} ${a.time || ""}`;
-      const bDate = `${b.date || ""} ${b.time || ""}`;
-      return bDate.localeCompare(aDate);
+      return {
+        id: `A-${s.schedule_id}`,
+        title: s.notes || "Service Appointment",
+        date: s.service_date || new Date().toISOString().split("T")[0],
+        time: s.start_time ? s.start_time.slice(0, 5) : "12:00",
+        endTime: s.end_time ? s.end_time.slice(0, 5) : "13:00",
+        property: s.properties?.property_name || "Unassigned Property",
+        contractor: s.contractors?.name || "Unassigned",
+        status: s.schedule_status || "Scheduled",
+        assignmentId: s.assignment_id,
+        tenantId,
+        propertyId: s.property_id,
+        requestId,
+        source: "maintenance_request",
+      };
     });
   }
 
@@ -1209,6 +1227,10 @@ export async function getInvoices() {
       reference: p.payment_reference,
       receipt: p.receipt_document,
       title: p.service_request_management?.request_category || "Maintenance Invoice",
+      tenantId: p.tenant_id,
+      propertyId: p.property_id,
+      rawId: p.payment_management_id,
+      source: "invoices",
     }));
   } catch (err) {
     console.error("Exception fetching invoices:", err);
@@ -1243,6 +1265,32 @@ export async function updateInvoiceStatus(id: string, payload: { status: string;
       throw err;
     }
   }
+
+async function updateRentPaymentById(rawId: string | number | null | undefined, payload: Record<string, unknown>) {
+  if (rawId == null || rawId === "") {
+    throw new Error("Missing rent payment id.");
+  }
+
+  let lastError: any = null;
+  for (const idColumn of ["payment_id", "rent_payment_id", "id"]) {
+    const result = await supabase
+      .from("rent_payments")
+      .update(payload)
+      .eq(idColumn, rawId)
+      .select();
+
+    if (!result.error) {
+      return result.data;
+    }
+
+    lastError = result.error;
+    if (!isSupabaseSchemaError(result.error)) {
+      break;
+    }
+  }
+
+  throw lastError;
+}
 
   export async function recordRentPaymentSuccess(
     invoice: {
@@ -1490,76 +1538,137 @@ export async function assignContractor(payload: {
   }
 }
 
-export async function createAppointment(payload: {
-  service_request_id: number;
-  contractor_id: number;
-  title: string;
-  appointment_date: string;
-  appointment_time: string;
-}) {
-  try {
-    let assignmentId = null;
-    const { data: assignData } = await supabase
-      .from("contractor_assignment")
-      .select("assignment_id")
-      .eq("service_request_id", payload.service_request_id)
-      .eq("contractor_id", payload.contractor_id)
-      .limit(1);
-
-    if (assignData && assignData.length > 0) {
-      assignmentId = assignData[0].assignment_id;
-    } else {
-      const { data: newAssign, error: assignErr } = await supabase
+export async function createAppointment(payload: any) {
+  // Try the new Service Admin (service_schedule) flow first if it's a maintenance request
+  if (payload.service_request_source === "maintenance_request") {
+    try {
+      let assignmentId = null;
+      const { data: assignData } = await supabase
         .from("contractor_assignment")
+        .select("assignment_id")
+        .eq("service_request_id", payload.service_request_id)
+        .eq("contractor_id", payload.contractor_id)
+        .limit(1);
+
+      if (assignData && assignData.length > 0) {
+        assignmentId = assignData[0].assignment_id;
+      } else {
+        const { data: newAssign, error: assignErr } = await supabase
+          .from("contractor_assignment")
+          .insert([
+            {
+              service_request_id: payload.service_request_id,
+              contractor_id: payload.contractor_id,
+              service_admin_id: 1,
+              landlord_id: 4,
+              assigned_date: new Date().toISOString(),
+              assignment_status: "Pending",
+            },
+          ])
+          .select();
+
+        if (assignErr) throw assignErr;
+        assignmentId = newAssign[0].assignment_id;
+      }
+
+      const { data: srmData } = await supabase
+        .from("service_request_management")
+        .select("property_id")
+        .eq("service_request_id", payload.service_request_id)
+        .single();
+
+      const propertyId = srmData ? srmData.property_id : 1;
+
+      const { data, error } = await supabase
+        .from("service_schedule")
         .insert([
           {
-            service_request_id: payload.service_request_id,
+            assignment_id: assignmentId,
             contractor_id: payload.contractor_id,
             service_admin_id: 1,
-            landlord_id: 4,
-            assigned_date: new Date().toISOString(),
-            assignment_status: "Pending",
+            property_id: propertyId,
+            service_date: payload.appointment_date,
+            start_time: payload.appointment_time,
+            notes: payload.title,
+            schedule_status: "Scheduled",
           },
         ])
-        .select();
+        .select()
+        .single();
 
-      if (assignErr) throw assignErr;
-      assignmentId = newAssign[0].assignment_id;
+      if (!error) return data;
+    } catch (e) {
+      console.warn("New service_schedule appointment failed, falling back to legacy:", e);
     }
+  }
 
-    const { data: srmData } = await supabase
-      .from("service_request_management")
-      .select("property_id")
-      .eq("service_request_id", payload.service_request_id)
+  // Legacy fallback flow
+  if (payload.service_request_source !== "maintenance_request" && payload.service_request_id) {
+    const { data, error } = await supabase
+      .from("appointments")
+      .insert({
+        title: payload.title,
+        service_request_id: payload.service_request_id,
+        contractor_id: payload.contractor_id,
+        appointment_date: payload.appointment_date,
+        appointment_time: payload.appointment_time,
+        status: "Scheduled",
+      })
+      .select()
       .single();
 
-    const propertyId = srmData ? srmData.property_id : 1;
-
-    const { data, error } = await supabase
-      .from("service_schedule")
-      .insert([
-        {
-          assignment_id: assignmentId,
-          contractor_id: payload.contractor_id,
-          service_admin_id: 1,
-          property_id: propertyId,
-          service_date: payload.appointment_date,
-          start_time: payload.appointment_time,
-          notes: payload.title,
-          schedule_status: "Scheduled",
-        },
-      ])
-      .select();
-
-    if (error) {
-      console.error("Error creating service schedule appointment:", error);
-      throw error;
-    }
-    return data;
-  } catch (err) {
-    console.error("Exception creating appointment:", err);
-    throw err;
+    if (!error) return data;
+    if (!isSupabaseSchemaError(error)) throw error;
   }
+
+  const visitSchedulePayload = {
+    tenant_id: payload.tenant_id || DEFAULT_TENANT_ID,
+    property_id: payload.property_id || DEFAULT_PROPERTY_ID,
+    landlord_id: payload.landlord_id || null,
+    service_request_id: payload.service_request_id || null,
+    visit_date: payload.appointment_date,
+    visit_time: payload.appointment_time,
+    visit_status: payload.status || "Pending",
+    remarks: payload.title || "Property visit",
+  };
+
+  const tenantTableResult = await supabase
+    .from("visit_schedule")
+    .insert([visitSchedulePayload])
+    .select()
+    .single();
+
+  if (!tenantTableResult.error) {
+    return tenantTableResult.data;
+  }
+
+  if (isSupabaseSchemaError(tenantTableResult.error) && payload.service_request_id) {
+    const retryPayload = { ...visitSchedulePayload };
+    delete (retryPayload as any).service_request_id;
+    const retry = await supabase.from("visit_schedule").insert([retryPayload]).select().single();
+    if (!retry.error) return retry.data;
+  }
+
+  if (!isSupabaseSchemaError(tenantTableResult.error)) {
+    console.error("Error creating visit schedule:", tenantTableResult.error);
+  }
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .insert({
+      title: payload.title,
+      service_request_id: payload.service_request_id,
+      contractor_id: payload.contractor_id,
+      appointment_date: payload.appointment_date,
+      appointment_time: payload.appointment_time,
+      status: "Scheduled",
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return data;
 }
 
 // ================= REALTORS =================
@@ -1754,74 +1863,6 @@ export async function createAppointment(payload: {
     }
   }
 
-  export async function createAppointment(payload: any) {
-    if (payload.service_request_source !== "maintenance_request" && payload.service_request_id) {
-      const { data, error } = await supabase
-        .from("appointments")
-        .insert({
-          title: payload.title,
-          service_request_id: payload.service_request_id,
-          contractor_id: payload.contractor_id,
-          appointment_date: payload.appointment_date,
-          appointment_time: payload.appointment_time,
-          status: "Scheduled",
-        })
-        .select()
-        .single();
-
-      if (!error) return data;
-      if (!isSupabaseSchemaError(error)) throw error;
-    }
-
-    const visitSchedulePayload = {
-      tenant_id: payload.tenant_id || DEFAULT_TENANT_ID,
-      property_id: payload.property_id || DEFAULT_PROPERTY_ID,
-      landlord_id: payload.landlord_id || null,
-      service_request_id: payload.service_request_id || null,
-      visit_date: payload.appointment_date,
-      visit_time: payload.appointment_time,
-      visit_status: payload.status || "Pending",
-      remarks: payload.title || "Property visit",
-    };
-
-    const tenantTableResult = await supabase
-      .from("visit_schedule")
-      .insert([visitSchedulePayload])
-      .select()
-      .single();
-
-    if (!tenantTableResult.error) {
-      return tenantTableResult.data;
-    }
-
-    if (isSupabaseSchemaError(tenantTableResult.error) && payload.service_request_id) {
-      const retryPayload = { ...visitSchedulePayload };
-      delete (retryPayload as any).service_request_id;
-      const retry = await supabase.from("visit_schedule").insert([retryPayload]).select().single();
-      if (!retry.error) return retry.data;
-    }
-
-    if (!isSupabaseSchemaError(tenantTableResult.error)) {
-      console.error("Error creating visit schedule:", tenantTableResult.error);
-    }
-
-    const { data, error } = await supabase
-      .from("appointments")
-      .insert({
-        title: payload.title,
-        service_request_id: payload.service_request_id,
-        contractor_id: payload.contractor_id,
-        appointment_date: payload.appointment_date,
-        appointment_time: payload.appointment_time,
-        status: "Scheduled",
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return data;
-  }
   export async function updateAppointmentDateTime(
     id: string,
     payload: {
@@ -1862,7 +1903,6 @@ export async function createAppointment(payload: {
     if (error) throw error;
     return data;
   }
-}
 
 export async function createEstimate(payload: {
   service_request_id: number;
@@ -1887,10 +1927,13 @@ export async function createEstimate(payload: {
       ])
       .select();
 
-  if(error) throw error;
-
-  return data;
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Exception creating estimate:", err);
+    throw err;
   }
+}
 
   export async function getUsers() {
     try {
@@ -2026,10 +2069,10 @@ export async function getServiceAdminDashboard() {
 
     return {
       stats: {
-        total: mockServiceRequests.length,
-        pending: pendingRequests.length,
-        assigned: assignedRequests.length,
-        completed: completedRequests.length,
+        total: totalRequests,
+        pending: pending,
+        assigned: assigned,
+        completed: completed,
       },
       requestsSeries,
       contractors: formattedContractors,
@@ -2430,7 +2473,9 @@ export async function getServiceAdminDashboard() {
   }
 
   export async function getTenantServiceRequests(tenantId: number, legacyTenantId?: number | null) {
-    return getServiceRequests({ tenantId, legacyTenantId: legacyTenantId || tenantId });
+    const all = await getServiceRequests();
+    const allowedTenantIds = new Set([tenantId, legacyTenantId || tenantId]);
+    return all.filter((request) => allowedTenantIds.has(request.tenantId));
   }
 
   export async function getTenantAppointments(tenantId: number, legacyTenantId?: number | null) {
@@ -2637,3 +2682,97 @@ export async function getServiceAdminDashboard() {
     if (error) throw error;
     return data;
   }
+
+// ================= CONTRACTOR DASHBOARD FUNCTIONS (RESTORED) =================
+export async function getContractorProfile(contractorId: number) {
+  const { data, error } = await supabase
+    .from("Contractor")
+    .select(`
+      *,
+      ContractorProfile(*)
+    `)
+    .eq("contractor_id", contractorId)
+    .single();
+
+  if (error) throw error;
+
+  return {
+    ...data,
+    ...(Array.isArray(data.ContractorProfile)
+      ? data.ContractorProfile[0]
+      : data.ContractorProfile),
+  };
+}
+
+export async function getContractorServiceRequests(contractorId: number) {
+  const { data, error } = await supabase
+    .from("ContractorServiceRequest")
+    .select("*")
+    .eq("contractor_id", contractorId)
+    .order("assigned_date", { ascending: false });
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+export async function getContractorAppointments(contractorId: number) {
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("*")
+    .eq("contractor_id", contractorId)
+    .order("appointment_date", { ascending: true });
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+export async function getContractorEstimates(contractorId: number) {
+  const { data, error } = await supabase
+    .from("estimates")
+    .select("*")
+    .eq("contractor_id", contractorId)
+    .order("submitted_date", { ascending: false });
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+export async function getContractorInvoices(contractorId: number) {
+  const { data, error } = await supabase
+    .from("ContractorInvoice")
+    .select("*")
+    .eq("contractor_id", contractorId)
+    .order("uploaded_at", { ascending: false });
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+    export async function getContractorQuotations(contractorId: number) {
+  const { data, error } = await supabase
+    .from("ContractorQuotation")
+    .select("*")
+    .eq("contractor_id", contractorId)
+    .order("submitted_at", { ascending: false });
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+export async function getContractorAvailability(contractorId: number) {
+
+  const { data, error } = await supabase
+    .from("ContractorAvailability")
+    .select("*")
+    .eq("contractor_id", contractorId);
+
+  if (error) throw error;
+
+  return data;
+}
+

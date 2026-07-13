@@ -29,11 +29,12 @@ import {
   getInvoices,
   recordRentPaymentSuccess,
   updateInvoiceStatus as updateSupabaseInvoice,
+  getServiceRequests,
+  getContractors,
+  createInvoice,
 } from "@/core/db/supabase-queries";
 import { createRazorpayOrder, verifyRazorpayPayment } from "@/core/api/razorpay.functions";
-import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil, CreditCard } from "lucide-react";
-import { getInvoices, updateInvoiceStatus as updateSupabaseInvoice, getServiceRequests, getContractors, createInvoice } from "@/core/db/supabase-queries";
-import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil, Plus } from "lucide-react";
+import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil, CreditCard, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
 const formatUsd = new Intl.NumberFormat("en-US", {
@@ -99,9 +100,8 @@ function InvoicesPage() {
     queryFn: getInvoices,
   });
 
-<<<<<<< HEAD
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
-=======
+
   const { data: serviceRequests = [] } = useQuery({
     queryKey: ["service-requests"],
     queryFn: getServiceRequests,
@@ -128,7 +128,6 @@ function InvoicesPage() {
     }
   });
 
->>>>>>> aa4fdbe (feat(service-admin): migrate module to finalized Supabase schema)
   const updateMutation = useMutation({
     mutationFn: ({ id, status, reason }: { id: string; status: string; reason?: string }) =>
       updateSupabaseInvoice(id, { status, reason }),

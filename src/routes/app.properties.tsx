@@ -371,6 +371,11 @@ function PropertiesPage() {
     occupancy_certificate: "",
     property_insurance: "",
     owner_government_id: "",
+    landlord_name: "",
+    mobile_number: "",
+    email: "",
+    preferred_contact_time: "Anytime",
+    whatsapp_number: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
@@ -855,6 +860,18 @@ function PropertiesPage() {
       airport_distance: (p as any).nearbyFacilitiesData?.airport_distance || "",
       supermarket_distance: (p as any).nearbyFacilitiesData?.supermarket_distance || "",
       bank_distance: (p as any).nearbyFacilitiesData?.bank_distance || "",
+      ownership_proof: (p as any).property_documents?.ownership_proof || "",
+      tax_receipt: (p as any).property_documents?.tax_receipt || "",
+      electricity_bill: (p as any).property_documents?.electricity_bill || "",
+      encumbrance_certificate: (p as any).property_documents?.encumbrance_certificate || "",
+      occupancy_certificate: (p as any).property_documents?.occupancy_certificate || "",
+      property_insurance: (p as any).property_documents?.property_insurance || "",
+      owner_government_id: (p as any).property_documents?.owner_government_id || "",
+      landlord_name: (p as any).property_contact_details?.landlord_name || "",
+      mobile_number: (p as any).property_contact_details?.mobile_number || "",
+      email: (p as any).property_contact_details?.email || "",
+      preferred_contact_time: (p as any).property_contact_details?.preferred_contact_time || "Anytime",
+      whatsapp_number: (p as any).property_contact_details?.whatsapp_number || "",
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);

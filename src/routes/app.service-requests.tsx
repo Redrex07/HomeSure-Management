@@ -9,9 +9,10 @@ import {
   getServiceRequests,
   createServiceRequest,
   getTenantServiceRequests,
+  updateServiceRequest,
+  deleteServiceRequest,
 } from "@/core/db/supabase-queries";
 import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
-import { getServiceRequests, createServiceRequest, updateServiceRequest, deleteServiceRequest } from "@/core/db/supabase-queries";
 import {
   Select,
   SelectContent,
