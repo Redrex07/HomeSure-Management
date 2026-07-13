@@ -11,6 +11,7 @@ import {
   getTenantServiceRequests,
   updateServiceRequest,
   deleteServiceRequest,
+  getContractors,
 } from "@/core/db/supabase-queries";
 import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 import {
@@ -55,6 +56,9 @@ function ServiceRequestsPage() {
   const [editCategory, setEditCategory] = useState("Plumbing");
   const [editPriority, setEditPriority] = useState("Medium");
   const [editStatus, setEditStatus] = useState("Pending");
+  const [editContractorId, setEditContractorId] = useState("unassigned");
+  const [editAssignedDate, setEditAssignedDate] = useState("");
+  const [editCompletedDate, setEditCompletedDate] = useState("");
 
   const queryClient = useQueryClient();
   const tenantContext = useTenantContext();
@@ -72,9 +76,38 @@ function ServiceRequestsPage() {
     enabled: !isTenant || (!!tenantId && !!serviceTenantId),
   });
 
+  // Load contractors list
+  const { data: contractors = [] } = useQuery({
+    queryKey: ["contractors"],
+    queryFn: getContractors,
+  });
+
   const updateMutation = useMutation({
-    mutationFn: ({ id, category, priority, status }: { id: string; category: string; priority: string; status: string }) =>
-      updateServiceRequest(id, { category, priority, status }),
+    mutationFn: ({
+      id,
+      category,
+      priority,
+      status,
+      contractor_id,
+      assigned_date,
+      completed_date,
+    }: {
+      id: string;
+      category: string;
+      priority: string;
+      status: string;
+      contractor_id: number | null;
+      assigned_date: string | null;
+      completed_date: string | null;
+    }) =>
+      updateServiceRequest(id, {
+        category,
+        priority,
+        status,
+        contractor_id,
+        assigned_date,
+        completed_date,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["service-requests"] });
       toast.success("Request updated successfully!");
@@ -331,6 +364,9 @@ function ServiceRequestsPage() {
                       setEditCategory(r.category || "Plumbing");
                       setEditPriority(r.priority || "Medium");
                       setEditStatus(r.status || "Pending");
+                      setEditContractorId(r.contractorId ? String(r.contractorId) : "unassigned");
+                      setEditAssignedDate(r.assignedDate ? r.assignedDate.split("T")[0] : "");
+                      setEditCompletedDate(r.completedDate ? r.completedDate.split("T")[0] : "");
                     }}
                     title="Edit Request"
                   >
@@ -372,7 +408,10 @@ function ServiceRequestsPage() {
                 id: editingRequest.id,
                 category: editCategory,
                 priority: editPriority,
-                status: editStatus
+                status: editStatus,
+                contractor_id: (editContractorId && editContractorId !== "unassigned") ? Number(editContractorId) : null,
+                assigned_date: editAssignedDate || null,
+                completed_date: editCompletedDate || null,
               });
             }}
             className="space-y-4 py-2"
@@ -423,6 +462,47 @@ function ServiceRequestsPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="editContractorSelect">Contractor</Label>
+              <Select value={editContractorId} onValueChange={setEditContractorId}>
+                <SelectTrigger id="editContractorSelect">
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {contractors.map((c: any) => {
+                    const rawId = c.id.replace("C-", "");
+                    return (
+                      <SelectItem key={c.id} value={rawId}>
+                        {c.name} ({c.trade})
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="editAssignedDateInput">Assigned Date</Label>
+                <Input
+                  id="editAssignedDateInput"
+                  type="date"
+                  value={editAssignedDate}
+                  onChange={(e) => setEditAssignedDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="editCompletedDateInput">Completed Date</Label>
+                <Input
+                  id="editCompletedDateInput"
+                  type="date"
+                  value={editCompletedDate}
+                  onChange={(e) => setEditCompletedDate(e.target.value)}
+                />
+              </div>
             </div>
 
             <DialogFooter className="pt-2">

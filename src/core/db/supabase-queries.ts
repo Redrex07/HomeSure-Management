@@ -886,6 +886,9 @@ export async function getServiceRequests() {
       propertyId: r.property_id,
       requestId: r.service_request_id,
       source: "maintenance_request",
+      contractorId: r.contractor_id,
+      assignedDate: r.assigned_date,
+      completedDate: r.completed_date,
     }));
   } catch (err) {
     console.error("Exception fetching service requests:", err);
@@ -960,16 +963,20 @@ export async function updateServiceRequest(
     priority?: string;
     status?: string;
     description?: string;
-    contractor_id?: number;
+    contractor_id?: number | null;
+    assigned_date?: string | null;
+    completed_date?: string | null;
   }
 ) {
   try {
     const numericId = parseInt(id.replace("SR-", ""), 10);
     const mapped: any = {};
-    if (payload.status) mapped.request_status = payload.status;
-    if (payload.priority) mapped.priority = payload.priority;
-    if (payload.category) mapped.request_category = payload.category;
-    if (payload.contractor_id) mapped.contractor_id = payload.contractor_id;
+    if (payload.status !== undefined) mapped.request_status = payload.status;
+    if (payload.priority !== undefined) mapped.priority = payload.priority;
+    if (payload.category !== undefined) mapped.request_category = payload.category;
+    if (payload.contractor_id !== undefined) mapped.contractor_id = payload.contractor_id;
+    if (payload.assigned_date !== undefined) mapped.assigned_date = payload.assigned_date;
+    if (payload.completed_date !== undefined) mapped.completed_date = payload.completed_date;
 
     const { data, error } = await supabase
       .from("service_request_management")
