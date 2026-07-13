@@ -88,11 +88,12 @@ function PropertyDetailsPage() {
     const contactDetails = (property as any)?.contactDetailsData || {};
     const availability = (property as any)?.availabilityData || {};
     const additionalInformation = (property as any)?.additionalInformationData || {};
+    const parkingData = (property as any)?.parkingData || {};
     const propertyVerified = (property as any)?.property_verification?.[0]?.property_verified ?? false;
     const adminApproval = (property as any)?.property_verification?.[0]?.admin_approval ?? "Pending";
     const featuredProperty = (property as any)?.property_verification?.[0]?.featured_property ?? false;
     
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails, ...availability, ...additionalInformation, property_verified: propertyVerified, admin_approval: adminApproval, featured_property: featuredProperty }));
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails, ...availability, ...additionalInformation, ...parkingData, property_verified: propertyVerified, admin_approval: adminApproval, featured_property: featuredProperty }));
 
     let images = [];
     try {
