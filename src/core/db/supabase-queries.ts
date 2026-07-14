@@ -1569,7 +1569,7 @@ export async function createAppointment(payload: any) {
               service_admin_id: 1,
               landlord_id: 4,
               assigned_date: new Date().toISOString(),
-              assignment_status: "Pending",
+              assignment_status: "Assigned",
             },
           ])
           .select();
@@ -1878,6 +1878,24 @@ export async function createAppointment(payload: any) {
     },
   ) {
     const numericId = parsePrefixedId(id, "A-");
+    
+    try {
+      const { data, error } = await supabase
+        .from("service_schedule")
+        .update({
+          service_date: payload.appointment_date,
+          start_time: payload.appointment_time,
+          end_time: payload.appointment_time,
+        })
+        .eq("schedule_id", numericId)
+        .select()
+        .single();
+
+      if (!error) return data;
+    } catch (e) {
+      console.warn("service_schedule reschedule failed, falling back:", e);
+    }
+
     const tenantTableResult = await supabase
       .from("visit_schedule")
       .update({
@@ -2900,6 +2918,81 @@ export async function reassignContractor(payload: {
     return data;
   } catch (err) {
     console.error("Exception in reassignContractor:", err);
+    throw err;
+  }
+}
+
+export async function updateAppointmentStatus(
+  id: string,
+  payload: {
+    status: string;
+    notes?: string;
+  }
+) {
+  try {
+    const numericId = parsePrefixedId(id, "A-");
+    const mapped: any = { schedule_status: payload.status };
+    if (payload.notes !== undefined) mapped.notes = payload.notes;
+
+    const { data, error } = await supabase
+      .from("service_schedule")
+      .update(mapped)
+      .eq("schedule_id", numericId)
+      .select()
+      .single();
+
+    if (error) {
+      console.warn("service_schedule update status failed, trying legacy:", error);
+      const tenantRes = await supabase
+        .from("visit_schedule")
+        .update({ visit_status: payload.status, remarks: payload.notes || "Property visit" })
+        .eq("visit_id", numericId)
+        .select()
+        .single();
+      if (!tenantRes.error) return tenantRes.data;
+
+      const apptRes = await supabase
+        .from("appointments")
+        .update({ status: payload.status })
+        .eq("appointment_id", numericId)
+        .select()
+        .single();
+      if (apptRes.error) throw apptRes.error;
+      return apptRes.data;
+    }
+    return data;
+  } catch (err) {
+    console.error("Exception in updateAppointmentStatus:", err);
+    throw err;
+  }
+}
+
+export async function deleteAppointment(id: string) {
+  try {
+    const numericId = parsePrefixedId(id, "A-");
+    
+    const { error } = await supabase
+      .from("service_schedule")
+      .delete()
+      .eq("schedule_id", numericId);
+
+    if (error) {
+      console.warn("service_schedule delete failed, trying legacy:", error);
+      const tenantRes = await supabase
+        .from("visit_schedule")
+        .delete()
+        .eq("visit_id", numericId);
+      if (tenantRes.error) {
+        const apptRes = await supabase
+          .from("appointments")
+          .delete()
+          .eq("appointment_id", numericId);
+        if (apptRes.error) throw apptRes.error;
+      }
+    }
+    return { success: true };
+  } catch (err) {
+    console.error("Exception in deleteAppointment:", err);
     throw err;
   }
 }
