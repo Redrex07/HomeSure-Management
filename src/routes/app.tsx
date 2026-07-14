@@ -32,7 +32,8 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
     "/app/invoices",
     "/app/support",
     "/app/settings",
-    "/app/service-documents"
+    "/app/service-documents",
+    "/app/service-communications"
   ],
   landlord: [
     "/app/dashboard",

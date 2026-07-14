@@ -3169,3 +3169,117 @@ export async function deleteServiceDocument(id: number) {
   }
 }
 
+export async function getServiceCommunications() {
+  try {
+    const { data, error } = await supabase
+      .from("service_communication")
+      .select(`
+        communication_id,
+        service_request_id,
+        sender_id,
+        receiver_id,
+        communication_type,
+        message,
+        attachment_url,
+        status,
+        sent_at,
+        read_at,
+        sender:users!sender_id (name),
+        receiver:users!receiver_id (name)
+      `)
+      .order("sent_at", { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map((c: any) => ({
+      id: c.communication_id,
+      requestId: c.service_request_id,
+      senderId: c.sender_id,
+      receiverId: c.receiver_id,
+      type: c.communication_type || "Chat",
+      message: c.message || "",
+      attachmentUrl: c.attachment_url || "",
+      status: c.status || "Sent",
+      sentAt: c.sent_at,
+      readAt: c.read_at,
+      senderName: c.sender?.name || "System Admin",
+      receiverName: c.receiver?.name || "Unknown User",
+    }));
+  } catch (err) {
+    console.error("Exception fetching service communications:", err);
+    return [];
+  }
+}
+
+export async function createServiceCommunication(payload: {
+  service_request_id: number;
+  sender_id: number;
+  receiver_id: number;
+  communication_type: string;
+  message: string;
+  attachment_url?: string;
+  status?: string;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from("service_communication")
+      .insert([
+        {
+          service_request_id: payload.service_request_id,
+          sender_id: payload.sender_id,
+          receiver_id: payload.receiver_id,
+          communication_type: payload.communication_type,
+          message: payload.message,
+          attachment_url: payload.attachment_url || "",
+          status: payload.status || "Sent",
+          sent_at: new Date().toISOString(),
+        },
+      ])
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  } catch (err) {
+    console.error("Exception creating service communication:", err);
+    throw err;
+  }
+}
+
+export async function updateServiceCommunication(
+  id: number,
+  payload: {
+    message?: string;
+    status?: string;
+    read_at?: string | null;
+  }
+) {
+  try {
+    const { data, error } = await supabase
+      .from("service_communication")
+      .update(payload)
+      .eq("communication_id", id)
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  } catch (err) {
+    console.error("Exception updating service communication:", err);
+    throw err;
+  }
+}
+
+export async function deleteServiceCommunication(id: number) {
+  try {
+    const { error } = await supabase
+      .from("service_communication")
+      .delete()
+      .eq("communication_id", id);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (err) {
+    console.error("Exception deleting service communication:", err);
+    throw err;
+  }
+}
+
