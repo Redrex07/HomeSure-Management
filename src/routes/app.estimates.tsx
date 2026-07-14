@@ -105,10 +105,6 @@ function EstimatesPage() {
       toast.error("Please fill in all fields.");
       return;
     }
-    console.log({
-  createRequestId,
-  createContractorId,
-});
     createMutation.mutate({
   service_request_id: parseInt(createRequestId.replace("SR-", ""), 10),
   contractor_id: Number(createContractorId),
@@ -156,7 +152,6 @@ function EstimatesPage() {
                   <Select
   value={createContractorId}
   onValueChange={(value) => {
-    console.log("Selected contractor:", value);
     setCreateContractorId(value);
   }}
 >

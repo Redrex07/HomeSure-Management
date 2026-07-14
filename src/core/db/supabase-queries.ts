@@ -48,9 +48,6 @@
    */
   export async function testSupabaseConnection() {
     try {
-      console.log("🧪 Testing Supabase connection...");
-
-      // Try to query any table to see if connection works
       const { data, error } = await supabase.from("properties").select("*").limit(1);
 
       if (error) {
@@ -58,7 +55,6 @@
         return { connected: false, error: error.message };
       }
 
-      console.log("✅ Supabase connected!");
       return { connected: true, error: null };
     } catch (err) {
       console.error("❌ Connection test failed:", err);
@@ -71,12 +67,7 @@
    */
   export async function getAllProperties() {
     try {
-      console.log("🔍 Fetching ALL properties...");
-
       const { data, error } = await supabase.from("properties").select("*, property_rent_details(*), property_amenities(*), tenant_preferences(*), property_utilities(*), nearby_facilities(*), property_documents(*), property_contact_details(*)");
-
-      console.log("📊 DATA:", data);
-      console.log("❌ ERROR:", error);
 
       if (error) {
         console.error("Supabase Error:", error);
@@ -2104,7 +2095,6 @@ export async function createEstimate(payload: {
   }
 
 export async function getServiceAdminDashboard() {
-  console.log("🔌 getServiceAdminDashboard executing in finalized queries layer...");
   const todayStr = new Date().toISOString().split("T")[0];
 
   try {
