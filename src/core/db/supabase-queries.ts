@@ -732,7 +732,34 @@
 
   export async function createInvoice(payload: any) {
     try {
-      const { data, error } = await supabase.from("invoices").insert([payload]).select();
+      const { data: srmData } = await supabase
+        .from("service_request_management")
+        .select("property_id, tenant_id, landlord_id")
+        .eq("service_request_id", payload.service_request_id)
+        .single();
+
+      const propertyId = srmData?.property_id || 1;
+      const tenantId = srmData?.tenant_id || 1;
+      const landlordId = srmData?.landlord_id || 4;
+
+      const { data, error } = await supabase
+        .from("payment_management")
+        .insert([
+          {
+            service_request_id: payload.service_request_id,
+            contractor_id: payload.contractor_id,
+            landlord_id: landlordId,
+            tenant_id: tenantId,
+            property_id: propertyId,
+            payment_amount: payload.amount,
+            payment_method: payload.payment_method || "Bank Transfer",
+            payment_reference: payload.payment_reference || "",
+            payment_status: payload.payment_status || "Pending",
+            payment_date: payload.payment_date || new Date().toISOString(),
+            receipt_document: payload.receipt_document || "",
+          },
+        ])
+        .select();
 
       if (error) throw error;
       return data;
@@ -746,9 +773,9 @@
     try {
       const numericId = parseInt(id.replace("INV-", ""), 10);
       const { data, error } = await supabase
-        .from("invoices")
+        .from("payment_management")
         .delete()
-        .eq("invoice_id", numericId)
+        .eq("payment_management_id", numericId)
         .select();
 
       if (error) throw error;
@@ -759,13 +786,31 @@
     }
   }
 
-  export async function updateInvoice(id: string, payload: any) {
+  export async function updateInvoice(
+    id: string,
+    payload: {
+      amount?: number;
+      status?: string;
+      payment_method?: string;
+      payment_reference?: string;
+      payment_date?: string;
+      receipt_document?: string;
+    }
+  ) {
     try {
       const numericId = parseInt(String(id).replace("INV-", ""), 10);
+      const mapped: any = {};
+      if (payload.amount !== undefined) mapped.payment_amount = payload.amount;
+      if (payload.status !== undefined) mapped.payment_status = payload.status;
+      if (payload.payment_method !== undefined) mapped.payment_method = payload.payment_method;
+      if (payload.payment_reference !== undefined) mapped.payment_reference = payload.payment_reference;
+      if (payload.payment_date !== undefined) mapped.payment_date = payload.payment_date;
+      if (payload.receipt_document !== undefined) mapped.receipt_document = payload.receipt_document;
+
       const { data, error } = await supabase
-        .from("invoices")
-        .update(payload)
-        .eq("invoice_id", numericId)
+        .from("payment_management")
+        .update(mapped)
+        .eq("payment_management_id", numericId)
         .select();
 
       if (error) throw error;
@@ -1213,7 +1258,11 @@ export async function getInvoices() {
         payment_status,
         payment_date,
         receipt_document,
-        service_request_management (request_category)
+        service_request_management (request_category),
+        properties (property_name),
+        tenant (first_name, last_name),
+        contractors (name),
+        landlord:users!landlord_id (name)
       `)
       .order("payment_management_id", { ascending: false });
 
@@ -1238,6 +1287,10 @@ export async function getInvoices() {
       propertyId: p.property_id,
       rawId: p.payment_management_id,
       source: "invoices",
+      propertyName: p.properties?.property_name || "General Billing",
+      tenantName: p.tenant ? `${p.tenant.first_name || ""} ${p.tenant.last_name || ""}`.trim() : "General Tenant",
+      landlordName: p.landlord?.name || "General Landlord",
+      contractorName: p.contractors?.name || "General Contractor",
     }));
   } catch (err) {
     console.error("Exception fetching invoices:", err);
