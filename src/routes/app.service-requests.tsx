@@ -35,6 +35,8 @@ import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "@/features/auth/store/auth-store";
+import { ContractorServiceRequests } from "@/features/dashboard/components/ContractorServiceRequests";
 
 export const Route = createFileRoute("/app/service-requests")({
   head: () => ({ meta: [{ title: "Service Requests — HomeSure" }] }),
@@ -42,6 +44,16 @@ export const Route = createFileRoute("/app/service-requests")({
 });
 
 function ServiceRequestsPage() {
+  const session = useSession();
+
+  if (session?.role === "contractor") {
+    return <ContractorServiceRequests />;
+  }
+
+  return <StandardServiceRequestsPage />;
+}
+
+function StandardServiceRequestsPage() {
   const [category, setCategory] = useState<string>("all");
   const [priority, setPriority] = useState<string>("all");
   const [open, setOpen] = useState(false);

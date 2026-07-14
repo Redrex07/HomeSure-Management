@@ -1,12 +1,8 @@
 
 import { PageHeader } from "@/shared/components/common/PageHeader";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
+import { DataTable } from "@/shared/components/common/DataTable";
+import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { getContractorAvailability } from "@/core/db/supabase-queries";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -38,8 +34,8 @@ const contractorId = 3001;
 export function ContractorAvailability() {
   const contractorId = 3001;
 
-  const { data: availability = [] } = useQuery({
-    queryKey: ["contractor-availability"],
+  const { data: availability = [], isLoading, isError } = useQuery({
+    queryKey: ["contractor-availability", contractorId],
     queryFn: () => getContractorAvailability(contractorId),
   });
   const [date, setDate] = useState("");
@@ -52,7 +48,7 @@ const queryClient = useQueryClient();
 const handleSaveAvailability = async () => {
 
   const { error } = await supabase
-    .from("ContractorAvailability")
+    .from("contractor_availability")
     .insert({
       contractor_id: contractorId,
       available_date: date,
@@ -190,69 +186,51 @@ const handleSaveAvailability = async () => {
   }
 />
 
-      <Card>
-       
-
-        <CardContent>
-
-          <table className="w-full border-collapse">
-
-            <thead>
-
-              <tr className="border-b">
-
-                <th className="py-3 text-left">Availability ID</th>
-                
-
-            <th>Contractor ID</th>
-<th>Date</th>
-<th>Available From</th>
-<th>Available To</th>
-<th>Status</th>
-<th>Remarks</th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {availability.map((item: any) => (
-
-               <tr key={item.availability_id}>
-    <td>{item.availability_id}</td>
-    <td>{item.contractor_id}</td>
-    <td>{item.available_date}</td>
-    <td>{item.available_from}</td>
-    <td>{item.available_to}</td>
-    <td>{item.availability_status}</td>
-    <td>{item.remarks}</td>
-</tr>
-
-              ))}
-
-              {availability.length === 0 && (
-
-                <tr>
-
-                  <td
-                    colSpan={6}
-                    className="py-8 text-center text-gray-500"
-                  >
-                    No availability records found.
-                  </td>
-
-                </tr>
-
-              )}
-
-            </tbody>
-
-          </table>
-
-        </CardContent>
-
-      </Card>
+      {isLoading ? (
+        <div className="flex h-64 items-center justify-center rounded-xl border border-slate-200 bg-white">
+          <p className="animate-pulse text-sm text-slate-500">Loading availability...</p>
+        </div>
+      ) : isError ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Unable to load availability. Please try again.
+        </div>
+      ) : (
+        <DataTable
+          rows={availability}
+          filterKeys={["availability_id", "available_date", "availability_status", "remarks"]}
+          empty="No availability records found."
+          columns={[
+            {
+              key: "availability_id",
+              header: "Availability ID",
+              sortable: true,
+              render: (item) => <span className="font-mono text-xs">#{item.availability_id}</span>,
+            },
+            { key: "contractor_id", header: "Contractor ID", render: (item) => `#${item.contractor_id}` },
+            {
+              key: "available_date",
+              header: "Available date",
+              sortable: true,
+              render: (item) =>
+                item.available_date
+                  ? new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(item.available_date))
+                  : "—",
+            },
+            { key: "available_from", header: "From" },
+            { key: "available_to", header: "To" },
+            {
+              key: "availability_status",
+              header: "Status",
+              render: (item) => <StatusBadge value={item.availability_status} />,
+            },
+            {
+              key: "remarks",
+              header: "Remarks",
+              render: (item) => <span className="block max-w-72 truncate" title={item.remarks || undefined}>{item.remarks || "—"}</span>,
+            },
+          ]}
+        />
+      )}
     </>
   );
 }
