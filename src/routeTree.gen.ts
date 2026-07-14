@@ -24,6 +24,7 @@ import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as AppSubscriptionsRouteImport } from './routes/app.subscriptions'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppServiceRequestsRouteImport } from './routes/app.service-requests'
+import { Route as AppServiceDocumentsRouteImport } from './routes/app.service-documents'
 import { Route as AppRealtorsRouteImport } from './routes/app.realtors'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
@@ -117,6 +118,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppServiceRequestsRoute = AppServiceRequestsRouteImport.update({
   id: '/service-requests',
   path: '/service-requests',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppServiceDocumentsRoute = AppServiceDocumentsRouteImport.update({
+  id: '/service-documents',
+  path: '/service-documents',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRealtorsRoute = AppRealtorsRouteImport.update({
@@ -241,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -277,6 +284,7 @@ export interface FileRoutesByTo {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -314,6 +322,7 @@ export interface FileRoutesById {
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -352,6 +361,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/properties'
     | '/app/realtors'
+    | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -388,6 +398,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/properties'
     | '/app/realtors'
+    | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -424,6 +435,7 @@ export interface FileRouteTypes {
     | '/app/notifications'
     | '/app/properties'
     | '/app/realtors'
+    | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -555,6 +567,13 @@ declare module '@tanstack/react-router' {
       path: '/service-requests'
       fullPath: '/app/service-requests'
       preLoaderRoute: typeof AppServiceRequestsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/service-documents': {
+      id: '/app/service-documents'
+      path: '/service-documents'
+      fullPath: '/app/service-documents'
+      preLoaderRoute: typeof AppServiceDocumentsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/realtors': {
@@ -735,6 +754,7 @@ interface AppRouteChildren {
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
   AppRealtorsRoute: typeof AppRealtorsRoute
+  AppServiceDocumentsRoute: typeof AppServiceDocumentsRoute
   AppServiceRequestsRoute: typeof AppServiceRequestsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionsRoute: typeof AppSubscriptionsRoute
@@ -760,6 +780,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotificationsRoute: AppNotificationsRoute,
   AppPropertiesRoute: AppPropertiesRouteWithChildren,
   AppRealtorsRoute: AppRealtorsRoute,
+  AppServiceDocumentsRoute: AppServiceDocumentsRoute,
   AppServiceRequestsRoute: AppServiceRequestsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionsRoute: AppSubscriptionsRoute,

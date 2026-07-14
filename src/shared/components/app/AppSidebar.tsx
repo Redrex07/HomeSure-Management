@@ -75,6 +75,7 @@ export const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
         { title: "Estimates", url: "/app/estimates", icon: FileSpreadsheet },
         { title: "Invoices", url: "/app/invoices", icon: Receipt },
         { title: "Support Tickets", url: "/app/support", icon: LifeBuoy },
+        { title: "Service Documents", url: "/app/service-documents", icon: FileText },
       ],
     },
   ],

@@ -3050,3 +3050,122 @@ export async function deleteAppointment(id: string) {
   }
 }
 
+export async function getServiceDocuments() {
+  try {
+    const { data, error } = await supabase
+      .from("service_document")
+      .select(`
+        document_id,
+        service_request_id,
+        property_id,
+        contractor_id,
+        uploaded_by,
+        document_name,
+        document_type,
+        document_url,
+        document_size,
+        uploaded_at,
+        properties (property_name),
+        contractors (name),
+        users (name)
+      `)
+      .order("uploaded_at", { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map((d: any) => ({
+      id: d.document_id,
+      requestId: d.service_request_id,
+      propertyId: d.property_id,
+      contractorId: d.contractor_id,
+      uploadedBy: d.uploaded_by,
+      name: d.document_name,
+      type: d.document_type || "Other",
+      url: d.document_url,
+      size: d.document_size || 0,
+      uploadedAt: d.uploaded_at,
+      propertyName: d.properties?.property_name || "General Property",
+      contractorName: d.contractors?.name || "General Contractor",
+      uploaderName: d.users?.name || "System Admin",
+    }));
+  } catch (err) {
+    console.error("Exception fetching service documents:", err);
+    return [];
+  }
+}
+
+export async function createServiceDocument(payload: {
+  service_request_id?: number | null;
+  property_id?: number | null;
+  contractor_id?: number | null;
+  uploaded_by: number;
+  document_name: string;
+  document_type: string;
+  document_url: string;
+  document_size: number;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from("service_document")
+      .insert([
+        {
+          service_request_id: payload.service_request_id || null,
+          property_id: payload.property_id || null,
+          contractor_id: payload.contractor_id || null,
+          uploaded_by: payload.uploaded_by,
+          document_name: payload.document_name,
+          document_type: payload.document_type,
+          document_url: payload.document_url,
+          document_size: payload.document_size,
+          uploaded_at: new Date().toISOString(),
+        },
+      ])
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  } catch (err) {
+    console.error("Exception creating service document:", err);
+    throw err;
+  }
+}
+
+export async function updateServiceDocument(
+  id: number,
+  payload: {
+    document_name?: string;
+    service_request_id?: number | null;
+    contractor_id?: number | null;
+    property_id?: number | null;
+  }
+) {
+  try {
+    const { data, error } = await supabase
+      .from("service_document")
+      .update(payload)
+      .eq("document_id", id)
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  } catch (err) {
+    console.error("Exception updating service document:", err);
+    throw err;
+  }
+}
+
+export async function deleteServiceDocument(id: number) {
+  try {
+    const { error } = await supabase
+      .from("service_document")
+      .delete()
+      .eq("document_id", id);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (err) {
+    console.error("Exception deleting service document:", err);
+    throw err;
+  }
+}
+
