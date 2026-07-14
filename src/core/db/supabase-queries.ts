@@ -2099,7 +2099,7 @@ export async function getServiceAdminDashboard() {
 
   try {
     const [requestsRes, contractorsRes, activeRequestsRes, appointmentsRes] = await Promise.all([
-      supabase.from("service_request_management").select("request_status, assigned_date, created_at"),
+      supabase.from("service_request_management").select("request_status, assigned_date"),
       supabase.from("contractors").select("contractor_id, name, email, trade, rating, available").limit(5),
       supabase.from("service_request_management").select(`
         service_request_id,
@@ -2159,8 +2159,8 @@ export async function getServiceAdminDashboard() {
       const dateStr = d.toISOString().split("T")[0];
       
       const createdCount = allRequests.filter(r => {
-        if (!r.created_at) return false;
-        return r.created_at.startsWith(dateStr);
+        if (!r.assigned_date) return false;
+        return r.assigned_date.startsWith(dateStr);
       }).length;
 
       const completedCount = allRequests.filter(r => {
