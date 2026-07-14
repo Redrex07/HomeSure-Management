@@ -1396,47 +1396,46 @@ async function updateRentPaymentById(rawId: string | number | null | undefined, 
 export async function getSupportTickets() {
   try {
     const { data, error } = await supabase
-      .from("support_tickets")
+      .from("support_ticket")
       .select(`
-        ticket_id,
-        user_id,
-        subject,
-        description,
-        status,
-        created_at,
-        priority,
-        service_admin_id,
-        landlord_id,
-        tenant_id,
-        property_id,
-        contractor_id,
-        ticket_category,
+        support_ticket_id,
+        service_request_id,
+        created_by,
         assigned_to,
+        ticket_subject,
+        ticket_description,
+        ticket_priority,
+        ticket_category,
+        ticket_status,
         resolution_notes,
-        resolved_at,
+        created_at,
         updated_at,
-        users (name)
+        resolved_at,
+        created_by_user:users!created_by (name),
+        assigned_to_user:users!assigned_to (name)
       `)
-      .order("ticket_id", { ascending: false });
+      .order("support_ticket_id", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching support tickets:", error);
-        return [];
-      }
+    if (error) {
+      console.error("Error fetching support tickets:", error);
+      return [];
+    }
 
     return (data || []).map((t: any) => ({
-      id: `TK-${t.ticket_id}`,
-      subject: t.subject,
-      description: t.description || "",
-      user: t.users?.name || "Reporter",
+      id: `TK-${t.support_ticket_id}`,
+      subject: t.ticket_subject,
+      description: t.ticket_description || "",
+      user: t.created_by_user?.name || "Reporter",
       role: t.ticket_category || "General Inquiry",
-      priority: t.priority || "Medium",
-      status: t.status || "Open",
+      priority: t.ticket_priority || "Medium",
+      status: t.ticket_status || "Open",
       created: t.created_at ? new Date(t.created_at).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-      assignedTo: t.assigned_to || "",
+      assignedTo: t.assigned_to ? String(t.assigned_to) : "",
+      assignedToName: t.assigned_to_user?.name || "",
       resolutionNotes: t.resolution_notes || "",
       resolvedAt: t.resolved_at || "",
       updatedAt: t.updated_at || "",
+      serviceRequestId: t.service_request_id || null,
     }));
   } catch (err) {
     console.error("Exception fetching support tickets:", err);
@@ -1445,23 +1444,26 @@ export async function getSupportTickets() {
 }
 
 export async function createSupportTicket(payload: {
-  user_id: number;
-  subject: string;
-  description: string;
-  priority: string;
+  created_by: number;
+  service_request_id?: number | null;
+  ticket_subject: string;
+  ticket_description: string;
+  ticket_priority: string;
+  ticket_category: string;
 }) {
   try {
     const { data, error } = await supabase
-      .from("support_tickets")
+      .from("support_ticket")
       .insert([
         {
-          user_id: payload.user_id,
-          subject: payload.subject,
-          description: payload.description,
-          priority: payload.priority,
-          status: "Open",
-          service_admin_id: 1,
-          ticket_category: "General Inquiry",
+          created_by: payload.created_by,
+          service_request_id: payload.service_request_id || null,
+          ticket_subject: payload.ticket_subject,
+          ticket_description: payload.ticket_description,
+          ticket_priority: payload.ticket_priority,
+          ticket_category: payload.ticket_category,
+          ticket_status: "Open",
+          created_at: new Date().toISOString(),
         },
       ])
       .select();
@@ -1480,22 +1482,31 @@ export async function createSupportTicket(payload: {
 export async function updateSupportTicket(
   id: string,
   payload: {
-    status: string;
-    notes?: string;
-    assignedTo?: string;
+    ticket_status: string;
+    resolution_notes?: string;
+    assigned_to?: number | null;
   }
 ) {
   try {
     const numericId = parseInt(id.replace("TK-", ""), 10);
-    const updatePayload: any = { status: payload.status };
-    if (payload.notes) updatePayload.resolution_notes = payload.notes;
-    if (payload.assignedTo) updatePayload.assigned_to = payload.assignedTo;
-    if (payload.status === "Resolved") updatePayload.resolved_at = new Date().toISOString();
+    const updatePayload: any = {
+      ticket_status: payload.ticket_status,
+      updated_at: new Date().toISOString(),
+    };
+    if (payload.resolution_notes !== undefined) {
+      updatePayload.resolution_notes = payload.resolution_notes;
+    }
+    if (payload.assigned_to !== undefined) {
+      updatePayload.assigned_to = payload.assigned_to;
+    }
+    if (payload.ticket_status === "Resolved") {
+      updatePayload.resolved_at = new Date().toISOString();
+    }
 
     const { data, error } = await supabase
-      .from("support_tickets")
+      .from("support_ticket")
       .update(updatePayload)
-      .eq("ticket_id", numericId)
+      .eq("support_ticket_id", numericId)
       .select();
 
     if (error) {
@@ -1505,6 +1516,22 @@ export async function updateSupportTicket(
     return data;
   } catch (err) {
     console.error("Exception updating support ticket:", err);
+    throw err;
+  }
+}
+
+export async function deleteSupportTicket(id: string) {
+  try {
+    const numericId = parseInt(id.replace("TK-", ""), 10);
+    const { error } = await supabase
+      .from("support_ticket")
+      .delete()
+      .eq("support_ticket_id", numericId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (err) {
+    console.error("Exception deleting support ticket:", err);
     throw err;
   }
 }
