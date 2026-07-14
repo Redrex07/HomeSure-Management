@@ -14,6 +14,7 @@ import {
   Shield,
   CreditCard,
   FileText,
+  ClipboardCheck,
   ScrollText,
   Megaphone,
   Settings,
@@ -160,6 +161,7 @@ contractor: [
       label: "Listings",
       items: [
         { title: "Properties", url: "/app/properties", icon: Building2 },
+        { title: "Realtor Workspace", url: "/app/realtor-workspace", icon: ClipboardCheck },
         { title: "Listing Analytics", url: "/app/analytics", icon: BarChart3 },
         { title: "Tenant Onboarding", url: "/app/tenants", icon: Users },
       ],

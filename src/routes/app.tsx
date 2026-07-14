@@ -15,6 +15,7 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
     "/app/users",
     "/app/subscriptions",
     "/app/properties",
+    "/app/realtor-workspace",
     "/app/property",
     "/app/analytics",
     "/app/audit-logs",
@@ -73,6 +74,7 @@ contractor: [
   realtor: [
     "/app/dashboard",
     "/app/properties",
+    "/app/realtor-workspace",
     "/app/property",
     "/app/analytics",
     "/app/tenants",

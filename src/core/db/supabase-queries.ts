@@ -1735,13 +1735,19 @@ export async function createAppointment(payload: any) {
 
   export async function getRealtors() {
     const { data, error } = await supabase
-        .from("users")
+        .from("realtors")
         .select("*")
-        .eq("role_id",5);
+        .order("realtor_id", { ascending: true });
 
     if(error) throw error;
 
-    return data || [];
+    return (data || []).map((realtor: any) => ({
+      ...realtor,
+      id: realtor.realtor_id,
+      realtorName: realtor.realtor_name || realtor.name,
+      agencyName: realtor.agency_name,
+      phone: realtor.mobile_number || realtor.phone,
+    }));
   }
 
   export async function createRealtor(payload: {
@@ -1764,6 +1770,45 @@ export async function createAppointment(payload: any) {
 
     return data;
   }
+
+export async function getRealtorPropertyListings() {
+  const { data, error } = await supabase
+    .from("realtor_property_listing")
+    .select("*");
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getTenantOnboardingRecords() {
+  const { data, error } = await supabase
+    .from("tenant_onboarding")
+    .select("*")
+    .order("onboarding_id", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getPropertyReadinessRecords() {
+  const { data, error } = await supabase
+    .from("property_readiness")
+    .select("*")
+    .order("readiness_id", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getRealtorCommunications() {
+  const { data, error } = await supabase
+    .from("realtor_communication")
+    .select("*")
+    .order("communication_date", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
 
   function normalizeAiListingKeywords(keywords: unknown) {
     if (Array.isArray(keywords)) {
