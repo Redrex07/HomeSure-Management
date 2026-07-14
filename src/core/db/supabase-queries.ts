@@ -2784,7 +2784,7 @@ export async function getContractorProfile(contractorId: number) {
 
 export async function getContractorServiceRequests(contractorId: number) {
   const { data, error } = await supabase
-    .from("ContractorServiceRequest")
+    .from("contractor_service_request")
     .select("*")
     .eq("contractor_id", contractorId)
     .order("assigned_date", { ascending: false });
@@ -2820,19 +2820,32 @@ export async function getContractorEstimates(contractorId: number) {
 
 export async function getContractorInvoices(contractorId: number) {
   const { data, error } = await supabase
-    .from("ContractorInvoice")
+    .from("payment_management")
     .select("*")
     .eq("contractor_id", contractorId)
-    .order("uploaded_at", { ascending: false });
+    .order("payment_date", { ascending: false });
 
   if (error) throw error;
 
-  return data || [];
+  return (data || []).map((payment: any) => ({
+    invoice_id: payment.payment_management_id,
+    quotation_id: payment.service_request_id,
+    contractor_id: payment.contractor_id,
+    invoice_number: payment.payment_reference || `INV-${payment.payment_management_id}`,
+    invoice_amount: Number(payment.payment_amount || 0),
+    tax_amount: 0,
+    invoice_file: payment.receipt_document,
+    completion_notes: payment.payment_method
+      ? `Payment method: ${payment.payment_method}`
+      : null,
+    invoice_status: payment.payment_status || "Pending",
+    uploaded_at: payment.payment_date,
+  }));
 }
 
-    export async function getContractorQuotations(contractorId: number) {
+export async function getContractorQuotations(contractorId: number) {
   const { data, error } = await supabase
-    .from("ContractorQuotation")
+    .from("contractor_quotation")
     .select("*")
     .eq("contractor_id", contractorId)
     .order("submitted_at", { ascending: false });
@@ -2845,7 +2858,7 @@ export async function getContractorInvoices(contractorId: number) {
 export async function getContractorAvailability(contractorId: number) {
 
   const { data, error } = await supabase
-    .from("ContractorAvailability")
+    .from("contractor_availability")
     .select("*")
     .eq("contractor_id", contractorId);
 
