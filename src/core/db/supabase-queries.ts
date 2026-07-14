@@ -2109,7 +2109,7 @@ export async function getServiceAdminDashboard() {
 
   try {
     const [requestsRes, contractorsRes, activeRequestsRes, appointmentsRes] = await Promise.all([
-      supabase.from("service_request_management").select("request_status, assigned_date"),
+      supabase.from("service_request_management").select("request_status, assigned_date, created_at"),
       supabase.from("contractors").select("contractor_id, name, email, trade, rating, available").limit(5),
       supabase.from("service_request_management").select(`
         service_request_id,
@@ -2117,7 +2117,8 @@ export async function getServiceAdminDashboard() {
         priority,
         request_status,
         properties (property_name),
-        tenant (first_name, last_name)
+        tenant (first_name, last_name),
+        contractors (name)
       `).order("service_request_id", { ascending: false }).limit(5),
       supabase.from("service_schedule").select(`
         schedule_id,
@@ -2168,8 +2169,8 @@ export async function getServiceAdminDashboard() {
       const dateStr = d.toISOString().split("T")[0];
       
       const createdCount = allRequests.filter(r => {
-        if (!r.assigned_date) return false;
-        return r.assigned_date.startsWith(dateStr);
+        if (!r.created_at) return false;
+        return r.created_at.startsWith(dateStr);
       }).length;
 
       const completedCount = allRequests.filter(r => {
@@ -2203,7 +2204,7 @@ export async function getServiceAdminDashboard() {
       status: r.request_status || "Pending",
       property: r.properties?.property_name || "—",
       tenant: r.tenant ? `${r.tenant.first_name || ""} ${r.tenant.last_name || ""}`.trim() : "—",
-      contractor: null
+      contractor: r.contractors?.name || null
     }));
 
     // Format Appointments
