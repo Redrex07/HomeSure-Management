@@ -123,6 +123,7 @@
 
       delete payload.property_additional_information;
       delete payload.property_parking;
+      delete payload.property_availability;
       delete payload.admin_approval;
       delete payload.property_verified;
       delete payload.featured_property;
@@ -321,6 +322,7 @@
 
       delete payload.property_additional_information;
       delete payload.property_parking;
+      delete payload.property_availability;
       delete payload.admin_approval;
       delete payload.property_verified;
       delete payload.featured_property;
