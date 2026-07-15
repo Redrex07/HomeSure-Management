@@ -74,7 +74,7 @@
         return [];
       }
 
-      return data || [];
+      return data ? data.map(parsePropertySpecs) : [];
     } catch (err) {
       console.error("Exception:", err);
       return [];
@@ -92,7 +92,7 @@
         console.error("Error fetching properties:", error);
         return [];
       }
-      return data || [];
+      return data ? data.map(parsePropertySpecs) : [];
     } catch (err) {
       console.error("Exception fetching properties:", err);
       return [];
@@ -135,6 +135,13 @@
           if (specs.rent_details) {
             rentDetailsObj = { ...specs.rent_details };
           }
+          if (payload.property_additional_information) specs.property_additional_information = payload.property_additional_information;
+          if (payload.property_parking) specs.property_parking = payload.property_parking;
+          if (payload.property_availability) specs.property_availability = payload.property_availability;
+          if (payload.admin_approval !== undefined) specs.admin_approval = payload.admin_approval;
+          if (payload.property_verified !== undefined) specs.property_verified = payload.property_verified;
+          if (payload.featured_property !== undefined) specs.featured_property = payload.featured_property;
+          payload.specifications = JSON.stringify(specs);
         } catch (e) {}
       }
 
@@ -334,6 +341,13 @@
           if (specs.rent_details) {
             rentDetailsObj = { ...specs.rent_details };
           }
+          if (payload.property_additional_information) specs.property_additional_information = payload.property_additional_information;
+          if (payload.property_parking) specs.property_parking = payload.property_parking;
+          if (payload.property_availability) specs.property_availability = payload.property_availability;
+          if (payload.admin_approval !== undefined) specs.admin_approval = payload.admin_approval;
+          if (payload.property_verified !== undefined) specs.property_verified = payload.property_verified;
+          if (payload.featured_property !== undefined) specs.featured_property = payload.featured_property;
+          payload.specifications = JSON.stringify(specs);
         } catch (e) {}
       }
 
@@ -614,6 +628,7 @@
       }
 
       if (data) {
+        parsePropertySpecs(data);
         data.rent_amount =
           data.property_rent_details?.[0]?.monthly_rent ||
           data.property_rent_details?.monthly_rent ||
@@ -3373,3 +3388,4 @@ export async function deleteServiceCommunication(id: number) {
   }
 }
 
+function parsePropertySpecs(prop: any) { if (prop && prop.specifications) { try { const specs = JSON.parse(prop.specifications); prop.additionalInformationData = specs.property_additional_information || null; prop.parkingData = specs.property_parking || null; prop.availabilityData = specs.property_availability || null; prop.admin_approval = specs.admin_approval !== undefined ? specs.admin_approval : null; prop.property_verified = specs.property_verified !== undefined ? specs.property_verified : null; prop.featured_property = specs.featured_property !== undefined ? specs.featured_property : null; } catch (e) {} } return prop; } 
