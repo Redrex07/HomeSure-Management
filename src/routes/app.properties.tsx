@@ -997,9 +997,9 @@ function PropertiesPage() {
       parking_fee: (p as any).parkingData?.parking_fee ? String((p as any).parkingData?.parking_fee) : "",
       parking_availability_timing: (p as any).parkingData?.parking_availability_timing || "",
       additional_parking_rules: (p as any).parkingData?.additional_parking_rules || "",
-      property_verified: (p as any).property_verification?.[0]?.property_verified ?? false,
-      admin_approval: (p as any).property_verification?.[0]?.['admin approval'] ?? "Pending",
-      featured_property: (p as any).property_verification?.[0]?.featured_property ?? false,
+      property_verified: (p as any).property_verified ?? false,
+      admin_approval: (p as any).admin_approval ?? "Pending",
+      featured_property: (p as any).featured_property ?? false,
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);

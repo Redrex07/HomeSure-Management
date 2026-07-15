@@ -121,6 +121,13 @@
       const propertyDocumentsObj = payload.property_documents;
       delete payload.property_documents;
 
+      const propertyAdditionalInfo = payload.property_additional_information;
+      const propertyParking = payload.property_parking;
+      const propertyAvailability = payload.property_availability;
+      const adminApproval = payload.admin_approval;
+      const propertyVerified = payload.property_verified;
+      const featuredProperty = payload.featured_property;
+
       delete payload.property_additional_information;
       delete payload.property_parking;
       delete payload.property_availability;
@@ -129,20 +136,25 @@
       delete payload.featured_property;
 
       let rentDetailsObj: any = null;
+      let specs: any = {};
       if (payload.specifications) {
         try {
-          const specs = JSON.parse(payload.specifications);
-          if (specs.rent_details) {
-            rentDetailsObj = { ...specs.rent_details };
-          }
-          if (payload.property_additional_information) specs.property_additional_information = payload.property_additional_information;
-          if (payload.property_parking) specs.property_parking = payload.property_parking;
-          if (payload.property_availability) specs.property_availability = payload.property_availability;
-          if (payload.admin_approval !== undefined) specs.admin_approval = payload.admin_approval;
-          if (payload.property_verified !== undefined) specs.property_verified = payload.property_verified;
-          if (payload.featured_property !== undefined) specs.featured_property = payload.featured_property;
-          payload.specifications = JSON.stringify(specs);
+          specs = JSON.parse(payload.specifications);
         } catch (e) {}
+      }
+      
+      if (specs.rent_details) {
+        rentDetailsObj = { ...specs.rent_details };
+      }
+      if (propertyAdditionalInfo) specs.property_additional_information = propertyAdditionalInfo;
+      if (propertyParking) specs.property_parking = propertyParking;
+      if (propertyAvailability) specs.property_availability = propertyAvailability;
+      if (adminApproval !== undefined) specs.admin_approval = adminApproval;
+      if (propertyVerified !== undefined) specs.property_verified = propertyVerified;
+      if (featuredProperty !== undefined) specs.featured_property = featuredProperty;
+      
+      if (Object.keys(specs).length > 0) {
+        payload.specifications = JSON.stringify(specs);
       }
 
       const { data, error } = await supabase.from("properties").insert([payload]).select();
@@ -327,6 +339,13 @@
       const propertyContactDetailsObj = payload.property_contact_details;
       delete payload.property_contact_details;
 
+      const propertyAdditionalInfo = payload.property_additional_information;
+      const propertyParking = payload.property_parking;
+      const propertyAvailability = payload.property_availability;
+      const adminApproval = payload.admin_approval;
+      const propertyVerified = payload.property_verified;
+      const featuredProperty = payload.featured_property;
+
       delete payload.property_additional_information;
       delete payload.property_parking;
       delete payload.property_availability;
@@ -335,20 +354,35 @@
       delete payload.featured_property;
 
       let rentDetailsObj: any = null;
+      let specs: any = {};
       if (payload.specifications) {
         try {
-          const specs = JSON.parse(payload.specifications);
-          if (specs.rent_details) {
-            rentDetailsObj = { ...specs.rent_details };
-          }
-          if (payload.property_additional_information) specs.property_additional_information = payload.property_additional_information;
-          if (payload.property_parking) specs.property_parking = payload.property_parking;
-          if (payload.property_availability) specs.property_availability = payload.property_availability;
-          if (payload.admin_approval !== undefined) specs.admin_approval = payload.admin_approval;
-          if (payload.property_verified !== undefined) specs.property_verified = payload.property_verified;
-          if (payload.featured_property !== undefined) specs.featured_property = payload.featured_property;
-          payload.specifications = JSON.stringify(specs);
+          specs = JSON.parse(payload.specifications);
         } catch (e) {}
+      } else {
+        const hasExtraFields = propertyAdditionalInfo || propertyParking || propertyAvailability || adminApproval !== undefined || propertyVerified !== undefined || featuredProperty !== undefined;
+        if (hasExtraFields) {
+          const { data: existingData } = await supabase.from("properties").select("specifications").eq("property_id", id).single();
+          if (existingData && existingData.specifications) {
+            try {
+              specs = JSON.parse(existingData.specifications);
+            } catch (e) {}
+          }
+        }
+      }
+
+      if (specs.rent_details) {
+        rentDetailsObj = { ...specs.rent_details };
+      }
+      if (propertyAdditionalInfo) specs.property_additional_information = propertyAdditionalInfo;
+      if (propertyParking) specs.property_parking = propertyParking;
+      if (propertyAvailability) specs.property_availability = propertyAvailability;
+      if (adminApproval !== undefined) specs.admin_approval = adminApproval;
+      if (propertyVerified !== undefined) specs.property_verified = propertyVerified;
+      if (featuredProperty !== undefined) specs.featured_property = featuredProperty;
+      
+      if (Object.keys(specs).length > 0) {
+        payload.specifications = JSON.stringify(specs);
       }
 
       const { data, error } = await supabase
