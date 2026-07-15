@@ -121,6 +121,12 @@
       const propertyDocumentsObj = payload.property_documents;
       delete payload.property_documents;
 
+      delete payload.property_additional_information;
+      delete payload.property_parking;
+      delete payload.admin_approval;
+      delete payload.property_verified;
+      delete payload.featured_property;
+
       let rentDetailsObj: any = null;
       if (payload.specifications) {
         try {
@@ -312,6 +318,12 @@
 
       const propertyContactDetailsObj = payload.property_contact_details;
       delete payload.property_contact_details;
+
+      delete payload.property_additional_information;
+      delete payload.property_parking;
+      delete payload.admin_approval;
+      delete payload.property_verified;
+      delete payload.featured_property;
 
       let rentDetailsObj: any = null;
       if (payload.specifications) {
