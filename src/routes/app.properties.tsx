@@ -431,7 +431,7 @@ function PropertiesPage() {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 15) {
+    if (step < 14) {
       setStep(step + 1);
       return;
     }
