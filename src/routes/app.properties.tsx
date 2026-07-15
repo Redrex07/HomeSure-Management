@@ -431,7 +431,7 @@ function PropertiesPage() {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 14) {
+    if (step < 15) {
       setStep(step + 1);
       return;
     }
@@ -985,9 +985,6 @@ function PropertiesPage() {
       pets_policy: (p as any).additionalInformationData?.pets_policy || "Allowed",
       smoking_policy: (p as any).additionalInformationData?.smoking_policy || "Allowed",
       maintenance_instructions: (p as any).additionalInformationData?.maintenance_instructions || "",
-      property_verified: (p as any).property_verification?.[0]?.property_verified ?? false,
-      admin_approval: (p as any).property_verification?.[0]?.['admin approval'] ?? "Pending",
-      featured_property: (p as any).property_verification?.[0]?.featured_property ?? false,
       parking_available: (p as any).parkingData?.parking_available || false,
       parking_type: (p as any).parkingData?.parking_type || "",
       number_of_parking_slots: (p as any).parkingData?.number_of_parking_slots ? String((p as any).parkingData?.number_of_parking_slots) : "",
@@ -1000,6 +997,9 @@ function PropertiesPage() {
       parking_fee: (p as any).parkingData?.parking_fee ? String((p as any).parkingData?.parking_fee) : "",
       parking_availability_timing: (p as any).parkingData?.parking_availability_timing || "",
       additional_parking_rules: (p as any).parkingData?.additional_parking_rules || "",
+      property_verified: (p as any).property_verification?.[0]?.property_verified ?? false,
+      admin_approval: (p as any).property_verification?.[0]?.['admin approval'] ?? "Pending",
+      featured_property: (p as any).property_verification?.[0]?.featured_property ?? false,
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);
@@ -1979,9 +1979,16 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(14)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 14 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(13)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(15)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(14)}>
                     Back
                   </Button>
                   <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc}>
