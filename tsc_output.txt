@@ -1,0 +1,15 @@
+src/components/app/AppSidebar.tsx(133,1): error TS1185: Merge conflict marker encountered.
+src/components/app/AppSidebar.tsx(136,1): error TS1185: Merge conflict marker encountered.
+src/components/app/AppSidebar.tsx(139,1): error TS1185: Merge conflict marker encountered.
+src/components/app/AppSidebar.tsx(202,1): error TS1185: Merge conflict marker encountered.
+src/components/app/AppSidebar.tsx(203,1): error TS1185: Merge conflict marker encountered.
+src/components/app/AppSidebar.tsx(205,1): error TS1185: Merge conflict marker encountered.
+src/core/db/supabase-queries.ts(70,1): error TS1185: Merge conflict marker encountered.
+src/core/db/supabase-queries.ts(74,1): error TS1185: Merge conflict marker encountered.
+src/core/db/supabase-queries.ts(76,1): error TS1185: Merge conflict marker encountered.
+src/core/db/supabase-queries.ts(1470,1): error TS1185: Merge conflict marker encountered.
+src/core/db/supabase-queries.ts(1600,1): error TS1185: Merge conflict marker encountered.
+src/core/db/supabase-queries.ts(1625,1): error TS1185: Merge conflict marker encountered.
+src/routes/index.tsx(42,1): error TS1185: Merge conflict marker encountered.
+src/routes/index.tsx(44,1): error TS1185: Merge conflict marker encountered.
+src/routes/index.tsx(46,1): error TS1185: Merge conflict marker encountered.
