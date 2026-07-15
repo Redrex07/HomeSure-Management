@@ -1098,6 +1098,11 @@ function PropertiesPage() {
             supermarket_distance: editForm.supermarket_distance,
             bank_distance: editForm.bank_distance
           },
+          property_availability: {
+            available_from: editForm.available_from,
+            visit_timing: editForm.visit_timing,
+            open_house_date: editForm.open_house_date
+          },
           property_additional_information: {
             house_rules: editForm.house_rules,
             noise_restrictions: editForm.noise_restrictions,
