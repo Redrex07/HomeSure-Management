@@ -107,7 +107,6 @@ function PropertyDetailsPage() {
     setEditImages(images);
     setEditVideo(property?.Virtual_Tour || null);
 
-    setEditStep(1);
     setIsEditing(true);
   };
 
