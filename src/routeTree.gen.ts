@@ -24,7 +24,10 @@ import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as AppSubscriptionsRouteImport } from './routes/app.subscriptions'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppServiceRequestsRouteImport } from './routes/app.service-requests'
+import { Route as AppServiceDocumentsRouteImport } from './routes/app.service-documents'
+import { Route as AppServiceCommunicationsRouteImport } from './routes/app.service-communications'
 import { Route as AppRealtorsRouteImport } from './routes/app.realtors'
+import { Route as AppRealtorWorkspaceRouteImport } from './routes/app.realtor-workspace'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppLeasesRouteImport } from './routes/app.leases'
@@ -119,9 +122,25 @@ const AppServiceRequestsRoute = AppServiceRequestsRouteImport.update({
   path: '/service-requests',
   getParentRoute: () => AppRoute,
 } as any)
+const AppServiceDocumentsRoute = AppServiceDocumentsRouteImport.update({
+  id: '/service-documents',
+  path: '/service-documents',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppServiceCommunicationsRoute =
+  AppServiceCommunicationsRouteImport.update({
+    id: '/service-communications',
+    path: '/service-communications',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppRealtorsRoute = AppRealtorsRouteImport.update({
   id: '/realtors',
   path: '/realtors',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRealtorWorkspaceRoute = AppRealtorWorkspaceRouteImport.update({
+  id: '/realtor-workspace',
+  path: '/realtor-workspace',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPropertiesRoute = AppPropertiesRouteImport.update({
@@ -240,7 +259,10 @@ export interface FileRoutesByFullPath {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/service-communications': typeof AppServiceCommunicationsRoute
+  '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -276,7 +298,10 @@ export interface FileRoutesByTo {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/service-communications': typeof AppServiceCommunicationsRoute
+  '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -313,7 +338,10 @@ export interface FileRoutesById {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/service-communications': typeof AppServiceCommunicationsRoute
+  '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -351,7 +379,10 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtor-workspace'
     | '/app/realtors'
+    | '/app/service-communications'
+    | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -387,7 +418,10 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtor-workspace'
     | '/app/realtors'
+    | '/app/service-communications'
+    | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -423,7 +457,10 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtor-workspace'
     | '/app/realtors'
+    | '/app/service-communications'
+    | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -557,11 +594,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServiceRequestsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/service-documents': {
+      id: '/app/service-documents'
+      path: '/service-documents'
+      fullPath: '/app/service-documents'
+      preLoaderRoute: typeof AppServiceDocumentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/service-communications': {
+      id: '/app/service-communications'
+      path: '/service-communications'
+      fullPath: '/app/service-communications'
+      preLoaderRoute: typeof AppServiceCommunicationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/realtors': {
       id: '/app/realtors'
       path: '/realtors'
       fullPath: '/app/realtors'
       preLoaderRoute: typeof AppRealtorsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/realtor-workspace': {
+      id: '/app/realtor-workspace'
+      path: '/realtor-workspace'
+      fullPath: '/app/realtor-workspace'
+      preLoaderRoute: typeof AppRealtorWorkspaceRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/properties': {
@@ -734,7 +792,10 @@ interface AppRouteChildren {
   AppLeasesRoute: typeof AppLeasesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
+  AppRealtorWorkspaceRoute: typeof AppRealtorWorkspaceRoute
   AppRealtorsRoute: typeof AppRealtorsRoute
+  AppServiceCommunicationsRoute: typeof AppServiceCommunicationsRoute
+  AppServiceDocumentsRoute: typeof AppServiceDocumentsRoute
   AppServiceRequestsRoute: typeof AppServiceRequestsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionsRoute: typeof AppSubscriptionsRoute
@@ -759,7 +820,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeasesRoute: AppLeasesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppPropertiesRoute: AppPropertiesRouteWithChildren,
+  AppRealtorWorkspaceRoute: AppRealtorWorkspaceRoute,
   AppRealtorsRoute: AppRealtorsRoute,
+  AppServiceCommunicationsRoute: AppServiceCommunicationsRoute,
+  AppServiceDocumentsRoute: AppServiceDocumentsRoute,
   AppServiceRequestsRoute: AppServiceRequestsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionsRoute: AppSubscriptionsRoute,

@@ -38,6 +38,24 @@ function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [companyName, setCompanyName] = useState("");
+  const [contactPerson, setContactPerson] = useState("");
+  const [contractorType, setContractorType] = useState("");
+  const [serviceArea, setServiceArea] = useState("");
+  const [experience, setExperience] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [certification, setCertification] = useState("");
+  const [availableDays, setAvailableDays] = useState("");
+  const [availableTime, setAvailableTime] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [chargeType, setChargeType] = useState("");
+  const [createdAt, setCreatedAt] = useState("");
+  const [updatedAt, setUpdatedAt] = useState("");
+  const [businessLicense, setBusinessLicense] = useState("");
+  const [emergencyService, setEmergencyService] = useState(false);
+  const contractorId = 3001;
+  const [contractor, setContractor] = useState<any>(null);
+
   useEffect(() => {
     if (s?.id) {
       const loadProfile = async () => {
@@ -192,6 +210,13 @@ const handleSubmit = async (e: React.FormEvent) => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handlePlanChange = (plan: string) => {
+    setCurrentPlan(plan);
+    localStorage.setItem("homesure.plan", plan);
+    setShowPlanDialog(false);
+    toast.success(`Plan changed to ${plan}.`);
   };
 
   return (

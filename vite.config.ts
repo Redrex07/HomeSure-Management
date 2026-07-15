@@ -1,4 +1,3 @@
-import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
@@ -12,21 +11,19 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
- plugins: [
-  TanStackRouterVite(),
+  plugins: [
+    tanstackStart({
+      server: {
+        entry: "server",
+      },
+    }),
 
-  tanstackStart({
-    server: {
-      entry: "server",
-    },
-  }),
+    react(),
 
-  react(),
+    tailwindcss(),
 
-  tailwindcss(),
-
-  nitro({
-    preset: "vercel",
-  }),
-],
+    nitro({
+      preset: "vercel",
+    }),
+  ],
 });

@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   addDays,
@@ -25,8 +25,10 @@ import {
   getServiceRequests,
   getTenantServiceRequests,
   getContractors,
+  updateAppointmentStatus,
+  deleteAppointment,
 } from "@/core/db/supabase-queries";
-import { Plus, Calendar as CalIcon, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Calendar as CalIcon, Clock, MapPin, ChevronLeft, ChevronRight, HardHat, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 import {
@@ -72,6 +74,11 @@ function AppointmentsPage() {
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+
   const { data: appointmentList = [], isLoading } = useQuery({
     queryKey: [
       "appointments",
@@ -84,6 +91,60 @@ function AppointmentsPage() {
     enabled:
       !tenantContext.isTenant || (!!tenantContext.tenantId && !!tenantContext.serviceTenantId),
   });
+
+  const itemsPerPage = 5;
+
+  const filteredAppointments = useMemo(() => {
+    return appointmentList.filter((a: any) => {
+      // 1. Search Query
+      const query = searchQuery.toLowerCase();
+      const matchSearch =
+        (a.title || "").toLowerCase().includes(query) ||
+        (a.property || "").toLowerCase().includes(query) ||
+        (a.contractor || "").toLowerCase().includes(query) ||
+        (a.date || "").includes(query) ||
+        (a.status || "").toLowerCase().includes(query);
+
+      if (!matchSearch) return false;
+
+      // 2. Status Filter
+      if (statusFilter !== "all") {
+        if (statusFilter === "Missed") {
+          const isMissed = a.status === "Cancelled" && (a.title || "").includes("[Missed]");
+          if (!isMissed) return false;
+        } else if (statusFilter === "Cancelled") {
+          const isMissed = a.status === "Cancelled" && (a.title || "").includes("[Missed]");
+          if (isMissed || a.status !== "Cancelled") return false;
+        } else {
+          if (a.status !== statusFilter) return false;
+        }
+      }
+
+      // 3. Time Filter
+      if (timeFilter === "today") {
+        const todayStr = format(new Date(), "yyyy-MM-dd");
+        if (a.date !== todayStr) return false;
+      } else if (timeFilter === "this-week") {
+        const apptDate = new Date(`${a.date}T00:00:00`);
+        const start = startOfWeek(new Date(), { weekStartsOn: 1 });
+        const end = endOfWeek(new Date(), { weekStartsOn: 1 });
+        if (apptDate < start || apptDate > end) return false;
+      } else if (timeFilter === "upcoming") {
+        const apptDate = new Date(`${a.date}T00:00:00`);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (apptDate < today || a.status === "Cancelled") return false;
+      }
+
+      return true;
+    });
+  }, [appointmentList, searchQuery, statusFilter, timeFilter]);
+
+  const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
+  const paginatedAppointments = useMemo(() => {
+    const startIdx = (currentPage - 1) * itemsPerPage;
+    return filteredAppointments.slice(startIdx, startIdx + itemsPerPage);
+  }, [filteredAppointments, currentPage, itemsPerPage]);
 
   const visibleDays = useMemo(() => {
     if (calendarView === "today") return [calendarDate];
@@ -194,6 +255,29 @@ function AppointmentsPage() {
     },
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: (payload: { id: string; status: string; notes?: string }) =>
+      updateAppointmentStatus(payload.id, { status: payload.status, notes: payload.notes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success("Appointment status updated successfully!");
+    },
+    onError: (err: any) => {
+      toast.error("Error updating appointment: " + (err.message || String(err)));
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteAppointment,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success("Appointment deleted successfully!");
+    },
+    onError: (err: any) => {
+      toast.error("Error deleting appointment: " + (err.message || String(err)));
+    },
+  });
+
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!createRequestId || !createContractorId) {
@@ -233,6 +317,19 @@ function AppointmentsPage() {
     setReschedulingAppointment(appt);
     setRescheduleDate(appt.date);
     setRescheduleTime(appt.time);
+  };
+
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setCurrentPage(1);
+  };
+  const handleStatusFilterChange = (val: string) => {
+    setStatusFilter(val);
+    setCurrentPage(1);
+  };
+  const handleTimeFilterChange = (val: string) => {
+    setTimeFilter(val);
+    setCurrentPage(1);
   };
 
   return (
@@ -481,42 +578,190 @@ function AppointmentsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-3">
-              {appointmentList.map((a) => (
-                <Card key={a.id} className="border-border/70 shadow-card">
-                  <CardContent className="flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-primary-soft text-primary">
-                        <CalIcon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="font-medium">{a.title}</div>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          <span className="inline-flex items-center gap-1">
-                            <CalIcon className="h-3 w-3" />
-                            {a.date}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {a.time}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {a.property}
-                          </span>
+            <>
+              {/* Search, Filter & Pagination Toolbar */}
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-4 border border-slate-200 rounded-xl shadow-sm my-4">
+                <div className="flex-1 max-w-md relative">
+                  <Label htmlFor="searchScheduleQuery" className="sr-only">Search visits</Label>
+                  <Input
+                    id="searchScheduleQuery"
+                    placeholder="Search by property, contractor, date..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="w-full pl-9 h-9"
+                  />
+                  <div className="absolute left-3 top-2.5 text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.637Z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
+                    Showing {filteredAppointments.length} of {appointmentList.length} visits
+                  </span>
+                  <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+                    <SelectTrigger className="h-9 w-36" aria-label="Status Filter">
+                      <SelectValue placeholder="Status Filter" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="Scheduled">Scheduled</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      <SelectItem value="Missed">Missed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={timeFilter} onValueChange={handleTimeFilterChange}>
+                    <SelectTrigger className="h-9 w-36" aria-label="Time Filter">
+                      <SelectValue placeholder="Time Filter" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="this-week">This Week</SelectItem>
+                      <SelectItem value="upcoming">Upcoming</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {filteredAppointments.length === 0 ? (
+                <div className="flex h-48 flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-white p-6 text-center shadow-sm">
+                  <CalIcon className="h-8 w-8 stroke-1 text-slate-400 mb-2" />
+                  <p className="text-sm font-semibold text-slate-800 mb-1">No matching appointments found</p>
+                  <p className="text-xs text-muted-foreground">
+                    Try modifying your search query or filters.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {paginatedAppointments.map((a: any) => (
+                    <Card key={a.id} className="border-border/70 shadow-card">
+                      <CardContent className="flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-primary-soft text-primary">
+                            <CalIcon className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="font-medium">{a.title}</div>
+                            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                              <span className="inline-flex items-center gap-1">
+                                <CalIcon className="h-3 w-3" />
+                                {a.date}
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {a.time}
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {a.property}
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <HardHat className="h-3 w-3" />
+                                {a.contractor}
+                              </span>
+                              {a.requestId && (
+                                <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-mono">
+                                  SR-{a.requestId}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <StatusBadge value={a.status === "Cancelled" && a.title.includes("[Missed]") ? "Missed" : a.status} />
+                          
+                          {a.status === "Scheduled" && (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200 h-8 text-[11px]"
+                                onClick={() => updateStatusMutation.mutate({ id: a.id, status: "Completed" })}
+                                disabled={updateStatusMutation.isPending}
+                              >
+                                Complete
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200 h-8 text-[11px]"
+                                onClick={() => {
+                                  updateStatusMutation.mutate({ 
+                                    id: a.id, 
+                                    status: "Cancelled", 
+                                    notes: `[Missed] ${a.title.replace(/^\[Missed\]\s*/, "")}` 
+                                  });
+                                }}
+                                disabled={updateStatusMutation.isPending}
+                              >
+                                Missed
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 h-8 text-[11px]"
+                                onClick={() => updateStatusMutation.mutate({ id: a.id, status: "Cancelled" })}
+                                disabled={updateStatusMutation.isPending}
+                              >
+                                Cancel
+                              </Button>
+                            </>
+                          )}
+                          
+                          <Button variant="outline" size="sm" className="h-8 text-[11px]" onClick={() => openRescheduleDialog(a)}>
+                            Reschedule
+                          </Button>
+                          
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                              if (confirm("Are you sure you want to delete this appointment?")) {
+                                deleteMutation.mutate(a.id);
+                              }
+                            }}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {filteredAppointments.length > itemsPerPage && (
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-4 px-1">
+                      <span className="text-xs text-slate-500">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={currentPage === totalPages}
+                          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                        >
+                          Next
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <StatusBadge value={a.status} />
-                      <Button variant="outline" size="sm" onClick={() => openRescheduleDialog(a)}>
-                        Reschedule
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </>
       )}

@@ -16,7 +16,7 @@ import { registerAccount, getInviteDetails } from "@/core/api/auth.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/signup")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { invite?: string } => ({
     invite: (search.invite as string) || "",
   }),
   head: () => ({

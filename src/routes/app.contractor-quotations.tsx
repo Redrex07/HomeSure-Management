@@ -10,7 +10,7 @@ export const Route = createFileRoute("/app/contractor-quotations")({
 function ContractorQuotationPage() {
   const contractorId = 1;
 
-  const { data = [], isLoading } = useQuery({
+  const { data = [], isLoading, isError } = useQuery({
     queryKey: ["contractor-quotations"],
     queryFn: () => getContractorQuotations(contractorId),
   });
@@ -61,7 +61,19 @@ function ContractorQuotationPage() {
 
         <tbody>
 
-          {data.length === 0 ? (
+          {isLoading ? (
+            <tr>
+              <td colSpan={8} className="p-10 text-center text-gray-500">
+                Loading quotations...
+              </td>
+            </tr>
+          ) : isError ? (
+            <tr>
+              <td colSpan={8} className="p-10 text-center text-red-600">
+                Unable to load quotations. Please try again.
+              </td>
+            </tr>
+          ) : data.length === 0 ? (
 
             <tr>
 

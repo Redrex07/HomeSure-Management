@@ -18,6 +18,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/shared/components/ui/dialog";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatCard } from "@/shared/components/common/StatCard";
@@ -28,9 +29,14 @@ import {
   getInvoices,
   recordRentPaymentSuccess,
   updateInvoiceStatus as updateSupabaseInvoice,
+  getServiceRequests,
+  getContractors,
+  createInvoice,
+  updateInvoice,
+  deleteInvoice,
 } from "@/core/db/supabase-queries";
 import { createRazorpayOrder, verifyRazorpayPayment } from "@/core/api/razorpay.functions";
-import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil, CreditCard } from "lucide-react";
+import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil, CreditCard, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
 const formatUsd = new Intl.NumberFormat("en-US", {
@@ -84,22 +90,90 @@ function InvoicesPage() {
 
   const queryClient = useQueryClient();
 
+  const [openCreate, setOpenCreate] = useState(false);
+  const [createRequestId, setCreateRequestId] = useState("");
+  const [createContractorId, setCreateContractorId] = useState("");
+  const [createAmount, setCreateAmount] = useState("");
+  const [createMethod, setCreateMethod] = useState("Bank Transfer");
+  const [createReference, setCreateReference] = useState("");
+
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ["invoices"],
     queryFn: getInvoices,
   });
 
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
-  const updateMutation = useMutation({
-    mutationFn: ({ id, status, reason }: { id: string; status: string; reason?: string }) =>
-      updateSupabaseInvoice(id.replace("INV-", ""), { status, reason }),
+
+  const { data: serviceRequests = [] } = useQuery({
+    queryKey: ["service-requests"],
+    queryFn: getServiceRequests,
+  });
+
+  const { data: contractors = [] } = useQuery({
+    queryKey: ["contractors"],
+    queryFn: getContractors,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: createInvoice,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
-      toast.success("Invoice status updated successfully!");
+      toast.success("Payment created successfully!");
+      setOpenCreate(false);
+      setCreateRequestId("");
+      setCreateContractorId("");
+      setCreateAmount("");
+      setCreateReference("");
+    },
+    onError: (err: any) => {
+      toast.error("Error creating payment: " + (err.message || String(err)));
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ 
+      id, 
+      amount, 
+      status, 
+      payment_method, 
+      payment_reference, 
+      payment_date, 
+      receipt_document 
+    }: { 
+      id: string; 
+      amount?: number;
+      status?: string; 
+      payment_method?: string;
+      payment_reference?: string;
+      payment_date?: string;
+      receipt_document?: string;
+    }) =>
+      updateInvoice(id, { 
+        amount, 
+        status, 
+        payment_method, 
+        payment_reference, 
+        payment_date, 
+        receipt_document 
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success("Payment details updated successfully!");
       setEditingInvoice(null);
     },
     onError: (err: any) => {
-      toast.error("Error updating invoice: " + (err.message || String(err)));
+      toast.error("Error updating payment: " + (err.message || String(err)));
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteInvoice,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success("Payment deleted successfully!");
+    },
+    onError: (err: any) => {
+      toast.error("Error deleting payment: " + (err.message || String(err)));
     },
   });
 
@@ -109,17 +183,34 @@ function InvoicesPage() {
 
   const [editingInvoice, setEditingInvoice] = useState<any | null>(null);
 
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createRequestId || !createContractorId || !createAmount) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    createMutation.mutate({
+      service_request_id: parseInt(createRequestId.replace("SR-", ""), 10),
+      contractor_id: parseInt(createContractorId.replace("C-", ""), 10),
+      amount: parseFloat(createAmount),
+      payment_method: createMethod,
+      payment_reference: createReference,
+    });
+  };
+
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editingInvoice) return;
     const formData = new FormData(e.currentTarget);
-    const newStatus = formData.get("status") as string;
-    const newReason = formData.get("reason") as string;
     
     updateMutation.mutate({
       id: editingInvoice.id,
-      status: newStatus,
-      reason: newReason,
+      amount: parseFloat(formData.get("amount") as string),
+      status: formData.get("status") as string,
+      payment_method: formData.get("payment_method") as string,
+      payment_reference: formData.get("payment_reference") as string,
+      payment_date: formData.get("payment_date") as string,
+      receipt_document: formData.get("receipt_document") as string,
     });
   };
 
@@ -341,7 +432,98 @@ function InvoicesPage() {
 
   return (
     <>
-      <PageHeader title="Invoices" description="Track billing, payments and overdue accounts." />
+      <PageHeader
+        title="Invoices"
+        description="Track billing, payments and overdue accounts."
+        actions={
+          <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Receipt className="mr-2 h-4 w-4" /> Create payment
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Payment</DialogTitle>
+                <DialogDescription>
+                  Generate a billing record for a completed request.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label>Service Request</Label>
+                  <Select value={createRequestId} onValueChange={setCreateRequestId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select service request" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceRequests.map((sr: any) => (
+                        <SelectItem key={sr.id} value={sr.id}>
+                          {sr.id}: {sr.title} ({sr.property})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Contractor</Label>
+                  <Select value={createContractorId} onValueChange={setCreateContractorId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select contractor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contractors.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name} ({c.trade})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Amount (INR)</Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 7500"
+                    required
+                    value={createAmount}
+                    onChange={(e) => setCreateAmount(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Payment Method</Label>
+                  <Select value={createMethod} onValueChange={setCreateMethod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Credit Card">Credit Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Reference</Label>
+                  <Input
+                    placeholder="e.g. TXN-129038, Check #402"
+                    value={createReference}
+                    onChange={(e) => setCreateReference(e.target.value)}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setOpenCreate(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? "Creating..." : "Create"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        }
+      />
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="Paid (mo)"
@@ -369,7 +551,7 @@ function InvoicesPage() {
       ) : (
         <DataTable
           rows={invoices}
-          filterKeys={["id", "request"]}
+          filterKeys={["id", "request", "propertyName", "tenantName", "landlordName", "contractorName", "reference"]}
           empty="No Invoices Found"
           columns={[
             {
@@ -450,6 +632,20 @@ function InvoicesPage() {
                   >
                     <Download className="h-3.5 w-3.5" />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      if (confirm("Are you sure you want to delete this payment?")) {
+                        deleteMutation.mutate(i.id);
+                      }
+                    }}
+                    title="Delete payment"
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               ),
             },
@@ -461,32 +657,80 @@ function InvoicesPage() {
       <Dialog open={!!editingInvoice} onOpenChange={(open) => !open && setEditingInvoice(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Invoice {editingInvoice?.id}</DialogTitle>
-            <DialogDescription>Update the invoice status or add a reason note.</DialogDescription>
+            <DialogTitle>Edit Payment {editingInvoice?.id}</DialogTitle>
+            <DialogDescription>Update payment status, amount, reference, method, date, or receipt document.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdate} className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select name="status" defaultValue={editingInvoice?.status || "Pending"}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Paid">Paid</SelectItem>
-                  <SelectItem value="Overdue">Overdue</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Amount</Label>
+                <Input
+                  name="amount"
+                  type="number"
+                  step="0.01"
+                  required
+                  defaultValue={editingInvoice?.amount || ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Payment Date</Label>
+                <Input
+                  name="payment_date"
+                  type="date"
+                  required
+                  defaultValue={editingInvoice?.issued || ""}
+                />
+              </div>
             </div>
-            
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select name="status" defaultValue={editingInvoice?.status || "Pending"}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Paid">Paid</SelectItem>
+                    <SelectItem value="Failed">Failed</SelectItem>
+                    <SelectItem value="Refunded">Refunded</SelectItem>
+                    <SelectItem value="Overdue">Overdue</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Payment Method</Label>
+                <Select name="payment_method" defaultValue={editingInvoice?.method || "Bank Transfer"}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="Cash">Cash</SelectItem>
+                    <SelectItem value="Credit Card">Credit Card</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label>Reason / Note</Label>
+              <Label>Payment Reference</Label>
               <Input
-                name="reason"
-                placeholder="e.g. Paid in cash, Late due to bank holiday"
-                defaultValue={editingInvoice?.reason || ""}
+                name="payment_reference"
+                placeholder="e.g. TXN-129038, Check #402"
+                defaultValue={editingInvoice?.reference || ""}
               />
-              <p className="text-xs text-muted-foreground">Optional reason or note regarding this invoice.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Receipt Document Path</Label>
+              <Input
+                name="receipt_document"
+                placeholder="e.g. receipts/invoice-101.pdf"
+                defaultValue={editingInvoice?.receipt || ""}
+              />
             </div>
 
             <DialogFooter className="pt-4">
