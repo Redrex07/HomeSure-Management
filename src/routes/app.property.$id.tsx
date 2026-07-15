@@ -540,22 +540,13 @@ function PropertyDetailsPage() {
       </div>
 
       <motion.div variants={contentVariants} className="max-w-5xl mx-auto flex flex-col gap-8 mt-8">
-        <div className="flex justify-end w-full">
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={openEditDialog}
-            className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white border-none shadow-md transition-all duration-300 group"
-          >
-            <Pencil className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" /> Edit Details
-          </Button>
-        </div>
+
 
         {/* Edit Property Dialog */}
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 15`}</DialogTitle>
+              <DialogTitle>Edit Property Details</DialogTitle>
             </DialogHeader>
             
             <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
@@ -1057,10 +1048,12 @@ function PropertyDetailsPage() {
                 </>
               ) : editStep === 10 ? (
                 <>
-                  <div className="grid gap-4">
-                    <p className="text-sm text-muted-foreground mb-2">Upload relevant property documents. Only PDFs and Images (max 10MB) are allowed.</p>
-                    
-                    <div className="grid gap-2">
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Property Documents</h3>
+                    <div className="grid gap-4">
+                      <p className="text-sm text-muted-foreground mb-2">Upload relevant property documents. Only PDFs and Images (max 10MB) are allowed.</p>
+                      
+                      <div className="grid gap-2">
                       <Label>Ownership Proof *</Label>
                       <div className="flex items-center gap-4">
                         <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'ownership_proof', true)} disabled={isUploadingDoc} />
@@ -1109,15 +1102,17 @@ function PropertyDetailsPage() {
                         {editForm.property_insurance && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
                       </div>
                     </div>
+                    </div>
                   </div>
-
                   
                 </>
               ) : editStep === 11 ? (
                 <>
-                  <div className="grid gap-4">
-                    <p className="text-sm text-muted-foreground mb-2">Update contact details for the landlord or property manager.</p>
-                    <div className="grid gap-2">
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Contact Details</h3>
+                    <div className="grid gap-4">
+                      <p className="text-sm text-muted-foreground mb-2">Update contact details for the landlord or property manager.</p>
+                      <div className="grid gap-2">
                       <Label>Landlord Name *</Label>
                       <Input placeholder="e.g. John Smith" value={editForm.landlord_name || ""} onChange={(e) => setEditForm({...editForm, landlord_name: e.target.value})} required />
                     </div>
@@ -1147,15 +1142,17 @@ function PropertyDetailsPage() {
                       <Label>WhatsApp Number (Optional)</Label>
                       <Input placeholder="e.g. +91 9876543210" value={editForm.whatsapp_number || ""} onChange={(e) => setEditForm({...editForm, whatsapp_number: e.target.value})} />
                     </div>
+                    </div>
                   </div>
-
                   
                 </>
               ) : editStep === 12 ? (
                 <>
-                  <div className="grid gap-4">
-                    <p className="text-sm text-muted-foreground mb-2">Update property availability details.</p>
-                    <div className="grid gap-2">
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Availability</h3>
+                    <div className="grid gap-4">
+                      <p className="text-sm text-muted-foreground mb-2">Update property availability details.</p>
+                      <div className="grid gap-2">
                       <Label>Available From</Label>
                       <Input type="date" placeholder="e.g. 1-Aug-26" value={editForm.available_from || ""} onChange={(e) => setEditForm({...editForm, available_from: e.target.value})} />
                     </div>
@@ -1167,15 +1164,17 @@ function PropertyDetailsPage() {
                       <Label>Open House Date (Optional)</Label>
                       <Input type="date" placeholder="e.g. Optional" value={editForm.open_house_date || ""} onChange={(e) => setEditForm({...editForm, open_house_date: e.target.value})} />
                     </div>
+                    </div>
                   </div>
-
                   
                 </>
               ) : editStep === 13 ? (
                 <>
-                  <div className="grid gap-4">
-                    <p className="text-sm text-muted-foreground mb-2">Update property additional information.</p>
-                    <div className="grid gap-2">
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Additional Information</h3>
+                    <div className="grid gap-4">
+                      <p className="text-sm text-muted-foreground mb-2">Update property additional information.</p>
+                      <div className="grid gap-2">
                       <Label>House Rules</Label>
                       <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. No loud music after 10 PM" value={editForm.house_rules || ""} onChange={(e) => setEditForm({...editForm, house_rules: e.target.value})} />
                     </div>
@@ -1217,15 +1216,17 @@ function PropertyDetailsPage() {
                       <Label>Maintenance Instructions</Label>
                       <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={editForm.maintenance_instructions || ""} onChange={(e) => setEditForm({...editForm, maintenance_instructions: e.target.value})} />
                     </div>
+                    </div>
                   </div>
                   
                   
                 </>
               ) : editStep === 14 ? (
                 <>
-                  <div className="grid gap-4">
-                    <h4 className="text-sm font-semibold">Parking Details</h4>
-                    <div className="flex items-center space-x-2">
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Parking Details</h3>
+                    <div className="grid gap-4">
+                      <div className="flex items-center space-x-2">
                       <Checkbox id="edit_parking_available" checked={editForm.parking_available} onCheckedChange={(c) => setEditForm({...editForm, parking_available: !!c})} />
                       <Label htmlFor="edit_parking_available">Parking Available</Label>
                     </div>
@@ -1283,12 +1284,15 @@ function PropertyDetailsPage() {
                       <Label>Additional Rules</Label>
                       <Input placeholder="e.g. No commercial vehicles" value={editForm.additional_parking_rules || ""} onChange={(e) => setEditForm({...editForm, additional_parking_rules: e.target.value})} />
                     </div>
+                    </div>
                   </div>
                 </>
               ) : editStep === 15 ? (
                 <>
-                  <div className="grid gap-6 sm:grid-cols-2 mt-2">
-                    <div className="space-y-2">
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Verification Status (Admin)</h3>
+                    <div className="grid gap-6 sm:grid-cols-2 mt-2">
+                      <div className="space-y-2">
                       <Label>Property Verified</Label>
                       <Select value={editForm.property_verified ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, property_verified: val === "Yes"})}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1320,25 +1324,16 @@ function PropertyDetailsPage() {
                       </Select>
                     </div>
                   </div>
+                  </div>
                 </>
               ) : null}
             
-              <DialogFooter className="mt-6 pt-4 border-t flex sm:justify-between items-center w-full">
-                <div>
-                   {editStep > 1 && (
-                     <Button type="button" variant="outline" onClick={() => setEditStep(editStep - 1)}>Back</Button>
-                   )}
-                   {editStep === 1 && (
-                     <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                   )}
-                </div>
+              <DialogFooter className="mt-6 pt-4 border-t flex justify-end items-center w-full">
                 <div className="flex gap-2">
-                   <Button type="button" variant="secondary" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc}>
+                   <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                   <Button type="button" variant="default" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc}>
                      {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
                    </Button>
-                   {editStep < 15 && (
-                     <Button type="button" onClick={() => setEditStep(editStep + 1)}>Next</Button>
-                   )}
                 </div>
               </DialogFooter>
 </form>
@@ -1350,9 +1345,19 @@ function PropertyDetailsPage() {
           <Accordion type="multiple" className="w-full space-y-4">
             
             {/* Basic Info Accordion */}
-            <AccordionItem value="basic" className="border rounded-xl px-6 bg-card shadow-sm">
+            <AccordionItem value="basic" className="group border rounded-xl px-6 bg-card shadow-sm">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Basic Information
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Basic Information</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(1); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
@@ -1385,9 +1390,19 @@ function PropertyDetailsPage() {
             </AccordionItem>
 
             {/* Location Details Accordion */}
-            <AccordionItem value="location" className="border rounded-xl px-6 bg-card shadow-sm">
+            <AccordionItem value="location" className="group border rounded-xl px-6 bg-card shadow-sm">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Location Details
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Location Details</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(2); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
@@ -1445,9 +1460,19 @@ function PropertyDetailsPage() {
             </AccordionItem>
 
             {/* Images & Media Accordion */}
-            <AccordionItem value="media" className="border rounded-xl px-6 bg-card shadow-sm">
+            <AccordionItem value="media" className="group border rounded-xl px-6 bg-card shadow-sm">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Images & Media
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Images & Media</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(3); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-6 pb-6 pt-2">
@@ -1487,9 +1512,19 @@ function PropertyDetailsPage() {
             </AccordionItem>
 
             {/* Property Specifications Accordion */}
-            <AccordionItem value="specifications" className="border rounded-xl px-6 bg-card shadow-sm">
+            <AccordionItem value="specifications" className="group border rounded-xl px-6 bg-card shadow-sm">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Property Specifications
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Property Specifications</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(4); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
@@ -1566,9 +1601,19 @@ function PropertyDetailsPage() {
 
           {/* Rent Details Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="rent" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+            <AccordionItem value="rent" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Rent Details
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Rent Details</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(5); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
@@ -1658,9 +1703,19 @@ function PropertyDetailsPage() {
 
           {/* Amenities Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="amenities" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+            <AccordionItem value="amenities" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Amenities
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Amenities</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(6); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
@@ -1712,9 +1767,19 @@ function PropertyDetailsPage() {
 
           {/* Tenant Preferences Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="tenant_preferences" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+            <AccordionItem value="tenant_preferences" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Tenant Preferences
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Tenant Preferences</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(7); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
@@ -1780,9 +1845,19 @@ function PropertyDetailsPage() {
 
           {/* Utility Information Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="utility_info" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+            <AccordionItem value="utility_info" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Utility Information
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Utility Information</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(8); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
@@ -1844,9 +1919,19 @@ function PropertyDetailsPage() {
 
           {/* Nearby Facilities Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="nearby_facilities" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+            <AccordionItem value="nearby_facilities" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Nearby Facilities
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Nearby Facilities</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(9); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
@@ -1893,9 +1978,19 @@ function PropertyDetailsPage() {
 
           {/* Property Documents Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="property_documents" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+            <AccordionItem value="property_documents" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Property Documents
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Property Documents</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(10); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
@@ -1941,9 +2036,19 @@ function PropertyDetailsPage() {
 
           {/* Contact Details Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="contact_details" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+            <AccordionItem value="contact_details" className="group border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Contact Details
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Contact Details</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(11); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
@@ -2009,9 +2114,19 @@ function PropertyDetailsPage() {
 
           {/* Availability Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="availability" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+            <AccordionItem value="availability" className="group border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Availability
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Availability</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(12); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
@@ -2043,9 +2158,19 @@ function PropertyDetailsPage() {
 
           {/* Additional Information Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="additional_information" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+            <AccordionItem value="additional_information" className="group border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Additional Information
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Additional Information</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(13); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
@@ -2089,10 +2214,20 @@ function PropertyDetailsPage() {
                 </div>
               </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="parking" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+            <AccordionItem value="parking" className="group border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
               <AccordionTrigger className="hover:no-underline py-4">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full"><div className="flex items-center gap-3">
                   <span className="font-semibold text-lg">Parking Details</span>
+                </div></div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(14); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-6">
@@ -2157,10 +2292,20 @@ function PropertyDetailsPage() {
                 </div>
               </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="verification" className="border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+            <AccordionItem value="verification" className="group border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
               <AccordionTrigger className="hover:no-underline py-4">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full"><div className="flex items-center gap-3">
                   <span className="font-semibold text-lg">Verification Status (Admin)</span>
+                </div></div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(15); openEditDialog(); }}
+                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-6">
