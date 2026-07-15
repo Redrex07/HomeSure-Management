@@ -1352,7 +1352,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(1); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -1397,7 +1397,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(2); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -1467,7 +1467,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(3); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -1519,7 +1519,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(4); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -1608,7 +1608,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(5); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -1710,7 +1710,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(6); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -1774,7 +1774,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(7); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -1852,7 +1852,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(8); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -1926,7 +1926,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(9); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -1985,7 +1985,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(10); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -2043,7 +2043,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(11); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -2121,7 +2121,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(12); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -2165,7 +2165,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(13); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -2223,7 +2223,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(14); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
@@ -2301,7 +2301,7 @@ function PropertyDetailsPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(15); openEditDialog(); }}
-                    className="h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100 shrink-0 z-10"
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
