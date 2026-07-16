@@ -59,7 +59,19 @@ import {
   getTenantAppointments,
   getTenantInvoices,
   getTenantServiceRequests,
+  getTenantDocuments,
+  uploadTenantDocument,
+  deleteTenantDocument,
 } from "@/core/db/supabase-queries";
+import { supabase } from "@/core/db/supabase";
+import { toast } from "sonner";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/shared/components/ui/dialog";
+import { Label } from "@/shared/components/ui/label";
+import { Input } from "@/shared/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import { Trash2, Upload, Download } from "lucide-react";
 import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 
 const fmt = (n: number) => formatINR(n);
@@ -84,6 +96,88 @@ export function TenantDashboard() {
     queryFn: () => getTenantInvoices(tenantContext.tenantId!, tenantContext.serviceTenantId),
     enabled: !!tenantContext.tenantId,
   });
+
+  const { data: dbDocuments = [], isLoading: isLoadingDocs } = useQuery({
+    queryKey: ["tenant-documents", tenantContext.tenantId],
+    queryFn: () => getTenantDocuments(tenantContext.tenantId!),
+    enabled: !!tenantContext.tenantId,
+  });
+
+  const queryClient = useQueryClient();
+  const [openUpload, setOpenUpload] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [docType, setDocType] = useState("Lease");
+  const [docNumber, setDocNumber] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
+  const uploadMutation = useMutation({
+    mutationFn: uploadTenantDocument,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-documents"] });
+      toast.success("Document uploaded successfully");
+      setOpenUpload(false);
+      setUploadFile(null);
+      setDocNumber("");
+      setDocType("Lease");
+    },
+    onError: (err: any) => {
+      toast.error("Upload failed: " + (err.message || String(err)));
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteTenantDocument,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-documents"] });
+      toast.success("Document deleted");
+    },
+    onError: (err: any) => {
+      toast.error("Failed to delete: " + (err.message || String(err)));
+    }
+  });
+
+  const handleUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFile || !tenantContext.tenantId) return;
+
+    setIsUploading(true);
+    try {
+      const fileName = `${Date.now()}-${uploadFile.name.replace(/[^a-zA-Z0-9.-]/g, "")}`;
+      const { data, error: uploadErr } = await supabase.storage
+        .from("tenant-documents")
+        .upload(`documents/${fileName}`, uploadFile, { upsert: false });
+
+      if (uploadErr) {
+        // Fallback to service-documents if tenant-documents bucket doesn't exist
+        const { data: fbData, error: fbErr } = await supabase.storage
+          .from("service-documents")
+          .upload(`documents/${fileName}`, uploadFile, { upsert: false });
+        if (fbErr) throw fbErr;
+        
+        const { data: publicUrlData } = supabase.storage.from("service-documents").getPublicUrl(fbData.path);
+        
+        await uploadMutation.mutateAsync({
+          tenant_id: tenantContext.tenantId,
+          document_type: docType,
+          document_number: docNumber,
+          document_file: publicUrlData.publicUrl,
+        });
+      } else {
+        const { data: publicUrlData } = supabase.storage.from("tenant-documents").getPublicUrl(data.path);
+        
+        await uploadMutation.mutateAsync({
+          tenant_id: tenantContext.tenantId,
+          document_type: docType,
+          document_number: docNumber,
+          document_file: publicUrlData.publicUrl,
+        });
+      }
+    } catch (err: any) {
+      toast.error("Upload error: " + (err.message || String(err)));
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const visibleRequests = dbRequests.length > 0 ? dbRequests : serviceRequests;
   const visibleAppointments = dbAppointments.length > 0 ? dbAppointments : appointments;
@@ -173,14 +267,14 @@ export function TenantDashboard() {
             icon={Calendar}
           />
         </Link>
-        <Link to="/app/leases" className="block">
+        <div className="block cursor-pointer">
           <StatCard
             label="Documents on file"
-            value={String(leaseDocs.length)}
+            value={String(dbDocuments.length)}
             icon={FileText}
             tone="success"
           />
-        </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -207,32 +301,97 @@ export function TenantDashboard() {
         </Card>
 
         <Card className="border-border/70 shadow-card">
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold">Lease documents</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold">My Documents</CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setOpenUpload(true)}>
+              <Upload className="mr-2 h-3.5 w-3.5" /> Upload
+            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
-            {leaseDocs.map((d) => (
-              <div
-                key={d.id}
-                className="flex items-center gap-3 rounded-md border border-border/60 p-2.5"
-              >
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-soft text-primary">
-                  <FileText className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{d.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {d.size} · Updated {d.updated}
+            {isLoadingDocs ? (
+              <p className="text-xs text-muted-foreground animate-pulse">Loading documents...</p>
+            ) : dbDocuments.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No documents found.</p>
+            ) : (
+              dbDocuments.map((d: any) => (
+                <div
+                  key={d.id}
+                  className="flex items-center gap-3 rounded-md border border-border/60 p-2.5"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-soft text-primary">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{d.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Status: {d.status} · Uploaded {d.updated}
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    {d.fileUrl && (
+                      <Button asChild variant="ghost" size="sm" className="h-7 w-7 p-0" title="Preview/Download">
+                        <a href={d.fileUrl} target="_blank" rel="noopener noreferrer">
+                          <Eye className="h-3.5 w-3.5" />
+                        </a>
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => {
+                        if(confirm("Delete this document?")) deleteMutation.mutate(d.id);
+                      }}
+                      title="Delete"
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
-                <Button asChild variant="ghost" size="sm">
-                  <Link to="/app/leases">View</Link>
-                </Button>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Upload Dialog */}
+      <Dialog open={openUpload} onOpenChange={(open) => !open && !isUploading && setOpenUpload(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>Upload ID proofs, leases, or other documents.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUploadSubmit} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>File</Label>
+              <Input type="file" required onChange={(e) => setUploadFile(e.target.files?.[0] || null)} disabled={isUploading} />
+            </div>
+            <div className="space-y-2">
+              <Label>Document Type</Label>
+              <Select value={docType} onValueChange={setDocType} disabled={isUploading}>
+                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Lease">Lease Agreement</SelectItem>
+                  <SelectItem value="ID Proof">ID Proof</SelectItem>
+                  <SelectItem value="Income Proof">Income Proof</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Document Number (Optional)</Label>
+              <Input value={docNumber} onChange={(e) => setDocNumber(e.target.value)} disabled={isUploading} placeholder="e.g. Passport number" />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpenUpload(false)} disabled={isUploading}>Cancel</Button>
+              <Button type="submit" disabled={isUploading || uploadMutation.isPending}>
+                {isUploading ? "Uploading..." : "Upload"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

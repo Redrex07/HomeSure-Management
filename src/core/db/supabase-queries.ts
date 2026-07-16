@@ -2660,9 +2660,10 @@ export async function getServiceAdminDashboard() {
       }
 
       return (data || []).map((doc) => ({
-        id: `TD-${doc.document_id}`,
+        id: doc.document_id,
         name: `${doc.document_type || "Document"}${doc.document_number ? ` · ${doc.document_number}` : ""}`,
         type: doc.document_type || "Document",
+        document_number: doc.document_number || "",
         fileUrl: doc.document_file || null,
         status: doc.verification_status || "Pending",
         updated: doc.uploaded_at
@@ -2674,6 +2675,39 @@ export async function getServiceAdminDashboard() {
       console.error("Exception fetching tenant documents:", err);
       return [];
     }
+  }
+
+  export async function uploadTenantDocument(payload: {
+    tenant_id: number;
+    document_type: string;
+    document_number?: string;
+    document_file: string; // The URL from supabase storage
+  }) {
+    const { data, error } = await supabase
+      .from("tenant_document")
+      .insert([
+        {
+          tenant_id: payload.tenant_id,
+          document_type: payload.document_type,
+          document_number: payload.document_number || null,
+          document_file: payload.document_file,
+          verification_status: "Pending",
+          uploaded_at: new Date().toISOString(),
+        },
+      ])
+      .select();
+
+    if (error) throw error;
+    return data;
+  }
+
+  export async function deleteTenantDocument(document_id: number) {
+    const { error } = await supabase
+      .from("tenant_document")
+      .delete()
+      .eq("document_id", document_id);
+    
+    if (error) throw error;
   }
 
   export async function getTenantServiceRequests(tenantId: number, legacyTenantId?: number | null) {
@@ -2791,6 +2825,17 @@ export async function getServiceAdminDashboard() {
   }
 
   export async function createFavoriteProperty(payload: { tenant_id: number; property_id: number }) {
+    const { data: existing } = await supabase
+      .from("favorite_property")
+      .select("favorite_id")
+      .eq("tenant_id", payload.tenant_id)
+      .eq("property_id", payload.property_id)
+      .maybeSingle();
+
+    if (existing) {
+      return existing; // already exists
+    }
+
     const { data, error } = await supabase
       .from("favorite_property")
       .insert([
@@ -2804,6 +2849,26 @@ export async function getServiceAdminDashboard() {
 
     if (error) throw error;
     return data;
+  }
+
+  export async function removeFavoriteProperty(payload: { tenant_id: number; property_id: number }) {
+    const { error } = await supabase
+      .from("favorite_property")
+      .delete()
+      .eq("tenant_id", payload.tenant_id)
+      .eq("property_id", payload.property_id);
+
+    if (error) throw error;
+  }
+  
+  export async function getFavoriteProperties(tenant_id: number) {
+    const { data, error } = await supabase
+      .from("favorite_property")
+      .select("*")
+      .eq("tenant_id", tenant_id);
+    
+    if (error) throw error;
+    return data || [];
   }
 
   export async function createPropertyInquiry(payload: {
