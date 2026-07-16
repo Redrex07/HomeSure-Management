@@ -3709,13 +3709,15 @@ function parsePropertySpecs(prop: any) {
       prop.featured_property = specs.featured_property !== undefined ? specs.featured_property : null;
     } catch (e) {}
   }
-  if (prop.property_rent_details && prop.property_rent_details.length > 0) prop.rentDetailsData = prop.property_rent_details[0];
-  if (prop.property_amenities && prop.property_amenities.length > 0) prop.amenitiesData = prop.property_amenities[0];
-  if (prop.tenant_preferences && prop.tenant_preferences.length > 0) prop.tenantPreferencesData = prop.tenant_preferences[0];
-  if (prop.property_utilities && prop.property_utilities.length > 0) prop.utilitiesData = prop.property_utilities[0];
-  if (prop.nearby_facilities && prop.nearby_facilities.length > 0) prop.nearbyFacilitiesData = prop.nearby_facilities[0];
-  if (prop.property_documents && prop.property_documents.length > 0) prop.documentsData = prop.property_documents[0];
-  if (prop.property_contact_details && prop.property_contact_details.length > 0) prop.contactDetailsData = prop.property_contact_details[0];
+  const extractData = (relation: any) => Array.isArray(relation) ? (relation.length > 0 ? relation[0] : null) : (relation || null);
+
+  prop.rentDetailsData = extractData(prop.property_rent_details);
+  prop.amenitiesData = extractData(prop.property_amenities);
+  prop.tenantPreferencesData = extractData(prop.tenant_preferences);
+  prop.utilitiesData = extractData(prop.property_utilities);
+  prop.nearbyFacilitiesData = extractData(prop.nearby_facilities);
+  prop.documentsData = extractData(prop.property_documents);
+  prop.contactDetailsData = extractData(prop.property_contact_details);
   
   return prop;
 }
