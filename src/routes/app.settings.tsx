@@ -780,8 +780,8 @@ function SettingsPage() {
                 </Card>
               </div>
             </div>
-          )}
-        </TabsContent>
+          </TabsContent>
+        )}
       </Tabs>
 
       <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
