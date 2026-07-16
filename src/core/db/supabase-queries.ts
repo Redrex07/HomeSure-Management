@@ -3038,6 +3038,67 @@ export async function getServiceAdminDashboard() {
     return data;
   }
 
+  export async function getTenantRentalApplications(tenantId: number) {
+    try {
+      const { data, error } = await supabase
+        .from("rental_application")
+        .select(`
+          application_id,
+          tenant_id,
+          property_id,
+          landlord_id,
+          application_date,
+          expected_move_in,
+          occupation,
+          monthly_income,
+          application_status,
+          remarks,
+          properties (property_name)
+        `)
+        .eq("tenant_id", tenantId)
+        .order("application_date", { ascending: false });
+
+      if (error && !isSupabaseSchemaError(error)) {
+        console.error("Error fetching tenant rental applications:", error);
+      }
+      
+      return (data || []).map((app: any) => ({
+        id: `APP-${app.application_id}`,
+        rawId: app.application_id,
+        propertyId: app.property_id,
+        propertyName: app.properties?.property_name || "Unknown Property",
+        date: app.application_date ? new Date(app.application_date).toLocaleDateString() : "",
+        expectedMoveIn: app.expected_move_in || "",
+        occupation: app.occupation || "",
+        monthlyIncome: app.monthly_income || 0,
+        status: app.application_status || "Pending",
+        remarks: app.remarks || "",
+      }));
+    } catch (err) {
+      return [];
+    }
+  }
+
+  export async function updateRentalApplication(applicationId: number, payload: any) {
+    const { data, error } = await supabase
+      .from("rental_application")
+      .update(payload)
+      .eq("application_id", applicationId)
+      .select();
+    if (error) throw error;
+    return data;
+  }
+
+  export async function cancelRentalApplication(applicationId: number) {
+    const { data, error } = await supabase
+      .from("rental_application")
+      .update({ application_status: "Cancelled" })
+      .eq("application_id", applicationId)
+      .select();
+    if (error) throw error;
+    return data;
+  }
+
   export async function createReviewRating(payload: {
     tenant_id: number;
     property_id: number;

@@ -68,7 +68,12 @@ import {
   createVisitSchedule,
   cancelVisitRequest,
   rescheduleVisitRequest,
-  getAllProperties
+  getAllProperties,
+  getTenantRentalApplications,
+  createRentalApplication,
+  updateRentalApplication,
+  cancelRentalApplication,
+  getTenantLeaseAgreements
 } from "@/core/db/supabase-queries";
 import { supabase } from "@/core/db/supabase";
 import { toast } from "sonner";
@@ -127,6 +132,18 @@ export function TenantDashboard() {
     enabled: !!tenantContext.tenantId,
   });
 
+  const { data: dbApplications = [], isLoading: isLoadingApps } = useQuery({
+    queryKey: ["tenant-applications", tenantContext.tenantId],
+    queryFn: () => getTenantRentalApplications(tenantContext.tenantId!),
+    enabled: !!tenantContext.tenantId,
+  });
+
+  const { data: dbLeases = [], isLoading: isLoadingLeases } = useQuery({
+    queryKey: ["tenant-leases", tenantContext.tenantId],
+    queryFn: () => getTenantLeaseAgreements(tenantContext.tenantId!),
+    enabled: !!tenantContext.tenantId,
+  });
+
   const queryClient = useQueryClient();
   const [openUpload, setOpenUpload] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -146,6 +163,14 @@ export function TenantDashboard() {
   const [reschedulingVisit, setReschedulingVisit] = useState<any | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
+
+  const [openApp, setOpenApp] = useState(false);
+  const [editingApp, setEditingApp] = useState<any | null>(null);
+  const [appProperty, setAppProperty] = useState("");
+  const [appMoveIn, setAppMoveIn] = useState("");
+  const [appOccupation, setAppOccupation] = useState("");
+  const [appIncome, setAppIncome] = useState("");
+  const [appRemarks, setAppRemarks] = useState("");
 
   const uploadMutation = useMutation({
     mutationFn: uploadTenantDocument,
@@ -226,6 +251,75 @@ export function TenantDashboard() {
       toast.error("Failed to cancel visit: " + (err.message || String(err)));
     }
   });
+
+  const createAppMutation = useMutation({
+    mutationFn: createRentalApplication,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-applications"] });
+      toast.success("Application submitted successfully!");
+      setOpenApp(false);
+      resetAppForm();
+    },
+    onError: (err: any) => {
+      toast.error("Failed to submit application: " + (err.message || String(err)));
+    }
+  });
+
+  const updateAppMutation = useMutation({
+    mutationFn: (payload: { id: number, data: any }) => updateRentalApplication(payload.id, payload.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-applications"] });
+      toast.success("Application updated successfully!");
+      setEditingApp(null);
+      resetAppForm();
+    },
+    onError: (err: any) => {
+      toast.error("Failed to update application: " + (err.message || String(err)));
+    }
+  });
+
+  const cancelAppMutation = useMutation({
+    mutationFn: cancelRentalApplication,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-applications"] });
+      toast.success("Application cancelled successfully!");
+    },
+    onError: (err: any) => {
+      toast.error("Failed to cancel application: " + (err.message || String(err)));
+    }
+  });
+
+  const resetAppForm = () => {
+    setAppProperty("");
+    setAppMoveIn("");
+    setAppOccupation("");
+    setAppIncome("");
+    setAppRemarks("");
+  };
+
+  const handleAppSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!appProperty) {
+      toast.error("Please select a property.");
+      return;
+    }
+    const prop = allProperties.find((p: any) => p.property_id === Number(appProperty));
+    const payloadData = {
+      tenant_id: tenantContext.tenantId || 1,
+      property_id: Number(appProperty),
+      landlord_id: prop?.landlord_id || null,
+      expected_move_in: appMoveIn || null,
+      occupation: appOccupation || null,
+      monthly_income: appIncome ? Number(appIncome) : null,
+      remarks: appRemarks || null,
+    };
+    
+    if (editingApp) {
+      updateAppMutation.mutate({ id: editingApp.rawId, data: payloadData });
+    } else {
+      createAppMutation.mutate(payloadData);
+    }
+  };
 
   const handleInquirySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -581,6 +675,110 @@ export function TenantDashboard() {
             )}
           </CardContent>
         </Card>
+        <Card className="border-border/70 shadow-card lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold">My Rental Applications</CardTitle>
+            <Button size="sm" variant="outline" onClick={() => { setEditingApp(null); resetAppForm(); setOpenApp(true); }}>
+              <Plus className="mr-2 h-3.5 w-3.5" /> New Application
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {isLoadingApps ? (
+              <p className="text-xs text-muted-foreground animate-pulse">Loading applications...</p>
+            ) : dbApplications.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No rental applications found.</p>
+            ) : (
+              dbApplications.map((app: any) => (
+                <div key={app.id} className="flex flex-col gap-2 rounded-md border border-border/60 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{app.propertyName}</div>
+                      <div className="text-xs text-muted-foreground">Applied: {app.date}</div>
+                    </div>
+                    <StatusBadge value={app.status} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-muted/50 p-2 rounded mt-2">
+                    <div><strong>Move-in:</strong> {app.expectedMoveIn || "N/A"}</div>
+                    <div><strong>Income:</strong> {app.monthlyIncome ? fmt(app.monthlyIncome) : "N/A"}</div>
+                    <div><strong>Occupation:</strong> {app.occupation || "N/A"}</div>
+                    {app.remarks && <div className="col-span-2"><strong>Remarks:</strong> {app.remarks}</div>}
+                  </div>
+                  {app.status === "Pending" && (
+                    <div className="flex justify-end gap-2 mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={() => {
+                          setEditingApp(app);
+                          setAppProperty(String(app.propertyId));
+                          setAppMoveIn(app.expectedMoveIn || "");
+                          setAppOccupation(app.occupation || "");
+                          setAppIncome(app.monthlyIncome ? String(app.monthlyIncome) : "");
+                          setAppRemarks(app.remarks || "");
+                          setOpenApp(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                        onClick={() => {
+                          if (confirm("Cancel this application?")) cancelAppMutation.mutate(app.rawId);
+                        }}
+                        disabled={cancelAppMutation.isPending}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-card lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold">My Lease Agreements</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {isLoadingLeases ? (
+              <p className="text-xs text-muted-foreground animate-pulse">Loading leases...</p>
+            ) : dbLeases.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No active lease agreements found.</p>
+            ) : (
+              dbLeases.map((lease: any) => (
+                <div key={lease.id} className="flex flex-col gap-2 rounded-md border border-border/60 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{lease.property}</div>
+                      <div className="text-xs text-muted-foreground">Ref: {lease.agreementNumber}</div>
+                    </div>
+                    <StatusBadge value={lease.status} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-muted/50 p-2 rounded mt-2">
+                    <div><strong>Start:</strong> {lease.leaseStart || "N/A"}</div>
+                    <div><strong>End:</strong> {lease.leaseEnd || "N/A"}</div>
+                    <div><strong>Rent:</strong> {fmt(lease.rent)}</div>
+                    <div><strong>Deposit:</strong> {fmt(lease.securityDeposit)}</div>
+                  </div>
+                  {lease.documentUrl && (
+                    <div className="flex justify-end mt-2">
+                      <Button variant="outline" size="sm" className="h-7 px-3 text-[11px]" asChild>
+                        <a href={lease.documentUrl} target="_blank" rel="noopener noreferrer">
+                          <Download className="mr-1.5 h-3 w-3" /> Download Agreement
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Upload Dialog */}
@@ -716,6 +914,53 @@ export function TenantDashboard() {
               <Button type="button" variant="outline" onClick={() => setReschedulingVisit(null)}>Cancel</Button>
               <Button type="submit" disabled={rescheduleVisitMutation.isPending}>
                 {rescheduleVisitMutation.isPending ? "Rescheduling..." : "Reschedule"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={openApp} onOpenChange={setOpenApp}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingApp ? "Edit Rental Application" : "New Rental Application"}</DialogTitle>
+            <DialogDescription>Submit or update your rental application details.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAppSubmit} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Property</Label>
+              <Select value={appProperty} onValueChange={setAppProperty} disabled={!!editingApp}>
+                <SelectTrigger><SelectValue placeholder="Select a property" /></SelectTrigger>
+                <SelectContent>
+                  {allProperties.map((p: any) => (
+                    <SelectItem key={p.property_id} value={String(p.property_id)}>
+                      {p.property_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Expected Move-in</Label>
+                <Input type="date" value={appMoveIn} onChange={(e) => setAppMoveIn(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Monthly Income (INR)</Label>
+                <Input type="number" placeholder="e.g. 50000" value={appIncome} onChange={(e) => setAppIncome(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Occupation</Label>
+              <Input placeholder="e.g. Software Engineer" value={appOccupation} onChange={(e) => setAppOccupation(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Remarks</Label>
+              <Input placeholder="Any additional information..." value={appRemarks} onChange={(e) => setAppRemarks(e.target.value)} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpenApp(false)}>Cancel</Button>
+              <Button type="submit" disabled={createAppMutation.isPending || updateAppMutation.isPending}>
+                {createAppMutation.isPending || updateAppMutation.isPending ? "Saving..." : "Save Application"}
               </Button>
             </DialogFooter>
           </form>
