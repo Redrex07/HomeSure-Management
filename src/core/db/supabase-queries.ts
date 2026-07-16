@@ -3697,4 +3697,25 @@ export async function deleteServiceCommunication(id: number) {
   }
 }
 
-function parsePropertySpecs(prop: any) { if (prop && prop.specifications) { try { const specs = JSON.parse(prop.specifications); prop.additionalInformationData = specs.property_additional_information || null; prop.parkingData = specs.property_parking || null; prop.availabilityData = specs.property_availability || null; prop.admin_approval = specs.admin_approval !== undefined ? specs.admin_approval : null; prop.property_verified = specs.property_verified !== undefined ? specs.property_verified : null; prop.featured_property = specs.featured_property !== undefined ? specs.featured_property : null; } catch (e) {} } return prop; } 
+function parsePropertySpecs(prop: any) {
+  if (prop && prop.specifications) {
+    try {
+      const specs = JSON.parse(prop.specifications);
+      prop.additionalInformationData = specs.property_additional_information || null;
+      prop.parkingData = specs.property_parking || null;
+      prop.availabilityData = specs.property_availability || null;
+      prop.admin_approval = specs.admin_approval !== undefined ? specs.admin_approval : null;
+      prop.property_verified = specs.property_verified !== undefined ? specs.property_verified : null;
+      prop.featured_property = specs.featured_property !== undefined ? specs.featured_property : null;
+    } catch (e) {}
+  }
+  if (prop.property_rent_details && prop.property_rent_details.length > 0) prop.rentDetailsData = prop.property_rent_details[0];
+  if (prop.property_amenities && prop.property_amenities.length > 0) prop.amenitiesData = prop.property_amenities[0];
+  if (prop.tenant_preferences && prop.tenant_preferences.length > 0) prop.tenantPreferencesData = prop.tenant_preferences[0];
+  if (prop.property_utilities && prop.property_utilities.length > 0) prop.utilitiesData = prop.property_utilities[0];
+  if (prop.nearby_facilities && prop.nearby_facilities.length > 0) prop.nearbyFacilitiesData = prop.nearby_facilities[0];
+  if (prop.property_documents && prop.property_documents.length > 0) prop.documentsData = prop.property_documents[0];
+  if (prop.property_contact_details && prop.property_contact_details.length > 0) prop.contactDetailsData = prop.property_contact_details[0];
+  
+  return prop;
+}
