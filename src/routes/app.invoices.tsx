@@ -24,6 +24,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatCard } from "@/shared/components/common/StatCard";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataTable } from "@/shared/components/common/DataTable";
+import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getInvoices,
@@ -34,6 +35,7 @@ import {
   createInvoice,
   updateInvoice,
   deleteInvoice,
+  getTenantInvoices,
 } from "@/core/db/supabase-queries";
 import { createRazorpayOrder, verifyRazorpayPayment } from "@/core/api/razorpay.functions";
 import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil, CreditCard, Plus, Trash2 } from "lucide-react";
@@ -97,9 +99,16 @@ function InvoicesPage() {
   const [createMethod, setCreateMethod] = useState("Bank Transfer");
   const [createReference, setCreateReference] = useState("");
 
+  const tenantContext = useTenantContext();
+  
   const { data: invoices = [], isLoading } = useQuery({
-    queryKey: ["invoices"],
-    queryFn: getInvoices,
+    queryKey: ["invoices", session?.role, tenantContext.tenantId],
+    queryFn: () => {
+      if (session?.role === "tenant" && tenantContext.tenantId) {
+        return getTenantInvoices(tenantContext.tenantId, tenantContext.serviceTenantId);
+      }
+      return getInvoices();
+    },
   });
 
   const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
@@ -574,6 +583,16 @@ function InvoicesPage() {
               sortable: true,
               render: (i) => <span className="font-medium">{formatCurrency(i.amount)}</span>,
             },
+            {
+              key: "method",
+              header: "Method",
+              render: (i: any) => <span className="text-xs text-muted-foreground">{i.method || i.payment_method || "-"}</span>,
+            },
+            {
+              key: "reference",
+              header: "Ref",
+              render: (i: any) => <span className="text-xs text-muted-foreground">{i.reference || i.payment_reference || "-"}</span>,
+            },
             { 
               key: "status", 
               header: "Status", 
@@ -627,8 +646,14 @@ function InvoicesPage() {
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
-                    onClick={() => handleDownloadInvoice(i)}
-                    title="Download"
+                    onClick={() => {
+                      if (i.receipt) {
+                        window.open(i.receipt, "_blank");
+                      } else {
+                        handleDownloadInvoice(i);
+                      }
+                    }}
+                    title={i.receipt ? "Download Receipt" : "Download Invoice"}
                   >
                     <Download className="h-3.5 w-3.5" />
                   </Button>
