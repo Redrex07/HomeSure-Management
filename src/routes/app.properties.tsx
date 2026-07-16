@@ -24,6 +24,8 @@ import {
   createPropertyInquiry,
   createRentalApplication,
   createReviewRating,
+  getFavoriteProperties,
+  removeFavoriteProperty,
 } from "@/core/db/supabase-queries";
 import { supabase } from "@/core/db/supabase";
 import {
@@ -91,6 +93,7 @@ function PropertiesPage() {
   const tenantContext = useTenantContext();
   const isTenant = session?.role === "tenant";
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
+  const [favoriteProps, setFavoriteProps] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSupabaseProperties = async () => {
@@ -99,6 +102,12 @@ function PropertiesPage() {
       const landlordId = "2"; // Force "2" to match Supabase mock data
       const data = isTenant ? await getAllProperties() : await getLandlordProperties(landlordId);
       setSupabaseProps(data as UnifiedProperty[]);
+      
+      if (isTenant) {
+        const tenantIdForFavs = tenantContext.tenantId || Number(session?.id) || 3;
+        const favs = await getFavoriteProperties(tenantIdForFavs);
+        setFavoriteProps(favs.map((f: any) => f.property_id));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -160,14 +169,26 @@ function PropertiesPage() {
   const getLandlordId = (property: UnifiedProperty) => Number((property as any).landlord_id || 2);
 
   const handleFavoriteProperty = async (property: UnifiedProperty) => {
+    const propId = getPropertyNumericId(property);
+    const isFav = favoriteProps.includes(propId);
     try {
-      await createFavoriteProperty({
-        tenant_id: tenantId,
-        property_id: getPropertyNumericId(property),
-      });
-      toast.success("Property added to favorites");
+      if (isFav) {
+        await removeFavoriteProperty({
+          tenant_id: tenantId,
+          property_id: propId,
+        });
+        setFavoriteProps((prev) => prev.filter((id) => id !== propId));
+        toast.success("Property removed from favorites");
+      } else {
+        await createFavoriteProperty({
+          tenant_id: tenantId,
+          property_id: propId,
+        });
+        setFavoriteProps((prev) => [...prev, propId]);
+        toast.success("Property added to favorites");
+      }
     } catch (err: any) {
-      toast.error("Could not save favorite: " + (err.message || String(err)));
+      toast.error("Could not update favorite: " + (err.message || String(err)));
     }
   };
 
@@ -2269,7 +2290,8 @@ function PropertiesPage() {
                           {isTenant && (
                             <div className="mt-3 grid grid-cols-2 gap-2">
                               <Button variant="outline" size="sm" onClick={() => handleFavoriteProperty(p)}>
-                                <Heart className="mr-1 h-3.5 w-3.5" /> Favorite
+                                <Heart className={`w-4 h-4 mr-2 ${favoriteProps.includes(getPropertyNumericId(p)) ? "fill-red-500 text-red-500" : ""}`} />
+                                Favorite
                               </Button>
                               <Button variant="outline" size="sm" onClick={() => handleInquiry(p)}>
                                 <MessageSquare className="mr-1 h-3.5 w-3.5" /> Inquiry

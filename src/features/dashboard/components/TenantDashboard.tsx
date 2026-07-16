@@ -73,7 +73,11 @@ import {
   createRentalApplication,
   updateRentalApplication,
   cancelRentalApplication,
-  getTenantLeaseAgreements
+  getTenantLeaseAgreements,
+  getFavoriteProperties,
+  getReviewRatings,
+  updateReviewRating,
+  deleteReviewRating
 } from "@/core/db/supabase-queries";
 import { supabase } from "@/core/db/supabase";
 import { toast } from "sonner";
@@ -144,6 +148,18 @@ export function TenantDashboard() {
     enabled: !!tenantContext.tenantId,
   });
 
+  const { data: dbFavorites = [], isLoading: isLoadingFavorites } = useQuery({
+    queryKey: ["tenant-favorites", tenantContext.tenantId],
+    queryFn: () => getFavoriteProperties(tenantContext.tenantId!),
+    enabled: !!tenantContext.tenantId,
+  });
+
+  const { data: dbReviews = [], isLoading: isLoadingReviews } = useQuery({
+    queryKey: ["tenant-reviews", tenantContext.tenantId],
+    queryFn: () => getReviewRatings(tenantContext.tenantId!),
+    enabled: !!tenantContext.tenantId,
+  });
+
   const queryClient = useQueryClient();
   const [openUpload, setOpenUpload] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -171,6 +187,49 @@ export function TenantDashboard() {
   const [appOccupation, setAppOccupation] = useState("");
   const [appIncome, setAppIncome] = useState("");
   const [appRemarks, setAppRemarks] = useState("");
+
+  const [openReview, setOpenReview] = useState(false);
+  const [editingReview, setEditingReview] = useState<any | null>(null);
+  const [reviewTitle, setReviewTitle] = useState("");
+  const [reviewDesc, setReviewDesc] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+
+  const updateReviewMutation = useMutation({
+    mutationFn: (payload: { id: number, data: any }) => updateReviewRating(payload.id, payload.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-reviews"] });
+      toast.success("Review updated successfully!");
+      setOpenReview(false);
+      setEditingReview(null);
+    },
+    onError: (err: any) => {
+      toast.error("Failed to update review: " + (err.message || String(err)));
+    }
+  });
+
+  const deleteReviewMutation = useMutation({
+    mutationFn: deleteReviewRating,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-reviews"] });
+      toast.success("Review deleted successfully!");
+    },
+    onError: (err: any) => {
+      toast.error("Failed to delete review: " + (err.message || String(err)));
+    }
+  });
+
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingReview) return;
+    updateReviewMutation.mutate({
+      id: editingReview.review_id,
+      data: {
+        review_title: reviewTitle,
+        review_description: reviewDesc,
+        rating: reviewRating
+      }
+    });
+  };
 
   const uploadMutation = useMutation({
     mutationFn: uploadTenantDocument,
@@ -582,6 +641,88 @@ export function TenantDashboard() {
         </Card>
         <Card className="border-border/70 shadow-card lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold">My Favorites</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {isLoadingFavorites ? (
+              <p className="text-xs text-muted-foreground animate-pulse">Loading favorites...</p>
+            ) : dbFavorites.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No favorite properties found.</p>
+            ) : (
+              dbFavorites.map((fav: any) => (
+                <div key={fav.id} className="flex flex-col gap-2 rounded-md border border-border/60 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{fav.property_name || `Property #${fav.property_id}`}</div>
+                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to="/app/property/$id" params={{ id: String(fav.property_id) }}>View Property</Link>
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-card lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold">My Reviews</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {isLoadingReviews ? (
+              <p className="text-xs text-muted-foreground animate-pulse">Loading reviews...</p>
+            ) : dbReviews.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No reviews found.</p>
+            ) : (
+              dbReviews.map((rev: any) => (
+                <div key={rev.review_id} className="flex flex-col gap-2 rounded-md border border-border/60 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{rev.review_title}</div>
+                      <div className="text-xs text-muted-foreground">Rating: {rev.rating}/5 · {rev.review_date}</div>
+                    </div>
+                  </div>
+                  {rev.review_description && (
+                    <div className="text-xs bg-muted/50 p-2 rounded">
+                      {rev.review_description}
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-[11px]"
+                      onClick={() => {
+                        setEditingReview(rev);
+                        setReviewTitle(rev.review_title || "");
+                        setReviewDesc(rev.review_description || "");
+                        setReviewRating(rev.rating || 5);
+                        setOpenReview(true);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-[11px] text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                      onClick={() => {
+                        if (confirm("Delete this review?")) deleteReviewMutation.mutate(rev.review_id);
+                      }}
+                      disabled={deleteReviewMutation.isPending}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-card lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-semibold">My Property Inquiries</CardTitle>
             <Button size="sm" variant="outline" onClick={() => setOpenInquiry(true)}>
               <Plus className="mr-2 h-3.5 w-3.5" /> New Inquiry
@@ -780,6 +921,35 @@ export function TenantDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={openReview} onOpenChange={setOpenReview}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Review</DialogTitle>
+            <DialogDescription>Update your review details.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleReviewSubmit} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input required value={reviewTitle} onChange={(e) => setReviewTitle(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input value={reviewDesc} onChange={(e) => setReviewDesc(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Rating (1-5)</Label>
+              <Input type="number" min="1" max="5" required value={reviewRating} onChange={(e) => setReviewRating(Number(e.target.value))} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpenReview(false)}>Cancel</Button>
+              <Button type="submit" disabled={updateReviewMutation.isPending}>
+                {updateReviewMutation.isPending ? "Saving..." : "Save Review"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Upload Dialog */}
       <Dialog open={openUpload} onOpenChange={(open) => !open && !isUploading && setOpenUpload(false)}>

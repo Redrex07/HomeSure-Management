@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion, Variants } from "framer-motion";
-import { getPropertyById, updateProperty } from "@/core/db/supabase-queries";
+import { getPropertyById, updateProperty, createFavoriteProperty, removeFavoriteProperty, getFavoriteProperties } from "@/core/db/supabase-queries";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { Button } from "@/shared/components/ui/button";
-import { ChevronLeft, Pencil, ImagePlus, X, CheckCircle } from "lucide-react";
+import { ChevronLeft, Pencil, ImagePlus, X, CheckCircle, Heart } from "lucide-react";
 import { supabase } from "@/core/db/supabase";
 import { toast } from "sonner";
 import {
@@ -32,6 +32,8 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { UnifiedProperty } from "./app.properties";
+import { useSession } from "@/features/auth/store/auth-store";
+import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 
 export const Route = createFileRoute("/app/property/$id")({
   component: PropertyDetailsPage,
@@ -43,6 +45,12 @@ function PropertyDetailsPage() {
   const { id } = Route.useParams();
   const [property, setProperty] = useState<UnifiedProperty | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const session = useSession();
+  const tenantContext = useTenantContext();
+  const isTenant = session?.role === "tenant";
+  const tenantId = tenantContext.tenantId || Number(session?.id) || 3;
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editStep, setEditStep] = useState(1);
@@ -388,10 +396,33 @@ function PropertyDetailsPage() {
       setLoading(true);
       const data = await getPropertyById(id);
       setProperty(data as UnifiedProperty);
+      
+      if (isTenant && data) {
+        const favs = await getFavoriteProperties(tenantId);
+        setIsFavorite(favs.some((f: any) => f.property_id === Number(data.property_id)));
+      }
+      
       setLoading(false);
     }
     fetchProperty();
-  }, [id]);
+  }, [id, isTenant, tenantId]);
+
+  const handleToggleFavorite = async () => {
+    if (!property) return;
+    try {
+      if (isFavorite) {
+        await removeFavoriteProperty({ tenant_id: tenantId, property_id: Number(property.property_id) });
+        setIsFavorite(false);
+        toast.success("Property removed from favorites");
+      } else {
+        await createFavoriteProperty({ tenant_id: tenantId, property_id: Number(property.property_id) });
+        setIsFavorite(true);
+        toast.success("Property added to favorites");
+      }
+    } catch (err: any) {
+      toast.error("Could not update favorite: " + (err.message || String(err)));
+    }
+  };
 
 
   let parsedSpecs: any = null;
@@ -513,6 +544,17 @@ function PropertyDetailsPage() {
               <ChevronLeft className="mr-2 h-4 w-4" /> Back to Properties
             </Link>
           </Button>
+          {isTenant && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleToggleFavorite}
+              className="bg-background/20 text-white border-white/30 hover:bg-background/40 hover:text-white backdrop-blur-md"
+            >
+              <Heart className={`mr-2 h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+              {isFavorite ? "Favorited" : "Favorite"}
+            </Button>
+          )}
         </motion.div>
 
         {/* Property Title Overlay */}

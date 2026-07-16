@@ -3126,6 +3126,42 @@ export async function getServiceAdminDashboard() {
     return data;
   }
 
+  export async function getReviewRatings(tenantId: number) {
+    const { data, error } = await supabase
+      .from("review_rating")
+      .select("*, properties(property_name, address)")
+      .eq("tenant_id", tenantId)
+      .order("review_date", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching review ratings:", error);
+      return [];
+    }
+    return data || [];
+  }
+
+  export async function updateReviewRating(reviewId: number, payload: any) {
+    const { data, error } = await supabase
+      .from("review_rating")
+      .update(payload)
+      .eq("review_id", reviewId)
+      .select();
+
+    if (error) throw error;
+    return data;
+  }
+
+  export async function deleteReviewRating(reviewId: number) {
+    const { data, error } = await supabase
+      .from("review_rating")
+      .delete()
+      .eq("review_id", reviewId)
+      .select();
+
+    if (error) throw error;
+    return data;
+  }
+
 // ================= CONTRACTOR DASHBOARD FUNCTIONS (RESTORED) =================
 export async function getContractorProfile(contractorId: number) {
   const { data, error } = await supabase
