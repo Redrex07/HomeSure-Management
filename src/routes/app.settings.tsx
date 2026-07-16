@@ -20,6 +20,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { useSession, setSession } from "@/features/auth/store/auth-store";
 import { toast } from "sonner";
+import { TenantSettings } from "@/features/tenant/components/TenantSettings";
 
 export const Route = createFileRoute("/app/settings")({
   head: () => ({ meta: [{ title: "Settings — HomeSure" }] }),
@@ -233,56 +234,73 @@ const handleSubmit = async (e: React.FormEvent) => {
           <TabsTrigger value="billing">Billing</TabsTrigger>
         </TabsList>
         <TabsContent value="profile">
-          <Card className="border-border/70 shadow-card">
-            <CardHeader>
-              <CardTitle className="text-sm font-semibold">Profile</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {name ? name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() : "US"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <Button variant="outline" size="sm">
-                    Upload photo
-                  </Button>
-                  <div className="mt-1 text-xs text-muted-foreground">PNG or JPG, max 2MB.</div>
-                </div>
-              </div>
-              
-              {isLoading ? (
-                <div className="flex h-48 items-center justify-center">
-                  <p className="text-xs text-muted-foreground animate-pulse">Loading profile...</p>
-                </div>
-              ) : (
-                <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
-                  <div className="space-y-1.5">
-                    <Label>Full name</Label>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} required />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Email</Label>
-                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Phone</Label>
-                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-0100" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Timezone</Label>
-                    <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <Button type="submit" disabled={isSaving}>
-                      {isSaving ? "Saving..." : "Save changes"}
+          {s?.role === "tenant" ? (
+            <TenantSettings />
+          ) : (
+            <Card className="border-border/70 shadow-card">
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold">Profile</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16">
+                    {profilePhoto && <AvatarImage src={profilePhoto} alt={name || "Profile photo"} />}
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {name ? name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() : "US"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg"
+                      className="hidden"
+                      onChange={handlePhotoSelected}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingPhoto}
+                    >
+                      {isUploadingPhoto ? "Uploading..." : "Upload photo"}
                     </Button>
+                    <div className="mt-1 text-xs text-muted-foreground">PNG or JPG, max 2MB.</div>
                   </div>
-                </form>
-              )}
-            </CardContent>
-          </Card>
+                </div>
+                
+                {isLoading ? (
+                  <div className="flex h-48 items-center justify-center">
+                    <p className="text-xs text-muted-foreground animate-pulse">Loading profile...</p>
+                  </div>
+                ) : (
+                  <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
+                    <div className="space-y-1.5">
+                      <Label>Full name</Label>
+                      <Input value={name} onChange={(e) => setName(e.target.value)} required />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Email</Label>
+                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Phone</Label>
+                      <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-0100" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Timezone</Label>
+                      <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Button type="submit" disabled={isSaving}>
+                        {isSaving ? "Saving..." : "Save changes"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         
         <TabsContent value="workspace">
