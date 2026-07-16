@@ -62,6 +62,13 @@ import {
   getTenantDocuments,
   uploadTenantDocument,
   deleteTenantDocument,
+  getTenantInquiries,
+  getTenantVisits,
+  createPropertyInquiry,
+  createVisitSchedule,
+  cancelVisitRequest,
+  rescheduleVisitRequest,
+  getAllProperties
 } from "@/core/db/supabase-queries";
 import { supabase } from "@/core/db/supabase";
 import { toast } from "sonner";
@@ -102,6 +109,23 @@ export function TenantDashboard() {
     queryFn: () => getTenantDocuments(tenantContext.tenantId!),
     enabled: !!tenantContext.tenantId,
   });
+  
+  const { data: allProperties = [] } = useQuery({
+    queryKey: ["properties"],
+    queryFn: getAllProperties,
+  });
+
+  const { data: dbInquiries = [], isLoading: isLoadingInquiries } = useQuery({
+    queryKey: ["tenant-inquiries", tenantContext.tenantId],
+    queryFn: () => getTenantInquiries(tenantContext.tenantId!),
+    enabled: !!tenantContext.tenantId,
+  });
+
+  const { data: dbVisits = [], isLoading: isLoadingVisits } = useQuery({
+    queryKey: ["tenant-visits", tenantContext.tenantId],
+    queryFn: () => getTenantVisits(tenantContext.tenantId!),
+    enabled: !!tenantContext.tenantId,
+  });
 
   const queryClient = useQueryClient();
   const [openUpload, setOpenUpload] = useState(false);
@@ -109,6 +133,19 @@ export function TenantDashboard() {
   const [docType, setDocType] = useState("Lease");
   const [docNumber, setDocNumber] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+
+  const [openInquiry, setOpenInquiry] = useState(false);
+  const [inquiryProperty, setInquiryProperty] = useState("");
+  const [inquiryMessage, setInquiryMessage] = useState("");
+
+  const [openVisit, setOpenVisit] = useState(false);
+  const [visitProperty, setVisitProperty] = useState("");
+  const [visitDate, setVisitDate] = useState("");
+  const [visitTime, setVisitTime] = useState("");
+  
+  const [reschedulingVisit, setReschedulingVisit] = useState<any | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
 
   const uploadMutation = useMutation({
     mutationFn: uploadTenantDocument,
@@ -135,6 +172,102 @@ export function TenantDashboard() {
       toast.error("Failed to delete: " + (err.message || String(err)));
     }
   });
+
+  const inquiryMutation = useMutation({
+    mutationFn: createPropertyInquiry,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-inquiries"] });
+      toast.success("Inquiry submitted successfully!");
+      setOpenInquiry(false);
+      setInquiryProperty("");
+      setInquiryMessage("");
+    },
+    onError: (err: any) => {
+      toast.error("Failed to submit inquiry: " + (err.message || String(err)));
+    }
+  });
+
+  const visitMutation = useMutation({
+    mutationFn: createVisitSchedule,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-visits"] });
+      toast.success("Visit scheduled successfully!");
+      setOpenVisit(false);
+      setVisitProperty("");
+      setVisitDate("");
+      setVisitTime("");
+    },
+    onError: (err: any) => {
+      toast.error("Failed to schedule visit: " + (err.message || String(err)));
+    }
+  });
+
+  const rescheduleVisitMutation = useMutation({
+    mutationFn: (payload: { id: number, date: string, time: string }) => rescheduleVisitRequest(payload.id, payload.date, payload.time),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-visits"] });
+      toast.success("Visit rescheduled successfully!");
+      setReschedulingVisit(null);
+      setRescheduleDate("");
+      setRescheduleTime("");
+    },
+    onError: (err: any) => {
+      toast.error("Failed to reschedule visit: " + (err.message || String(err)));
+    }
+  });
+
+  const cancelVisitMutation = useMutation({
+    mutationFn: cancelVisitRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-visits"] });
+      toast.success("Visit cancelled successfully!");
+    },
+    onError: (err: any) => {
+      toast.error("Failed to cancel visit: " + (err.message || String(err)));
+    }
+  });
+
+  const handleInquirySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inquiryProperty || !inquiryMessage) {
+      toast.error("Please fill all required fields.");
+      return;
+    }
+    const prop = allProperties.find((p: any) => p.property_id === Number(inquiryProperty));
+    inquiryMutation.mutate({
+      tenant_id: tenantContext.tenantId || 1,
+      property_id: Number(inquiryProperty),
+      landlord_id: prop?.landlord_id || null,
+      inquiry_message: inquiryMessage,
+    });
+  };
+
+  const handleVisitSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!visitProperty || !visitDate || !visitTime) {
+      toast.error("Please fill all required fields.");
+      return;
+    }
+    const prop = allProperties.find((p: any) => p.property_id === Number(visitProperty));
+    visitMutation.mutate({
+      tenant_id: tenantContext.tenantId || 1,
+      property_id: Number(visitProperty),
+      landlord_id: prop?.landlord_id || null,
+      visit_date: visitDate,
+      visit_time: visitTime,
+      remarks: `Visit to ${prop?.property_name || "property"}`,
+    });
+  };
+
+  const handleRescheduleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reschedulingVisit) return;
+    rescheduleVisitMutation.mutate({
+      id: reschedulingVisit.rawId,
+      date: rescheduleDate,
+      time: rescheduleTime
+    });
+  };
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -353,6 +486,101 @@ export function TenantDashboard() {
             )}
           </CardContent>
         </Card>
+        <Card className="border-border/70 shadow-card lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold">My Property Inquiries</CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setOpenInquiry(true)}>
+              <Plus className="mr-2 h-3.5 w-3.5" /> New Inquiry
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {isLoadingInquiries ? (
+              <p className="text-xs text-muted-foreground animate-pulse">Loading inquiries...</p>
+            ) : dbInquiries.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No property inquiries found.</p>
+            ) : (
+              dbInquiries.map((inq: any) => (
+                <div key={inq.id} className="flex flex-col gap-2 rounded-md border border-border/60 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{inq.propertyName}</div>
+                      <div className="text-xs text-muted-foreground">Sent: {inq.date}</div>
+                    </div>
+                    <StatusBadge value={inq.status} />
+                  </div>
+                  <div className="text-xs bg-muted/50 p-2 rounded">
+                    <strong>Message:</strong> {inq.message}
+                  </div>
+                  {inq.reply && (
+                    <div className="text-xs bg-primary-soft text-primary-foreground p-2 rounded border border-primary/20">
+                      <strong>Landlord Reply:</strong> {inq.reply}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-card lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-semibold">My Visit Schedules</CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setOpenVisit(true)}>
+              <Calendar className="mr-2 h-3.5 w-3.5" /> Schedule Visit
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {isLoadingVisits ? (
+              <p className="text-xs text-muted-foreground animate-pulse">Loading visits...</p>
+            ) : dbVisits.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No visits scheduled.</p>
+            ) : (
+              dbVisits.map((v: any) => (
+                <div key={v.id} className="flex items-center gap-3 rounded-md border border-border/60 p-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary-soft text-primary flex-shrink-0">
+                    <Calendar className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{v.propertyName}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {v.date} at {v.time} · {v.remarks}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <StatusBadge value={v.status} />
+                    {v.status === "Pending" && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-[11px]"
+                          onClick={() => {
+                            setReschedulingVisit(v);
+                            setRescheduleDate(v.date);
+                            setRescheduleTime(v.time);
+                          }}
+                        >
+                          Reschedule
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-[11px] text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                          onClick={() => {
+                            if (confirm("Cancel this visit?")) cancelVisitMutation.mutate(v.rawId);
+                          }}
+                          disabled={cancelVisitMutation.isPending}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Upload Dialog */}
@@ -387,6 +615,107 @@ export function TenantDashboard() {
               <Button type="button" variant="outline" onClick={() => setOpenUpload(false)} disabled={isUploading}>Cancel</Button>
               <Button type="submit" disabled={isUploading || uploadMutation.isPending}>
                 {isUploading ? "Uploading..." : "Upload"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openInquiry} onOpenChange={setOpenInquiry}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Property Inquiry</DialogTitle>
+            <DialogDescription>Submit an inquiry for a property you're interested in.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleInquirySubmit} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Property</Label>
+              <Select value={inquiryProperty} onValueChange={setInquiryProperty}>
+                <SelectTrigger><SelectValue placeholder="Select a property" /></SelectTrigger>
+                <SelectContent>
+                  {allProperties.map((p: any) => (
+                    <SelectItem key={p.property_id} value={String(p.property_id)}>
+                      {p.property_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Message</Label>
+              <Input value={inquiryMessage} onChange={(e) => setInquiryMessage(e.target.value)} required placeholder="I'm interested in renting this property..." />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpenInquiry(false)}>Cancel</Button>
+              <Button type="submit" disabled={inquiryMutation.isPending}>
+                {inquiryMutation.isPending ? "Submitting..." : "Submit Inquiry"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openVisit} onOpenChange={setOpenVisit}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Schedule Visit</DialogTitle>
+            <DialogDescription>Schedule a visit to view a property.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleVisitSubmit} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Property</Label>
+              <Select value={visitProperty} onValueChange={setVisitProperty}>
+                <SelectTrigger><SelectValue placeholder="Select a property" /></SelectTrigger>
+                <SelectContent>
+                  {allProperties.map((p: any) => (
+                    <SelectItem key={p.property_id} value={String(p.property_id)}>
+                      {p.property_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Date</Label>
+                <Input type="date" required value={visitDate} onChange={(e) => setVisitDate(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Time</Label>
+                <Input type="time" required value={visitTime} onChange={(e) => setVisitTime(e.target.value)} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpenVisit(false)}>Cancel</Button>
+              <Button type="submit" disabled={visitMutation.isPending}>
+                {visitMutation.isPending ? "Scheduling..." : "Schedule Visit"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!reschedulingVisit} onOpenChange={(open) => !open && setReschedulingVisit(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reschedule Visit</DialogTitle>
+            <DialogDescription>Change the date and time of your scheduled visit.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleRescheduleSubmit} className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>New Date</Label>
+                <Input type="date" required value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>New Time</Label>
+                <Input type="time" required value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setReschedulingVisit(null)}>Cancel</Button>
+              <Button type="submit" disabled={rescheduleVisitMutation.isPending}>
+                {rescheduleVisitMutation.isPending ? "Rescheduling..." : "Reschedule"}
               </Button>
             </DialogFooter>
           </form>

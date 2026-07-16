@@ -2851,6 +2851,119 @@ export async function getServiceAdminDashboard() {
     return data;
   }
 
+  export async function getTenantInquiries(tenantId: number) {
+    try {
+      const { data, error } = await supabase
+        .from("property_inquiry")
+        .select(`
+          inquiry_id,
+          tenant_id,
+          property_id,
+          landlord_id,
+          inquiry_message,
+          inquiry_status,
+          inquiry_date,
+          landlord_reply,
+          properties (property_name)
+        `)
+        .eq("tenant_id", tenantId)
+        .order("inquiry_date", { ascending: false });
+
+      if (error && !isSupabaseSchemaError(error)) {
+        console.error("Error fetching tenant inquiries:", error);
+      }
+      
+      return (data || []).map((inq: any) => ({
+        id: `INQ-${inq.inquiry_id}`,
+        rawId: inq.inquiry_id,
+        propertyId: inq.property_id,
+        propertyName: inq.properties?.property_name || "Unknown Property",
+        message: inq.inquiry_message || "",
+        status: inq.inquiry_status || "Pending",
+        date: inq.inquiry_date ? new Date(inq.inquiry_date).toLocaleDateString() : "",
+        reply: inq.landlord_reply || null,
+      }));
+    } catch (err) {
+      return [];
+    }
+  }
+
+  export async function getTenantVisits(tenantId: number) {
+    try {
+      const { data, error } = await supabase
+        .from("visit_schedule")
+        .select(`
+          visit_id,
+          tenant_id,
+          property_id,
+          landlord_id,
+          visit_date,
+          visit_time,
+          visit_status,
+          remarks,
+          properties (property_name)
+        `)
+        .eq("tenant_id", tenantId)
+        .order("visit_date", { ascending: false });
+
+      if (error && !isSupabaseSchemaError(error)) {
+        console.error("Error fetching tenant visits:", error);
+      }
+      
+      return (data || []).map((v: any) => ({
+        id: `VS-${v.visit_id}`,
+        rawId: v.visit_id,
+        propertyId: v.property_id,
+        propertyName: v.properties?.property_name || "Unknown Property",
+        date: v.visit_date || "",
+        time: v.visit_time || "",
+        status: v.visit_status || "Pending",
+        remarks: v.remarks || "",
+      }));
+    } catch (err) {
+      return [];
+    }
+  }
+
+  export async function cancelVisitRequest(visitId: number) {
+    const { data, error } = await supabase
+      .from("visit_schedule")
+      .update({ visit_status: "Cancelled" })
+      .eq("visit_id", visitId)
+      .select();
+    if (error) throw error;
+    return data;
+  }
+
+  export async function rescheduleVisitRequest(visitId: number, date: string, time: string) {
+    const { data, error } = await supabase
+      .from("visit_schedule")
+      .update({ visit_date: date, visit_time: time, visit_status: "Pending" })
+      .eq("visit_id", visitId)
+      .select();
+    if (error) throw error;
+    return data;
+  }
+
+  export async function createVisitSchedule(payload: any) {
+    const { data, error } = await supabase
+      .from("visit_schedule")
+      .insert([
+        {
+          tenant_id: payload.tenant_id,
+          property_id: payload.property_id,
+          landlord_id: payload.landlord_id,
+          visit_date: payload.visit_date,
+          visit_time: payload.visit_time,
+          visit_status: "Pending",
+          remarks: payload.remarks || "Property visit",
+        }
+      ])
+      .select();
+    if (error) throw error;
+    return data;
+  }
+
   export async function removeFavoriteProperty(payload: { tenant_id: number; property_id: number }) {
     const { error } = await supabase
       .from("favorite_property")
