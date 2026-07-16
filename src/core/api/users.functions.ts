@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { getRequestHeaders, getRequestIP } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { getAppUrl } from "@/core/email/email.config.server";
 import { sendInvitationEmail } from "@/core/email/email.service.server";
@@ -35,7 +35,7 @@ const deleteSchema = z.object({
 });
 
 // Helper for server-side activity logging
-export async function logActivityInternal(payload: {
+async function logActivityInternal(payload: {
   userEmail?: string;
   userName?: string;
   role?: string;
@@ -44,9 +44,9 @@ export async function logActivityInternal(payload: {
 }) {
   try {
     const admin = getSupabaseAdmin();
-    const request = getWebRequest();
-    const userAgent = request?.headers.get("user-agent") || "";
-    const ipAddress = request?.headers.get("x-forwarded-for") || "127.0.0.1";
+    const headers = getRequestHeaders();
+    const userAgent = headers["user-agent"] || "";
+    const ipAddress = getRequestIP() || "127.0.0.1";
 
     let browser = "Unknown";
     if (/chrome|crios/i.test(userAgent)) browser = "Chrome";
