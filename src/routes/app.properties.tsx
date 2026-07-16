@@ -1098,6 +1098,15 @@ function PropertiesPage() {
             supermarket_distance: editForm.supermarket_distance,
             bank_distance: editForm.bank_distance
           },
+          property_documents: {
+            ownership_proof: editForm.ownership_proof,
+            tax_receipt: editForm.tax_receipt,
+            electricity_bill: editForm.electricity_bill,
+            encumbrance_certificate: editForm.encumbrance_certificate,
+            occupancy_certificate: editForm.occupancy_certificate,
+            property_insurance: editForm.property_insurance,
+            owner_government_id: editForm.owner_government_id
+          },
           property_availability: {
             available_from: editForm.available_from,
             visit_timing: editForm.visit_timing,
@@ -2620,6 +2629,38 @@ function PropertiesPage() {
                       <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={editForm.maintenance_instructions || ""} onChange={(e) => setEditForm({...editForm, maintenance_instructions: e.target.value})} />
                     </div>
 
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="property_documents">
+                <AccordionTrigger>Property Documents</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid gap-4 pt-4">
+                    <p className="text-sm text-muted-foreground mb-2">Manage property documents. Only PDFs and Images (max 10MB) are allowed.</p>
+                    
+                    {[
+                      { key: 'ownership_proof', label: 'Ownership Proof *' },
+                      { key: 'tax_receipt', label: 'Tax Receipt *' },
+                      { key: 'electricity_bill', label: 'Electricity Bill *' },
+                      { key: 'encumbrance_certificate', label: 'Encumbrance Certificate *' },
+                      { key: 'occupancy_certificate', label: 'Occupancy Certificate *' },
+                      { key: 'owner_government_id', label: 'Government ID of Owner *' },
+                      { key: 'property_insurance', label: 'Property Insurance (Optional)' },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="grid gap-2">
+                        <Label>{label}</Label>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                          {(editForm as any)[key] ? (
+                            <>
+                              <a href={(editForm as any)[key]} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate max-w-[200px]">View Document</a>
+                              <Button type="button" variant="outline" size="sm" onClick={() => setEditForm({ ...editForm, [key]: "" })}>Remove</Button>
+                            </>
+                          ) : (
+                            <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, key as any, true)} disabled={isUploadingDoc} />
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </AccordionContent>
               </AccordionItem>
