@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 
 export const Route = createFileRoute("/verify-email")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { email?: string } => ({
     email: (search.email as string) || "",
   }),
   head: () => ({

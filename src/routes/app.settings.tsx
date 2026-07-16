@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { supabase } from "@/core/db/supabase";
+import { getContractorProfile } from "@/core/db/supabase-queries";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
@@ -19,6 +20,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { useSession, setSession } from "@/features/auth/store/auth-store";
 import { toast } from "sonner";
+import { TenantSettings } from "@/features/tenant/components/TenantSettings";
 import { getSystemSettings, updateSystemSettings } from "@/core/api/users.functions";
 import { ShieldAlert, Server, Mail, CreditCard, Lock, Sliders, Database, EyeOff, Eye } from "lucide-react";
 
@@ -64,6 +66,25 @@ function SettingsPage() {
   const [sessionTimeout, setSessionTimeout] = useState(30);
   const [minPasswordLength, setMinPasswordLength] = useState(8);
   const [requireSpecialChar, setRequireSpecialChar] = useState(true);
+
+  // Contractor details states
+  const [companyName, setCompanyName] = useState("");
+  const [contactPerson, setContactPerson] = useState("");
+  const [contractorType, setContractorType] = useState("");
+  const [serviceArea, setServiceArea] = useState("");
+  const [experience, setExperience] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [certification, setCertification] = useState("");
+  const [availableDays, setAvailableDays] = useState("");
+  const [availableTime, setAvailableTime] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [chargeType, setChargeType] = useState("");
+  const [createdAt, setCreatedAt] = useState("");
+  const [updatedAt, setUpdatedAt] = useState("");
+  const [businessLicense, setBusinessLicense] = useState("");
+  const [emergencyService, setEmergencyService] = useState(false);
+  const contractorId = 3001;
+  const [contractor, setContractor] = useState<any>(null);
 
   useEffect(() => {
     if (s?.id) {
@@ -115,12 +136,43 @@ function SettingsPage() {
   }, [s?.id, s?.email]);
 
   useEffect(() => {
+    const loadContractor = async () => {
+      try {
+        const data = await getContractorProfile(contractorId);
+        if (data) {
+          setContractor(data);
+          setCompanyName(data.company_name || "");
+          setContactPerson(data.contact_person || "");
+          setContractorType(data.contractor_type || "");
+          setServiceArea(data.service_area || "");
+          setExperience(String(data.years_of_experience || ""));
+          setSpecialization(data.specialization || "");
+          setCertification(data.certification || "");
+          setAvailableDays(data.available_days || "");
+          setAvailableTime(data.available_time || "");
+          setHourlyRate(String(data.hourly_rate || ""));
+          setChargeType(data.service_charge_type || "");
+          setEmergencyService(data.emergency_service || false);
+          setBusinessLicense(data.business_license || "");
+          setProfilePhoto(data.profile_photo || "");
+          setCreatedAt(data.created_at || "");
+          setUpdatedAt(data.updated_at || "");
+        }
+      } catch (err) {
+        console.error("Error loading contractor details:", err);
+      }
+    };
+    if (s?.role === "contractor") {
+      loadContractor();
+    }
+  }, [s?.role]);
+
+  useEffect(() => {
     if (s?.role === "super_admin") {
       getSystemSettings().then((data) => {
         if (data && data.length > 0) {
           setSysSettings(data);
           
-          // Map values to hooks
           const general = data.find(x => x.key === "general")?.value || {};
           setPlatformName(general.platformName || "HomeSure");
           setMaintenanceMode(general.maintenanceMode || false);
@@ -145,48 +197,26 @@ function SettingsPage() {
     }
   }, [s?.role]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!s?.id) return;
-    setIsSaving(true);
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    const file = e.target.files[0];
+    const fileName = `${contractorId}-${Date.now()}-${file.name}`;
+
     try {
-      const { error } = await supabase
-        .from("users")
-        .update({
-          name,
-          email,
-          phone,
-        })
-        .eq("auth_user_id", s.id);
+      const { error } = await supabase.storage
+        .from("contractor-photos")
+        .upload(fileName, file, { upsert: true });
 
-      if (error) {
-        const { error: altError } = await supabase
-          .from("users")
-          .update({
-            name,
-            email,
-            phone,
-          })
-          .eq("email", s.email);
+      if (error) throw error;
 
-        if (altError) throw altError;
-      }
+      const { data } = supabase.storage
+        .from("contractor-photos")
+        .getPublicUrl(fileName);
 
-      localStorage.setItem("homesure.timezone", timezone);
-
-      if (s) {
-        setSession({
-          ...s,
-          name,
-          email,
-        });
-      }
-
-      toast.success("Profile updated successfully!");
+      setProfilePhoto(data.publicUrl);
+      toast.success("Photo uploaded successfully!");
     } catch (err: any) {
-      toast.error("Failed to update profile: " + (err.message || String(err)));
-    } finally {
-      setIsSaving(false);
+      toast.error("Failed to upload photo: " + err.message);
     }
   };
 
@@ -234,6 +264,82 @@ function SettingsPage() {
     } finally {
       setIsUploadingPhoto(false);
       event.target.value = "";
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      // 1. Update users table
+      const { error } = await supabase
+        .from("users")
+        .update({
+          name,
+          email,
+          phone,
+        })
+        .eq("auth_user_id", s?.id);
+
+      if (error) {
+        const { error: altError } = await supabase
+          .from("users")
+          .update({
+            name,
+            email,
+            phone,
+          })
+          .eq("email", s?.email);
+
+        if (altError) throw altError;
+      }
+
+      // 2. Update contractor specific tables if role is contractor
+      if (s?.role === "contractor") {
+        await supabase
+          .from("Contractor")
+          .update({
+            company_name: companyName,
+            contact_person: contactPerson,
+            email,
+            mobile_number: phone,
+            contractor_type: contractorType,
+            service_area: serviceArea,
+            business_license: businessLicense,
+            profile_photo: profilePhoto,
+          })
+          .eq("contractor_id", contractorId);
+
+        await supabase
+          .from("ContractorProfile")
+          .update({
+            years_of_experience: Number(experience),
+            specialization,
+            certification,
+            available_days: availableDays,
+            available_time: availableTime,
+            hourly_rate: Number(hourlyRate),
+            service_charge_type: chargeType,
+            emergency_service: emergencyService,
+          })
+          .eq("contractor_id", contractorId);
+      }
+
+      localStorage.setItem("homesure.timezone", timezone);
+      if (s) {
+        setSession({
+          ...s,
+          name,
+          email,
+        });
+      }
+
+      toast.success("Profile updated successfully!");
+    } catch (err: any) {
+      toast.error("Failed to update profile: " + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -303,147 +409,184 @@ function SettingsPage() {
         </TabsList>
 
         <TabsContent value="profile">
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="md:col-span-2 space-y-6">
-              <Card className="border border-slate-200 shadow-sm bg-white rounded-xl">
-                <CardHeader>
-                  <CardTitle className="text-sm font-semibold text-slate-800">Profile</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16">
-                      {profilePhoto && <AvatarImage src={profilePhoto} alt={name || "Profile photo"} />}
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {name ? name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() : "US"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/png,image/jpeg"
-                        className="hidden"
-                        onChange={handlePhotoSelected}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploadingPhoto}
-                      >
-                        {isUploadingPhoto ? "Uploading..." : "Upload photo"}
-                      </Button>
-                      <div className="mt-1 text-xs text-muted-foreground">PNG or JPG, max 2MB.</div>
-                    </div>
-                  </div>
-                  
-                  {isLoading ? (
-                    <div className="flex h-48 items-center justify-center">
-                      <p className="text-xs text-muted-foreground animate-pulse">Loading profile...</p>
-                    </div>
-                  ) : (
-                    <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
-                      <div className="space-y-1.5">
-                        <Label>Full name</Label>
-                        <Input value={name} onChange={(e) => setName(e.target.value)} required />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Email</Label>
-                        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Phone</Label>
-                        <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-0100" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Timezone</Label>
-                        <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <Button type="submit" disabled={isSaving}>
-                          {isSaving ? "Saving..." : "Save changes"}
+          {s?.role === "tenant" ? (
+            <TenantSettings />
+          ) : (
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="md:col-span-2 space-y-6">
+                <Card className="border border-slate-200 shadow-sm bg-white rounded-xl">
+                  <CardHeader>
+                    <CardTitle className="text-sm font-semibold text-slate-800">Profile</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-16 w-16">
+                        {profilePhoto && <AvatarImage src={profilePhoto} alt={name || "Profile photo"} />}
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {name ? name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() : "US"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg"
+                          className="hidden"
+                          onChange={handlePhotoSelected}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingPhoto}
+                        >
+                          {isUploadingPhoto ? "Uploading..." : "Upload photo"}
                         </Button>
+                        <div className="mt-1 text-xs text-muted-foreground">PNG or JPG, max 2MB.</div>
                       </div>
-                    </form>
-                  )}
-                </CardContent>
-              </Card>
+                    </div>
+                    
+                    {isLoading ? (
+                      <div className="flex h-48 items-center justify-center">
+                        <p className="text-xs text-muted-foreground animate-pulse">Loading profile...</p>
+                      </div>
+                    ) : (
+                      <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
+                        <div className="space-y-1.5">
+                          <Label>Full name</Label>
+                          <Input value={name} onChange={(e) => setName(e.target.value)} required />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Email</Label>
+                          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Phone</Label>
+                          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-0100" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>Timezone</Label>
+                          <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} />
+                        </div>
 
-              {/* Password Change Section */}
-              <Card className="border border-slate-200 shadow-sm bg-white rounded-xl">
-                <CardHeader>
-                  <CardTitle className="text-sm font-semibold text-slate-800">Change Password</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handlePasswordChangeSubmit} className="space-y-4 max-w-md">
-                    <div className="space-y-1.5 relative">
-                      <Label htmlFor="new-password">New Password</Label>
-                      <div className="relative">
+                        {s?.role === "contractor" && (
+                          <div className="sm:col-span-2 border-t pt-4 mt-2 space-y-4">
+                            <h4 className="text-sm font-semibold text-slate-800">Contractor Details</h4>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <div className="space-y-1.5">
+                                <Label>Company Name</Label>
+                                <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label>Contact Person</Label>
+                                <Input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label>Contractor Type</Label>
+                                <Input value={contractorType} onChange={(e) => setContractorType(e.target.value)} />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label>Service Area</Label>
+                                <Input value={serviceArea} onChange={(e) => setServiceArea(e.target.value)} />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label>Business License</Label>
+                                <Input value={businessLicense} onChange={(e) => setBusinessLicense(e.target.value)} />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label>Hourly Rate (₹)</Label>
+                                <Input value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} type="number" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="sm:col-span-2">
+                          <Button type="submit" disabled={isSaving}>
+                            {isSaving ? "Saving..." : "Save changes"}
+                          </Button>
+                        </div>
+                      </form>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Password Change Section */}
+                <Card className="border border-slate-200 shadow-sm bg-white rounded-xl">
+                  <CardHeader>
+                    <CardTitle className="text-sm font-semibold text-slate-800">Change Password</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handlePasswordChangeSubmit} className="space-y-4 max-w-md">
+                      <div className="space-y-1.5 relative">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <div className="relative">
+                          <Input
+                            id="new-password"
+                            type={showPassword ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="At least 6 characters"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="confirm-password">Confirm Password</Label>
                         <Input
-                          id="new-password"
+                          id="confirm-password"
                           type={showPassword ? "text" : "password"}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="At least 6 characters"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Re-enter new password"
                           required
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
+                      </div>
+                      <Button type="submit" disabled={isChangingPassword} className="bg-blue-600 hover:bg-blue-700 text-white">
+                        {isChangingPassword ? "Updating..." : "Change password"}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Account Details Card */}
+              <div>
+                <Card className="border border-slate-200 shadow-sm bg-white rounded-xl">
+                  <CardHeader>
+                    <CardTitle className="text-sm font-semibold text-slate-800">Account details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-slate-500">Role</span>
+                        <span className="font-medium text-slate-800 capitalize">{(s?.role || "user").replace("_", " ")}</span>
+                      </div>
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-slate-500">Status</span>
+                        <span className="font-medium text-emerald-600">Active</span>
+                      </div>
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-slate-500">App Version</span>
+                        <span className="font-medium text-slate-700">v1.2.0</span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-500 text-xs">User ID</span>
+                        <span className="font-mono text-[10px] bg-slate-50 p-1.5 rounded text-slate-600 break-all">{s?.id || "Unavailable"}</span>
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="confirm-password">Confirm Password</Label>
-                      <Input
-                        id="confirm-password"
-                        type={showPassword ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter new password"
-                        required
-                      />
-                    </div>
-                    <Button type="submit" disabled={isChangingPassword} className="bg-blue-600 hover:bg-blue-700 text-white">
-                      {isChangingPassword ? "Updating..." : "Change password"}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-
-            {/* Account Details Card */}
-            <div>
-              <Card className="border border-slate-200 shadow-sm bg-white rounded-xl">
-                <CardHeader>
-                  <CardTitle className="text-sm font-semibold text-slate-800">Account details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between border-b pb-2">
-                      <span className="text-slate-500">Role</span>
-                      <span className="font-medium text-slate-800 capitalize">{(s?.role || "user").replace("_", " ")}</span>
-                    </div>
-                    <div className="flex justify-between border-b pb-2">
-                      <span className="text-slate-500">Status</span>
-                      <span className="font-medium text-emerald-600">Active</span>
-                    </div>
-                    <div className="flex justify-between border-b pb-2">
-                      <span className="text-slate-500">App Version</span>
-                      <span className="font-medium text-slate-700">v1.2.0</span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-slate-500 text-xs">User ID</span>
-                      <span className="font-mono text-[10px] bg-slate-50 p-1.5 rounded text-slate-600 break-all">{s?.id || "Unavailable"}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          )}
         </TabsContent>
 
         <TabsContent value="workspace">
@@ -510,7 +653,6 @@ function SettingsPage() {
         {isSuperAdmin && (
           <TabsContent value="system_config">
             <div className="grid gap-6 lg:grid-cols-3">
-              {/* Sidebar Tabs for Subsettings */}
               <div className="lg:col-span-1 space-y-2">
                 <Card className="border border-slate-200 shadow-sm bg-white p-3 rounded-xl">
                   <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-2">Config Modules</div>
@@ -519,12 +661,10 @@ function SettingsPage() {
                     <button className="flex items-center gap-2 p-2 rounded-lg text-left text-sm font-medium text-slate-600 hover:bg-slate-50"><Mail className="h-4 w-4" /> SMTP Settings</button>
                     <button className="flex items-center gap-2 p-2 rounded-lg text-left text-sm font-medium text-slate-600 hover:bg-slate-50"><CreditCard className="h-4 w-4" /> Payment Settings</button>
                     <button className="flex items-center gap-2 p-2 rounded-lg text-left text-sm font-medium text-slate-600 hover:bg-slate-50"><Lock className="h-4 w-4" /> Security Policies</button>
-                    <button className="flex items-center gap-2 p-2 rounded-lg text-left text-sm font-medium text-slate-600 hover:bg-slate-50"><Database className="h-4 w-4" /> Storage & API Keys</button>
                   </div>
                 </Card>
               </div>
 
-              {/* Main settings options */}
               <div className="lg:col-span-2 space-y-6">
                 {/* General Settings */}
                 <Card className="border border-slate-200 shadow-sm bg-white rounded-xl">
@@ -640,8 +780,8 @@ function SettingsPage() {
                 </Card>
               </div>
             </div>
-          </TabsContent>
-        )}
+          )}
+        </TabsContent>
       </Tabs>
 
       <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>

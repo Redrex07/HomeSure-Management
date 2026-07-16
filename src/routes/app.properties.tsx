@@ -24,6 +24,8 @@ import {
   createPropertyInquiry,
   createRentalApplication,
   createReviewRating,
+  getFavoriteProperties,
+  removeFavoriteProperty,
 } from "@/core/db/supabase-queries";
 import { supabase } from "@/core/db/supabase";
 import {
@@ -91,6 +93,7 @@ function PropertiesPage() {
   const tenantContext = useTenantContext();
   const isTenant = session?.role === "tenant";
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
+  const [favoriteProps, setFavoriteProps] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSupabaseProperties = async () => {
@@ -99,6 +102,12 @@ function PropertiesPage() {
       const landlordId = "2"; // Force "2" to match Supabase mock data
       const data = isTenant ? await getAllProperties() : await getLandlordProperties(landlordId);
       setSupabaseProps(data as UnifiedProperty[]);
+      
+      if (isTenant) {
+        const tenantIdForFavs = tenantContext.tenantId || Number(session?.id) || 3;
+        const favs = await getFavoriteProperties(tenantIdForFavs);
+        setFavoriteProps(favs.map((f: any) => f.property_id));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -160,14 +169,26 @@ function PropertiesPage() {
   const getLandlordId = (property: UnifiedProperty) => Number((property as any).landlord_id || 2);
 
   const handleFavoriteProperty = async (property: UnifiedProperty) => {
+    const propId = getPropertyNumericId(property);
+    const isFav = favoriteProps.includes(propId);
     try {
-      await createFavoriteProperty({
-        tenant_id: tenantId,
-        property_id: getPropertyNumericId(property),
-      });
-      toast.success("Property added to favorites");
+      if (isFav) {
+        await removeFavoriteProperty({
+          tenant_id: tenantId,
+          property_id: propId,
+        });
+        setFavoriteProps((prev) => prev.filter((id) => id !== propId));
+        toast.success("Property removed from favorites");
+      } else {
+        await createFavoriteProperty({
+          tenant_id: tenantId,
+          property_id: propId,
+        });
+        setFavoriteProps((prev) => [...prev, propId]);
+        toast.success("Property added to favorites");
+      }
     } catch (err: any) {
-      toast.error("Could not save favorite: " + (err.message || String(err)));
+      toast.error("Could not update favorite: " + (err.message || String(err)));
     }
   };
 
@@ -214,6 +235,7 @@ function PropertiesPage() {
       toast.error("Could not save review: " + (err.message || String(err)));
     }
   };
+
   const [editForm, setEditForm] = useState({
     property_name: "",
     property_type: "",
@@ -231,6 +253,8 @@ function PropertiesPage() {
     parking_charges: "",
     advance_payment: "",
     available_from: "",
+    visit_timing: "",
+    open_house_date: "",
     lease_duration: "",
     wifi: false,
     power_backup: false,
@@ -253,6 +277,53 @@ function PropertiesPage() {
     smoking_allowed: false,
     drinking_allowed: false,
     maximum_occupants: "",
+    water_supply: "",
+    electricity_connection: "",
+    internet_available: false,
+    gas_connection: false,
+    sewage_connection: false,
+    school_distance: "",
+    college_distance: "",
+    hospital_distance: "",
+    bus_stop_distance: "",
+    railway_station_distance: "",
+    airport_distance: "",
+    supermarket_distance: "",
+    bank_distance: "",
+    ownership_proof: "",
+    tax_receipt: "",
+    electricity_bill: "",
+    encumbrance_certificate: "",
+    occupancy_certificate: "",
+    property_insurance: "",
+    owner_government_id: "",
+    landlord_name: "",
+    mobile_number: "",
+    email: "",
+    preferred_contact_time: "Anytime",
+    whatsapp_number: "",
+    house_rules: "",
+    noise_restrictions: "",
+    visitor_policy: "",
+    society_rules: "",
+    pets_policy: "Allowed",
+    smoking_policy: "Allowed",
+    maintenance_instructions: "",
+    parking_available: false,
+    parking_type: "",
+    number_of_parking_slots: "",
+    vehicle_types_allowed: "",
+    reserved_parking: false,
+    visitor_parking_available: false,
+    ev_charging_station: false,
+    parking_slot_numbers: "",
+    parking_area: "",
+    parking_fee: "",
+    parking_availability_timing: "",
+    additional_parking_rules: "",
+    property_verified: false,
+    admin_approval: "Pending",
+    featured_property: false,
   });
   const [editImages, setEditImages] = useState<string[]>([]);
   const [isEditUploading, setIsEditUploading] = useState(false);
@@ -261,6 +332,7 @@ function PropertiesPage() {
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
   const [editVideo, setEditVideo] = useState<string | null>(null);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   const [form, setForm] = useState({
     property_name: "",
@@ -303,6 +375,8 @@ function PropertiesPage() {
     parking_charges: "",
     advance_payment: "",
     available_from: "",
+    visit_timing: "",
+    open_house_date: "",
     lease_duration: "",
     wifi: false,
     power_backup: false,
@@ -325,13 +399,60 @@ function PropertiesPage() {
     smoking_allowed: false,
     drinking_allowed: false,
     maximum_occupants: "",
+    water_supply: "",
+    electricity_connection: "",
+    internet_available: false,
+    gas_connection: false,
+    sewage_connection: false,
+    school_distance: "",
+    college_distance: "",
+    hospital_distance: "",
+    bus_stop_distance: "",
+    railway_station_distance: "",
+    airport_distance: "",
+    supermarket_distance: "",
+    bank_distance: "",
+    ownership_proof: "",
+    tax_receipt: "",
+    electricity_bill: "",
+    encumbrance_certificate: "",
+    occupancy_certificate: "",
+    property_insurance: "",
+    owner_government_id: "",
+    landlord_name: "",
+    mobile_number: "",
+    email: "",
+    preferred_contact_time: "Anytime",
+    whatsapp_number: "",
+    house_rules: "",
+    noise_restrictions: "",
+    visitor_policy: "",
+    society_rules: "",
+    pets_policy: "Allowed",
+    smoking_policy: "Allowed",
+    maintenance_instructions: "",
+    property_verified: false,
+    admin_approval: "Pending",
+    featured_property: false,
+    parking_available: false,
+    parking_type: "",
+    number_of_parking_slots: "",
+    vehicle_types_allowed: "",
+    reserved_parking: false,
+    visitor_parking_available: false,
+    ev_charging_station: false,
+    parking_slot_numbers: "",
+    parking_area: "",
+    parking_fee: "",
+    parking_availability_timing: "",
+    additional_parking_rules: "",
   });
 
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Prevent premature saving if they press "Enter" on an earlier step
-    if (step < 7) {
+    if (step < 15) {
       setStep(step + 1);
       return;
     }
@@ -415,7 +536,71 @@ function PropertiesPage() {
           pets_allowed: form.pets_allowed === true,
           smoking_allowed: form.smoking_allowed === true,
           drinking_allowed: form.drinking_allowed === true
-        }
+        },
+        property_utilities: {
+          water_supply: form.water_supply,
+          electricity_connection: form.electricity_connection,
+          internet_available: form.internet_available === true,
+          gas_connection: form.gas_connection === true,
+          sewage_connection: form.sewage_connection === true
+        },
+        nearby_facilities: {
+          school_distance: form.school_distance,
+          college_distance: form.college_distance,
+          hospital_distance: form.hospital_distance,
+          bus_stop_distance: form.bus_stop_distance,
+          railway_station_distance: form.railway_station_distance,
+          airport_distance: form.airport_distance,
+          supermarket_distance: form.supermarket_distance,
+          bank_distance: form.bank_distance
+        },
+        property_documents: {
+          ownership_proof: form.ownership_proof,
+          tax_receipt: form.tax_receipt,
+          electricity_bill: form.electricity_bill,
+          encumbrance_certificate: form.encumbrance_certificate,
+          occupancy_certificate: form.occupancy_certificate,
+          property_insurance: form.property_insurance,
+          owner_government_id: form.owner_government_id
+        },
+        property_availability: {
+          available_from: form.available_from,
+          visit_timing: form.visit_timing,
+          open_house_date: form.open_house_date
+        },
+        property_contact_details: {
+          landlord_name: form.landlord_name,
+          mobile_number: form.mobile_number,
+          email: form.email,
+          preferred_contact_time: form.preferred_contact_time,
+          whatsapp_number: form.whatsapp_number
+        },
+        property_additional_information: {
+          house_rules: form.house_rules,
+          noise_restrictions: form.noise_restrictions,
+          visitor_policy: form.visitor_policy,
+          society_rules: form.society_rules,
+          pets_policy: form.pets_policy,
+          smoking_policy: form.smoking_policy,
+          maintenance_instructions: form.maintenance_instructions
+        },
+        property_parking: {
+          parking_available: form.parking_available === true,
+          parking_type: form.parking_type,
+          number_of_parking_slots: form.number_of_parking_slots ? parseInt(form.number_of_parking_slots) : null,
+          vehicle_types_allowed: form.vehicle_types_allowed,
+          reserved_parking: form.reserved_parking === true,
+          visitor_parking_available: form.visitor_parking_available === true,
+          ev_charging_station: form.ev_charging_station === true,
+          parking_slot_numbers: form.parking_slot_numbers,
+          parking_area: form.parking_area,
+          parking_fee: form.parking_fee ? parseFloat(form.parking_fee) : null,
+          parking_availability_timing: form.parking_availability_timing,
+          additional_parking_rules: form.additional_parking_rules
+        },
+        property_verified: form.property_verified,
+        admin_approval: form.admin_approval,
+        featured_property: form.featured_property
       };
       if (uploadedVideo) {
         payload.Virtual_Tour = uploadedVideo;
@@ -476,6 +661,8 @@ function PropertiesPage() {
       parking_charges: "",
       advance_payment: "",
       available_from: "",
+      visit_timing: "",
+      open_house_date: "",
       lease_duration: "",
       wifi: false,
       power_backup: false,
@@ -498,6 +685,53 @@ function PropertiesPage() {
       smoking_allowed: false,
       drinking_allowed: false,
       maximum_occupants: "",
+      water_supply: "",
+      electricity_connection: "",
+      internet_available: false,
+      gas_connection: false,
+      sewage_connection: false,
+      school_distance: "",
+      college_distance: "",
+      hospital_distance: "",
+      bus_stop_distance: "",
+      railway_station_distance: "",
+      airport_distance: "",
+      supermarket_distance: "",
+      bank_distance: "",
+      ownership_proof: "",
+      tax_receipt: "",
+      electricity_bill: "",
+      encumbrance_certificate: "",
+      occupancy_certificate: "",
+      property_insurance: "",
+      owner_government_id: "",
+      landlord_name: "",
+      mobile_number: "",
+      email: "",
+      preferred_contact_time: "Anytime",
+      whatsapp_number: "",
+      house_rules: "",
+      noise_restrictions: "",
+      visitor_policy: "",
+      society_rules: "",
+      pets_policy: "Allowed",
+      smoking_policy: "Allowed",
+      maintenance_instructions: "",
+      property_verified: false,
+      admin_approval: "Pending",
+      featured_property: false,
+      parking_available: false,
+      parking_type: "",
+      number_of_parking_slots: "",
+      vehicle_types_allowed: "",
+      reserved_parking: false,
+      visitor_parking_available: false,
+      ev_charging_station: false,
+      parking_slot_numbers: "",
+      parking_area: "",
+      parking_fee: "",
+      parking_availability_timing: "",
+      additional_parking_rules: "",
     });
     setStep(1);
     setUploadedImages([]);
@@ -539,6 +773,44 @@ function PropertiesPage() {
       toast.error("Failed to upload video.");
     } finally {
       setIsUploadingVideo(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof typeof form, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Document must be less than 10MB");
+      e.target.value = "";
+      return;
+    }
+
+    setIsUploadingDoc(true);
+    try {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+      const { error } = await supabase.storage
+        .from('property-documents')
+        .upload(`properties/${fileName}`, file, { cacheControl: '3600', upsert: false });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('property-documents')
+        .getPublicUrl(`properties/${fileName}`);
+
+      if (isEdit) {
+        setEditForm({ ...editForm, [fieldName]: publicUrlData.publicUrl });
+      } else {
+        setForm({ ...form, [fieldName]: publicUrlData.publicUrl });
+      }
+      toast.success("Document uploaded successfully!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Failed to upload document: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsUploadingDoc(false);
       e.target.value = "";
     }
   };
@@ -677,7 +949,9 @@ function PropertiesPage() {
       water_charges: "",
       parking_charges: "",
       advance_payment: "",
-      available_from: "",
+      available_from: (p as any).availabilityData?.available_from || "",
+      visit_timing: (p as any).availabilityData?.visit_timing || "",
+      open_house_date: (p as any).availabilityData?.open_house_date || "",
       lease_duration: "",
       wifi: false,
       power_backup: false,
@@ -700,6 +974,53 @@ function PropertiesPage() {
       smoking_allowed: (p as any).tenantPreferencesData?.smoking_allowed || false,
       drinking_allowed: (p as any).tenantPreferencesData?.drinking_allowed || false,
       maximum_occupants: (p as any).tenantPreferencesData?.maximum_occupants ? String((p as any).tenantPreferencesData?.maximum_occupants) : "",
+      water_supply: (p as any).utilitiesData?.water_supply || "",
+      electricity_connection: (p as any).utilitiesData?.electricity_connection || "",
+      internet_available: (p as any).utilitiesData?.internet_available || false,
+      gas_connection: (p as any).utilitiesData?.gas_connection || false,
+      sewage_connection: (p as any).utilitiesData?.sewage_connection || false,
+      school_distance: (p as any).nearbyFacilitiesData?.school_distance || "",
+      college_distance: (p as any).nearbyFacilitiesData?.college_distance || "",
+      hospital_distance: (p as any).nearbyFacilitiesData?.hospital_distance || "",
+      bus_stop_distance: (p as any).nearbyFacilitiesData?.bus_stop_distance || "",
+      railway_station_distance: (p as any).nearbyFacilitiesData?.railway_station_distance || "",
+      airport_distance: (p as any).nearbyFacilitiesData?.airport_distance || "",
+      supermarket_distance: (p as any).nearbyFacilitiesData?.supermarket_distance || "",
+      bank_distance: (p as any).nearbyFacilitiesData?.bank_distance || "",
+      ownership_proof: (p as any).documentsData?.ownership_proof || "",
+      tax_receipt: (p as any).documentsData?.tax_receipt || "",
+      electricity_bill: (p as any).documentsData?.electricity_bill || "",
+      encumbrance_certificate: (p as any).documentsData?.encumbrance_certificate || "",
+      occupancy_certificate: (p as any).documentsData?.occupancy_certificate || "",
+      property_insurance: (p as any).documentsData?.property_insurance || "",
+      owner_government_id: (p as any).documentsData?.owner_government_id || "",
+      landlord_name: (p as any).contactDetailsData?.landlord_name || "",
+      mobile_number: (p as any).contactDetailsData?.mobile_number || "",
+      email: (p as any).contactDetailsData?.email || "",
+      preferred_contact_time: (p as any).contactDetailsData?.preferred_contact_time || "Anytime",
+      whatsapp_number: (p as any).contactDetailsData?.whatsapp_number || "",
+      house_rules: (p as any).additionalInformationData?.house_rules || "",
+      noise_restrictions: (p as any).additionalInformationData?.noise_restrictions || "",
+      visitor_policy: (p as any).additionalInformationData?.visitor_policy || "",
+      society_rules: (p as any).additionalInformationData?.society_rules || "",
+      pets_policy: (p as any).additionalInformationData?.pets_policy || "Allowed",
+      smoking_policy: (p as any).additionalInformationData?.smoking_policy || "Allowed",
+      maintenance_instructions: (p as any).additionalInformationData?.maintenance_instructions || "",
+      parking_available: (p as any).parkingData?.parking_available || false,
+      parking_type: (p as any).parkingData?.parking_type || "",
+      number_of_parking_slots: (p as any).parkingData?.number_of_parking_slots ? String((p as any).parkingData?.number_of_parking_slots) : "",
+      vehicle_types_allowed: (p as any).parkingData?.vehicle_types_allowed || "",
+      reserved_parking: (p as any).parkingData?.reserved_parking || false,
+      visitor_parking_available: (p as any).parkingData?.visitor_parking_available || false,
+      ev_charging_station: (p as any).parkingData?.ev_charging_station || false,
+      parking_slot_numbers: (p as any).parkingData?.parking_slot_numbers || "",
+      parking_area: (p as any).parkingData?.parking_area || "",
+      parking_fee: (p as any).parkingData?.parking_fee ? String((p as any).parkingData?.parking_fee) : "",
+      parking_availability_timing: (p as any).parkingData?.parking_availability_timing || "",
+      additional_parking_rules: (p as any).parkingData?.additional_parking_rules || "",
+      property_verified: (p as any).property_verified ?? false,
+      admin_approval: (p as any).admin_approval ?? "Pending",
+      featured_property: (p as any).featured_property ?? false,
     });
     setEditImages(parseImageUrls(p.image_url));
     setEditVideo(p.Virtual_Tour || null);
@@ -781,6 +1102,54 @@ function PropertiesPage() {
           Description: editForm.Description,
           Category: editForm.Category,
           Virtual_Tour: editVideo || null,
+          property_utilities: {
+            water_supply: editForm.water_supply,
+            electricity_connection: editForm.electricity_connection,
+            internet_available: editForm.internet_available === true,
+            gas_connection: editForm.gas_connection === true,
+            sewage_connection: editForm.sewage_connection === true
+          },
+          nearby_facilities: {
+            school_distance: editForm.school_distance,
+            college_distance: editForm.college_distance,
+            hospital_distance: editForm.hospital_distance,
+            bus_stop_distance: editForm.bus_stop_distance,
+            railway_station_distance: editForm.railway_station_distance,
+            airport_distance: editForm.airport_distance,
+            supermarket_distance: editForm.supermarket_distance,
+            bank_distance: editForm.bank_distance
+          },
+          property_availability: {
+            available_from: editForm.available_from,
+            visit_timing: editForm.visit_timing,
+            open_house_date: editForm.open_house_date
+          },
+          property_additional_information: {
+            house_rules: editForm.house_rules,
+            noise_restrictions: editForm.noise_restrictions,
+            visitor_policy: editForm.visitor_policy,
+            society_rules: editForm.society_rules,
+            pets_policy: editForm.pets_policy,
+            smoking_policy: editForm.smoking_policy,
+            maintenance_instructions: editForm.maintenance_instructions
+          },
+          property_parking: {
+            parking_available: editForm.parking_available === true,
+            parking_type: editForm.parking_type,
+            number_of_parking_slots: editForm.number_of_parking_slots ? parseInt(editForm.number_of_parking_slots) : null,
+            vehicle_types_allowed: editForm.vehicle_types_allowed,
+            reserved_parking: editForm.reserved_parking === true,
+            visitor_parking_available: editForm.visitor_parking_available === true,
+            ev_charging_station: editForm.ev_charging_station === true,
+            parking_slot_numbers: editForm.parking_slot_numbers,
+            parking_area: editForm.parking_area,
+            parking_fee: editForm.parking_fee ? parseFloat(editForm.parking_fee) : null,
+            parking_availability_timing: editForm.parking_availability_timing,
+            additional_parking_rules: editForm.additional_parking_rules
+          },
+          property_verified: editForm.property_verified,
+          admin_approval: editForm.admin_approval,
+          featured_property: editForm.featured_property
         };
         await updateSupabaseProperty(editingProperty.property_id, supabasePayload);
         toast.success("Property updated successfully!");
@@ -819,7 +1188,7 @@ function PropertiesPage() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {step === 1 ? "Step 1 of 7: Basic Property Information" : step === 2 ? "Step 2 of 7: Location Details" : step === 3 ? "Step 3 of 7: Images & Media" : step === 4 ? "Step 4 of 7: Property Specifications" : step === 5 ? "Step 5 of 7: Rent Details" : step === 6 ? "Step 6 of 7: Amenities" : "Step 7 of 7: Tenant Preferences"}
+              {step === 1 ? "Step 1 of 15: Basic Property Information" : step === 2 ? "Step 2 of 15: Location Details" : step === 3 ? "Step 3 of 15: Images & Media" : step === 4 ? "Step 4 of 15: Property Specifications" : step === 5 ? "Step 5 of 15: Rent Details" : step === 6 ? "Step 6 of 15: Amenities" : step === 7 ? "Step 7 of 15: Tenant Preferences" : step === 8 ? "Step 8 of 15: Utility Information" : step === 9 ? "Step 9 of 15: Nearby Facilities" : step === 10 ? "Step 10 of 15: Property Documents" : step === 11 ? "Step 11 of 15: Contact Details" : step === 12 ? "Step 12 of 15: Availability" : step === 13 ? "Step 13 of 15: Additional Information" : step === 14 ? "Step 14 of 15: Parking Details" : "Step 15 of 15: Verification Status (Admin)"}
             </SheetTitle>
             <SheetDescription className="sr-only">Fill out this form to add a new property.</SheetDescription>
           </SheetHeader>
@@ -851,15 +1220,16 @@ function PropertiesPage() {
 
             <div className="grid gap-2">
               <Label>Status</Label>
-              <select
-                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                value={form.availability_status}
-                onChange={(e) => setForm({ ...form, availability_status: e.target.value })}
-              >
-                <option value="Available">Available</option>
-                <option value="Occupied">Occupied</option>
-                <option value="Under Maintenance">Under Maintenance</option>
-              </select>
+              <Select value={form.availability_status} onValueChange={(val) => setForm({ ...form, availability_status: val })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Available">Available</SelectItem>
+                  <SelectItem value="Occupied">Occupied</SelectItem>
+                  <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">
@@ -1097,10 +1467,6 @@ function PropertiesPage() {
                     <Input placeholder="e.g. 2 Months" value={form.advance_payment} onChange={(e) => setForm({...form, advance_payment: e.target.value})} />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Available From</Label>
-                    <Input placeholder="e.g. 1-Aug-26" type="date" value={form.available_from} onChange={(e) => setForm({...form, available_from: e.target.value})} />
-                  </div>
-                  <div className="grid gap-2">
                     <Label>Lease Duration</Label>
                     <Input placeholder="e.g. 11 Months" value={form.lease_duration} onChange={(e) => setForm({...form, lease_duration: e.target.value})} />
                   </div>
@@ -1162,7 +1528,7 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
-              ) : (
+              ) : step === 7 ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2 grid gap-2">
@@ -1225,7 +1591,327 @@ function PropertiesPage() {
                     </div>
                   </div>
                 </>
-              )}
+              ) : step === 8 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Water Supply</Label>
+                      <Input placeholder="e.g. 24x7 Corporation Water" value={form.water_supply} onChange={(e) => setForm({...form, water_supply: e.target.value})} />
+                    </div>
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Electricity Connection</Label>
+                      <Input placeholder="e.g. Generator / Invertor" value={form.electricity_connection} onChange={(e) => setForm({...form, electricity_connection: e.target.value})} />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="add-internet" checked={form.internet_available} onCheckedChange={(c) => setForm({...form, internet_available: !!c})} />
+                      <Label htmlFor="add-internet">Internet Available</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="add-gas" checked={form.gas_connection} onCheckedChange={(c) => setForm({...form, gas_connection: !!c})} />
+                      <Label htmlFor="add-gas">Gas Connection (Pipeline)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="add-sewage" checked={form.sewage_connection} onCheckedChange={(c) => setForm({...form, sewage_connection: !!c})} />
+                      <Label htmlFor="add-sewage">Sewage Connection</Label>
+                    </div>
+                  </div>
+                </>
+              ) : step === 9 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label>School Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.5" value={form.school_distance} onChange={(e) => setForm({...form, school_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>College Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 3.0" value={form.college_distance} onChange={(e) => setForm({...form, college_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Hospital Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 2.0" value={form.hospital_distance} onChange={(e) => setForm({...form, hospital_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bus Stop Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.5" value={form.bus_stop_distance} onChange={(e) => setForm({...form, bus_stop_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Railway Station (km)</Label>
+                      <Input type="number" placeholder="e.g. 5.0" value={form.railway_station_distance} onChange={(e) => setForm({...form, railway_station_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Airport Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 15.0" value={form.airport_distance} onChange={(e) => setForm({...form, airport_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Supermarket (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.0" value={form.supermarket_distance} onChange={(e) => setForm({...form, supermarket_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bank/ATM (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.2" value={form.bank_distance} onChange={(e) => setForm({...form, bank_distance: e.target.value})} />
+                    </div>
+                  </div>
+                </>
+              ) : step === 10 ? (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Upload relevant property documents. Only PDFs and Images (max 10MB) are allowed.</p>
+                    
+                    <div className="grid gap-2">
+                      <Label>Ownership Proof *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'ownership_proof')} disabled={isUploadingDoc} />
+                        {form.ownership_proof && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Tax Receipt *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'tax_receipt')} disabled={isUploadingDoc} />
+                        {form.tax_receipt && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Electricity Bill *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'electricity_bill')} disabled={isUploadingDoc} />
+                        {form.electricity_bill && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Encumbrance Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'encumbrance_certificate')} disabled={isUploadingDoc} />
+                        {form.encumbrance_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Occupancy Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'occupancy_certificate')} disabled={isUploadingDoc} />
+                        {form.occupancy_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Government ID of Owner *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'owner_government_id')} disabled={isUploadingDoc} />
+                        {form.owner_government_id && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Property Insurance (Optional)</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'property_insurance')} disabled={isUploadingDoc} />
+                        {form.property_insurance && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : step === 11 ? (
+                <>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-muted-foreground mb-2">Provide contact details for the landlord or property manager.</p>
+                    <div className="grid gap-2">
+                      <Label>Landlord Name *</Label>
+                      <Input placeholder="e.g. John Smith" value={form.landlord_name || ""} onChange={(e) => setForm({...form, landlord_name: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Mobile Number *</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={form.mobile_number || ""} onChange={(e) => setForm({...form, mobile_number: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="e.g. john@email.com" value={form.email || ""} onChange={(e) => setForm({...form, email: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Preferred Contact Time</Label>
+                      <Select value={form.preferred_contact_time || "Anytime"} onValueChange={(val) => setForm({...form, preferred_contact_time: val})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Contact Time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Morning">Morning</SelectItem>
+                          <SelectItem value="Afternoon">Afternoon</SelectItem>
+                          <SelectItem value="Evening">Evening</SelectItem>
+                          <SelectItem value="Anytime">Anytime</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>WhatsApp Number (Optional)</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={form.whatsapp_number || ""} onChange={(e) => setForm({...form, whatsapp_number: e.target.value})} />
+                    </div>
+                  </div>
+                </>
+              ) : step === 12 ? (
+                <>
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label>Available From</Label>
+                      <Input placeholder="e.g. 1-Aug-26" type="date" value={form.available_from} onChange={(e) => setForm({...form, available_from: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visit Timing</Label>
+                      <Input placeholder="e.g. 10 AM-6 PM" value={form.visit_timing} onChange={(e) => setForm({...form, visit_timing: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Open House Date (Optional)</Label>
+                      <Input placeholder="e.g. Optional" type="date" value={form.open_house_date} onChange={(e) => setForm({...form, open_house_date: e.target.value})} />
+                    </div>
+                  </div>
+                </>
+              ) : step === 13 ? (
+                <>
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label>House Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. No loud music after 10 PM" value={form.house_rules} onChange={(e) => setForm({...form, house_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Noise Restrictions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Keep noise down during afternoon" value={form.noise_restrictions} onChange={(e) => setForm({...form, noise_restrictions: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visitor Policy</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Visitors allowed until 11 PM" value={form.visitor_policy} onChange={(e) => setForm({...form, visitor_policy: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Society Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Use service lift for moving furniture" value={form.society_rules} onChange={(e) => setForm({...form, society_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Pets Policy</Label>
+                      <Select value={form.pets_policy || "Allowed"} onValueChange={(val) => setForm({...form, pets_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Conditional">Conditional</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Smoking Policy</Label>
+                      <Select value={form.smoking_policy || "Allowed"} onValueChange={(val) => setForm({...form, smoking_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Designated Area">Designated Area</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Maintenance Instructions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={form.maintenance_instructions} onChange={(e) => setForm({...form, maintenance_instructions: e.target.value})} />
+                    </div>
+                  </div>
+                </>
+              ) : step === 14 ? (
+                <>
+                  <div className="grid gap-4">
+                    <h4 className="text-sm font-semibold">Parking Details</h4>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="parking_available" checked={form.parking_available} onCheckedChange={(c) => setForm({...form, parking_available: !!c})} />
+                      <Label htmlFor="parking_available">Parking Available</Label>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Type</Label>
+                      <Select value={form.parking_type || ""} onValueChange={(val) => setForm({...form, parking_type: val})}>
+                        <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Covered">Covered</SelectItem>
+                          <SelectItem value="Open">Open</SelectItem>
+                          <SelectItem value="Basement">Basement</SelectItem>
+                          <SelectItem value="Street">Street</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Number of Parking Slots</Label>
+                      <Input type="number" placeholder="e.g. 2" value={form.number_of_parking_slots || ""} onChange={(e) => setForm({...form, number_of_parking_slots: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Vehicle Types Allowed</Label>
+                      <Input placeholder="e.g. Car, Bike, Bicycle, EV" value={form.vehicle_types_allowed || ""} onChange={(e) => setForm({...form, vehicle_types_allowed: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="reserved_parking" checked={form.reserved_parking} onCheckedChange={(c) => setForm({...form, reserved_parking: !!c})} />
+                        <Label htmlFor="reserved_parking">Reserved Parking</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="visitor_parking_available" checked={form.visitor_parking_available} onCheckedChange={(c) => setForm({...form, visitor_parking_available: !!c})} />
+                        <Label htmlFor="visitor_parking_available">Visitor Parking</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="ev_charging_station" checked={form.ev_charging_station} onCheckedChange={(c) => setForm({...form, ev_charging_station: !!c})} />
+                        <Label htmlFor="ev_charging_station">EV Charging Station</Label>
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Slot Number(s)</Label>
+                      <Input placeholder="e.g. P12, B-04" value={form.parking_slot_numbers || ""} onChange={(e) => setForm({...form, parking_slot_numbers: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Area (sq.ft)</Label>
+                      <Input placeholder="e.g. 180 sq.ft" value={form.parking_area || ""} onChange={(e) => setForm({...form, parking_area: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Fee</Label>
+                      <Input type="number" placeholder="e.g. 500" value={form.parking_fee || ""} onChange={(e) => setForm({...form, parking_fee: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Availability Timing</Label>
+                      <Input placeholder="e.g. 24x7 / Restricted Hours" value={form.parking_availability_timing || ""} onChange={(e) => setForm({...form, parking_availability_timing: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Additional Rules</Label>
+                      <Input placeholder="e.g. No commercial vehicles" value={form.additional_parking_rules || ""} onChange={(e) => setForm({...form, additional_parking_rules: e.target.value})} />
+                    </div>
+                  </div>
+                </>
+              ) : step === 15 ? (
+                <>
+                  <div className="grid gap-4">
+                    <h4 className="text-sm font-semibold">Verification Status (Admin)</h4>
+                    <div className="grid gap-2">
+                      <Label>Property Verified</Label>
+                      <Select value={form.property_verified ? "Yes" : "No"} onValueChange={(val) => setForm({...form, property_verified: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Admin Approval</Label>
+                      <Select value={form.admin_approval} onValueChange={(val) => setForm({...form, admin_approval: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Approved">Approved</SelectItem>
+                          <SelectItem value="Rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Featured Property</Label>
+                      <Select value={form.featured_property ? "Yes" : "No"} onValueChange={(val) => setForm({...form, featured_property: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </>
+
+              ) : null}
 
             <SheetFooter className="mt-4 pb-12">
               {step === 1 ? (
@@ -1270,13 +1956,69 @@ function PropertiesPage() {
                   </Button>
                   <Button type="button" onClick={() => setStep(7)}>Next</Button>
                 </>
-              ) : (
+              ) : step === 7 ? (
                 <>
                   <Button type="button" variant="outline" onClick={() => setStep(6)}>
                     Back
                   </Button>
-                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo}>
-                    {(isUploading || isUploadingVideo) ? "Uploading..." : "Save Property"}
+                  <Button type="button" onClick={() => setStep(8)}>Next</Button>
+                </>
+              ) : step === 8 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(7)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(9)}>Next</Button>
+                </>
+              ) : step === 9 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(8)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(10)}>Next</Button>
+                </>
+              ) : step === 10 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(9)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(11)}>Next</Button>
+                </>
+              ) : step === 11 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(10)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(12)}>Next</Button>
+                </>
+              ) : step === 12 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(11)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(13)}>Next</Button>
+                </>
+              ) : step === 13 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(12)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(14)}>Next</Button>
+                </>
+              ) : step === 14 ? (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(13)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => setStep(15)}>Next</Button>
+                </>
+              ) : (
+                <>
+                  <Button type="button" variant="outline" onClick={() => setStep(14)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={handleAddProperty} disabled={isUploading || isUploadingVideo || isUploadingDoc}>
+                    {(isUploading || isUploadingVideo || isUploadingDoc) ? "Uploading..." : "Save Property"}
                   </Button>
                 </>
               )}
@@ -1488,7 +2230,8 @@ function PropertiesPage() {
                       className="h-full"
                     >
                       <Card className="overflow-hidden group hover:shadow-2xl transition-all duration-500 border-border/60 hover:border-primary/50 bg-card flex flex-col h-full rounded-2xl hover:-translate-y-1">
-                        <div className="relative h-56 w-full bg-muted/30 overflow-hidden cursor-pointer" onClick={() => navigate({ to: "/app/property/$id", params: { id: String(p.property_id) } })}>
+                        <div className="relative h-56 w-full bg-muted/30 overflow-hidden">
+                          <Link to="/app/property/$id" params={{ id: String(p.property_id) }} className="absolute inset-0 z-10" />
                           {parseImageUrls(p.image_url)[0] ? (
                             <img src={parseImageUrls(p.image_url)[0]} alt={p.property_name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
                           ) : (
@@ -1500,13 +2243,13 @@ function PropertiesPage() {
                           {/* Subtle overlay gradient */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
                           
-                          <div className="absolute top-3 left-3">
+                          <div className="absolute top-3 left-3 z-20">
                             <StatusBadge value={p.availability_status} />
                           </div>
                           
                           {!isTenant && (
-                          <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0">
-                            <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0 z-20">
+                            <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -1547,7 +2290,8 @@ function PropertiesPage() {
                           {isTenant && (
                             <div className="mt-3 grid grid-cols-2 gap-2">
                               <Button variant="outline" size="sm" onClick={() => handleFavoriteProperty(p)}>
-                                <Heart className="mr-1 h-3.5 w-3.5" /> Favorite
+                                <Heart className={`w-4 h-4 mr-2 ${favoriteProps.includes(getPropertyNumericId(p)) ? "fill-red-500 text-red-500" : ""}`} />
+                                Favorite
                               </Button>
                               <Button variant="outline" size="sm" onClick={() => handleInquiry(p)}>
                                 <MessageSquare className="mr-1 h-3.5 w-3.5" /> Inquiry
@@ -1626,20 +2370,16 @@ function PropertiesPage() {
 
             <div className="grid gap-2">
               <Label>Status</Label>
-              <select
-                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
-                value={editForm.availability_status}
-                onChange={(e) =>
-                  setEditForm({
-                    ...editForm,
-                    availability_status: e.target.value,
-                  })
-                }
-              >
-                <option value="Available">Available</option>
-                <option value="Occupied">Occupied</option>
-                <option value="Under Maintenance">Under Maintenance</option>
-              </select>
+              <Select value={editForm.availability_status} onValueChange={(val) => setEditForm({ ...editForm, availability_status: val })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Available">Available</SelectItem>
+                  <SelectItem value="Occupied">Occupied</SelectItem>
+                  <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">
@@ -1669,7 +2409,281 @@ function PropertiesPage() {
               </select>
             </div>
 
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="utilities">
+                <AccordionTrigger>Utility Information</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Water Supply</Label>
+                      <Input placeholder="e.g. 24x7 Corporation Water" value={editForm.water_supply} onChange={(e) => setEditForm({...editForm, water_supply: e.target.value})} />
+                    </div>
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Electricity Connection</Label>
+                      <Input placeholder="e.g. Generator / Invertor" value={editForm.electricity_connection} onChange={(e) => setEditForm({...editForm, electricity_connection: e.target.value})} />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-internet" checked={editForm.internet_available} onCheckedChange={(c) => setEditForm({...editForm, internet_available: !!c})} />
+                      <Label htmlFor="edit-internet">Internet Available</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-gas" checked={editForm.gas_connection} onCheckedChange={(c) => setEditForm({...editForm, gas_connection: !!c})} />
+                      <Label htmlFor="edit-gas">Gas Connection (Pipeline)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit-sewage" checked={editForm.sewage_connection} onCheckedChange={(c) => setEditForm({...editForm, sewage_connection: !!c})} />
+                      <Label htmlFor="edit-sewage">Sewage Connection</Label>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="nearby_facilities">
+                <AccordionTrigger>Nearby Facilities</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="grid gap-2">
+                      <Label>School Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.5" value={editForm.school_distance} onChange={(e) => setEditForm({...editForm, school_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>College Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 3.0" value={editForm.college_distance} onChange={(e) => setEditForm({...editForm, college_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Hospital Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 2.0" value={editForm.hospital_distance} onChange={(e) => setEditForm({...editForm, hospital_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bus Stop Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.5" value={editForm.bus_stop_distance} onChange={(e) => setEditForm({...editForm, bus_stop_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Railway Station (km)</Label>
+                      <Input type="number" placeholder="e.g. 5.0" value={editForm.railway_station_distance} onChange={(e) => setEditForm({...editForm, railway_station_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Airport Distance (km)</Label>
+                      <Input type="number" placeholder="e.g. 15.0" value={editForm.airport_distance} onChange={(e) => setEditForm({...editForm, airport_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Supermarket (km)</Label>
+                      <Input type="number" placeholder="e.g. 1.0" value={editForm.supermarket_distance} onChange={(e) => setEditForm({...editForm, supermarket_distance: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Bank/ATM (km)</Label>
+                      <Input type="number" placeholder="e.g. 0.2" value={editForm.bank_distance} onChange={(e) => setEditForm({...editForm, bank_distance: e.target.value})} />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="contact_details">
+                <AccordionTrigger>Contact Details</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Landlord Name *</Label>
+                      <Input placeholder="e.g. John Smith" value={editForm.landlord_name || ""} onChange={(e) => setEditForm({...editForm, landlord_name: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Mobile Number *</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={editForm.mobile_number || ""} onChange={(e) => setEditForm({...editForm, mobile_number: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="e.g. john@email.com" value={editForm.email || ""} onChange={(e) => setEditForm({...editForm, email: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Preferred Contact Time</Label>
+                      <Select value={editForm.preferred_contact_time || "Anytime"} onValueChange={(val) => setEditForm({...editForm, preferred_contact_time: val})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Morning">Morning</SelectItem>
+                          <SelectItem value="Afternoon">Afternoon</SelectItem>
+                          <SelectItem value="Evening">Evening</SelectItem>
+                          <SelectItem value="Anytime">Anytime</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>WhatsApp Number</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={editForm.whatsapp_number || ""} onChange={(e) => setEditForm({...editForm, whatsapp_number: e.target.value})} />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="parking_details">
+                <AccordionTrigger>Parking Details</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="flex items-center space-x-2 col-span-2">
+                      <Checkbox id="edit_parking_available" checked={editForm.parking_available} onCheckedChange={(c) => setEditForm({...editForm, parking_available: !!c})} />
+                      <Label htmlFor="edit_parking_available">Parking Available</Label>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Type</Label>
+                      <Select value={editForm.parking_type || ""} onValueChange={(val) => setEditForm({...editForm, parking_type: val})}>
+                        <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Covered">Covered</SelectItem>
+                          <SelectItem value="Open">Open</SelectItem>
+                          <SelectItem value="Basement">Basement</SelectItem>
+                          <SelectItem value="Street">Street</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Number of Parking Slots</Label>
+                      <Input type="number" placeholder="e.g. 2" value={editForm.number_of_parking_slots || ""} onChange={(e) => setEditForm({...editForm, number_of_parking_slots: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Vehicle Types Allowed</Label>
+                      <Input placeholder="e.g. Car, Bike, Bicycle, EV" value={editForm.vehicle_types_allowed || ""} onChange={(e) => setEditForm({...editForm, vehicle_types_allowed: e.target.value})} />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit_reserved_parking" checked={editForm.reserved_parking} onCheckedChange={(c) => setEditForm({...editForm, reserved_parking: !!c})} />
+                      <Label htmlFor="edit_reserved_parking">Reserved Parking</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit_visitor_parking" checked={editForm.visitor_parking_available} onCheckedChange={(c) => setEditForm({...editForm, visitor_parking_available: !!c})} />
+                      <Label htmlFor="edit_visitor_parking">Visitor Parking</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="edit_ev_charging" checked={editForm.ev_charging_station} onCheckedChange={(c) => setEditForm({...editForm, ev_charging_station: !!c})} />
+                      <Label htmlFor="edit_ev_charging">EV Charging Station</Label>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Slot Number(s)</Label>
+                      <Input placeholder="e.g. P12, B-04" value={editForm.parking_slot_numbers || ""} onChange={(e) => setEditForm({...editForm, parking_slot_numbers: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Area (sq.ft)</Label>
+                      <Input placeholder="e.g. 180 sq.ft" value={editForm.parking_area || ""} onChange={(e) => setEditForm({...editForm, parking_area: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Fee</Label>
+                      <Input type="number" placeholder="e.g. 500" value={editForm.parking_fee || ""} onChange={(e) => setEditForm({...editForm, parking_fee: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Availability Timing</Label>
+                      <Input placeholder="e.g. 24x7 / Restricted Hours" value={editForm.parking_availability_timing || ""} onChange={(e) => setEditForm({...editForm, parking_availability_timing: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2 col-span-2">
+                      <Label>Additional Rules</Label>
+                      <Input placeholder="e.g. No commercial vehicles" value={editForm.additional_parking_rules || ""} onChange={(e) => setEditForm({...editForm, additional_parking_rules: e.target.value})} />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="availability">
+                <AccordionTrigger>Availability</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="grid gap-2">
+                      <Label>Available From</Label>
+                      <Input placeholder="e.g. 1-Aug-26" type="date" value={editForm.available_from || ""} onChange={(e) => setEditForm({...editForm, available_from: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visit Timing</Label>
+                      <Input placeholder="e.g. 10 AM-6 PM" value={editForm.visit_timing || ""} onChange={(e) => setEditForm({...editForm, visit_timing: e.target.value})} />
+                    </div>
+                    <div className="col-span-2 grid gap-2">
+                      <Label>Open House Date (Optional)</Label>
+                      <Input placeholder="e.g. Optional" type="date" value={editForm.open_house_date || ""} onChange={(e) => setEditForm({...editForm, open_house_date: e.target.value})} />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="additional_information">
+                <AccordionTrigger>Additional Information</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid gap-4 pt-4">
+                    <div className="grid gap-2">
+                      <Label>House Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. No loud music after 10 PM" value={editForm.house_rules || ""} onChange={(e) => setEditForm({...editForm, house_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Noise Restrictions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Keep noise down during afternoon" value={editForm.noise_restrictions || ""} onChange={(e) => setEditForm({...editForm, noise_restrictions: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visitor Policy</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Visitors allowed until 11 PM" value={editForm.visitor_policy || ""} onChange={(e) => setEditForm({...editForm, visitor_policy: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Society Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Use service lift for moving furniture" value={editForm.society_rules || ""} onChange={(e) => setEditForm({...editForm, society_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Pets Policy</Label>
+                      <Select value={editForm.pets_policy || "Allowed"} onValueChange={(val) => setEditForm({...editForm, pets_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Conditional">Conditional</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Smoking Policy</Label>
+                      <Select value={editForm.smoking_policy || "Allowed"} onValueChange={(val) => setEditForm({...editForm, smoking_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Designated Area">Designated Area</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Maintenance Instructions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={editForm.maintenance_instructions || ""} onChange={(e) => setEditForm({...editForm, maintenance_instructions: e.target.value})} />
+                    </div>
 
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="verification">
+                <AccordionTrigger>Verification Status (Admin)</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid gap-4 pt-4">
+                    <div className="grid gap-2">
+                      <Label>Property Verified</Label>
+                      <Select value={editForm.property_verified ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, property_verified: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Admin Approval</Label>
+                      <Select value={editForm.admin_approval} onValueChange={(val) => setEditForm({...editForm, admin_approval: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Approved">Approved</SelectItem>
+                          <SelectItem value="Rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Featured Property</Label>
+                      <Select value={editForm.featured_property ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, featured_property: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
             <div className="grid gap-2">
               <Label>Virtual Tour Video (Optional, Max 10MB)</Label>

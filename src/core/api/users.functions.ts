@@ -1,4 +1,5 @@
-import { createServerFn, getWebRequest } from "@tanstack/react-start";
+import { createServerFn } from "@tanstack/react-start";
+import { getWebRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { getAppUrl } from "@/core/email/email.config.server";
 import { sendInvitationEmail } from "@/core/email/email.service.server";

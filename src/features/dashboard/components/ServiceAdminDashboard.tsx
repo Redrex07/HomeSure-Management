@@ -27,8 +27,6 @@ export function ServiceAdminDashboard() {
     queryFn: getServiceAdminDashboard,
   });
 
-  console.log("🔍 Rendering ServiceAdminDashboard (features) - Data:", dashboardData);
-
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center border border-border/60 rounded-md bg-background/50">

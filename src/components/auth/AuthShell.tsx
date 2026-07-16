@@ -9,7 +9,7 @@ export function AuthShell({ title, subtitle, children, footer }: {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="flex flex-col px-6 py-8 sm:px-12">
-        <Link to="/"><Logo /></Link>
+        <Link to="/app/dashboard" params={{}}></Link>
         <div className="flex flex-1 items-center justify-center py-12">
           <div className="w-full max-w-sm">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>

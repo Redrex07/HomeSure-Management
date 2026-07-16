@@ -15,6 +15,8 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
     "/app/users",
     "/app/subscriptions",
     "/app/properties",
+    "/app/realtor-workspace",
+    "/app/property",
     "/app/analytics",
     "/app/audit-logs",
     "/app/service-requests",
@@ -30,11 +32,14 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
     "/app/estimates",
     "/app/invoices",
     "/app/support",
-    "/app/settings"
+    "/app/settings",
+    "/app/service-documents",
+    "/app/service-communications"
   ],
   landlord: [
     "/app/dashboard",
     "/app/properties",
+    "/app/property",
     "/app/tenants",
     "/app/leases",
     "/app/invoices",
@@ -46,6 +51,7 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
   tenant: [
     "/app/dashboard",
     "/app/properties",
+    "/app/property",
     "/app/invoices",
     "/app/service-requests",
     "/app/appointments",
@@ -53,17 +59,23 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
     "/app/notifications",
     "/app/settings"
   ],
-  contractor: [
-    "/app/dashboard",
-    "/app/service-requests",
-    "/app/appointments",
-    "/app/estimates",
-    "/app/invoices",
-    "/app/settings"
-  ],
+contractor: [
+  "/app/dashboard",
+  "/app/service-requests",
+  "/app/appointments",
+  "/app/estimates",
+  "/app/contractor-quotations",
+  "/app/contractor-profile",
+  "/app/contractor-invoices",
+  "/app/invoices",
+  "/app/settings",
+  "/app/contractor-availability",
+],
   realtor: [
     "/app/dashboard",
     "/app/properties",
+    "/app/realtor-workspace",
+    "/app/property",
     "/app/analytics",
     "/app/tenants",
     "/app/settings"

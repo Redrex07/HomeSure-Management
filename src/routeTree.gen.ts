@@ -24,7 +24,10 @@ import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as AppSubscriptionsRouteImport } from './routes/app.subscriptions'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppServiceRequestsRouteImport } from './routes/app.service-requests'
+import { Route as AppServiceDocumentsRouteImport } from './routes/app.service-documents'
+import { Route as AppServiceCommunicationsRouteImport } from './routes/app.service-communications'
 import { Route as AppRealtorsRouteImport } from './routes/app.realtors'
+import { Route as AppRealtorWorkspaceRouteImport } from './routes/app.realtor-workspace'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppLeasesRouteImport } from './routes/app.leases'
@@ -32,12 +35,17 @@ import { Route as AppInvoicesRouteImport } from './routes/app.invoices'
 import { Route as AppEstimatesRouteImport } from './routes/app.estimates'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppContractorsRouteImport } from './routes/app.contractors'
+import { Route as AppContractorQuotationsRouteImport } from './routes/app.contractor-quotations'
+import { Route as AppContractorProfileRouteImport } from './routes/app.contractor-profile'
+import { Route as AppContractorInvoicesRouteImport } from './routes/app.contractor-invoices'
+import { Route as AppContractorAvailabilityRouteImport } from './routes/app.contractor-availability'
 import { Route as AppAuditLogsRouteImport } from './routes/app.audit-logs'
 import { Route as AppAppointmentsRouteImport } from './routes/app.appointments'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as ApiTestEmailRouteImport } from './routes/api.test-email'
 import { Route as AppPropertyIdRouteImport } from './routes/app.property.$id'
 import { Route as AppPropertiesIdRouteImport } from './routes/app.properties.$id'
+import { Route as AppContractorQuotationsNewRouteImport } from './routes/app.contractor-quotations.new'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -114,9 +122,25 @@ const AppServiceRequestsRoute = AppServiceRequestsRouteImport.update({
   path: '/service-requests',
   getParentRoute: () => AppRoute,
 } as any)
+const AppServiceDocumentsRoute = AppServiceDocumentsRouteImport.update({
+  id: '/service-documents',
+  path: '/service-documents',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppServiceCommunicationsRoute =
+  AppServiceCommunicationsRouteImport.update({
+    id: '/service-communications',
+    path: '/service-communications',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppRealtorsRoute = AppRealtorsRouteImport.update({
   id: '/realtors',
   path: '/realtors',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRealtorWorkspaceRoute = AppRealtorWorkspaceRouteImport.update({
+  id: '/realtor-workspace',
+  path: '/realtor-workspace',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPropertiesRoute = AppPropertiesRouteImport.update({
@@ -154,6 +178,27 @@ const AppContractorsRoute = AppContractorsRouteImport.update({
   path: '/contractors',
   getParentRoute: () => AppRoute,
 } as any)
+const AppContractorQuotationsRoute = AppContractorQuotationsRouteImport.update({
+  id: '/contractor-quotations',
+  path: '/contractor-quotations',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContractorProfileRoute = AppContractorProfileRouteImport.update({
+  id: '/contractor-profile',
+  path: '/contractor-profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContractorInvoicesRoute = AppContractorInvoicesRouteImport.update({
+  id: '/contractor-invoices',
+  path: '/contractor-invoices',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContractorAvailabilityRoute =
+  AppContractorAvailabilityRouteImport.update({
+    id: '/contractor-availability',
+    path: '/contractor-availability',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAuditLogsRoute = AppAuditLogsRouteImport.update({
   id: '/audit-logs',
   path: '/audit-logs',
@@ -184,6 +229,12 @@ const AppPropertiesIdRoute = AppPropertiesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AppPropertiesRoute,
 } as any)
+const AppContractorQuotationsNewRoute =
+  AppContractorQuotationsNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AppContractorQuotationsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -197,6 +248,10 @@ export interface FileRoutesByFullPath {
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/appointments': typeof AppAppointmentsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/contractor-availability': typeof AppContractorAvailabilityRoute
+  '/app/contractor-invoices': typeof AppContractorInvoicesRoute
+  '/app/contractor-profile': typeof AppContractorProfileRoute
+  '/app/contractor-quotations': typeof AppContractorQuotationsRouteWithChildren
   '/app/contractors': typeof AppContractorsRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/estimates': typeof AppEstimatesRoute
@@ -204,7 +259,10 @@ export interface FileRoutesByFullPath {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/service-communications': typeof AppServiceCommunicationsRoute
+  '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -213,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/app/contractor-quotations/new': typeof AppContractorQuotationsNewRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
   '/app/property/$id': typeof AppPropertyIdRoute
 }
@@ -228,6 +287,10 @@ export interface FileRoutesByTo {
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/appointments': typeof AppAppointmentsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/contractor-availability': typeof AppContractorAvailabilityRoute
+  '/app/contractor-invoices': typeof AppContractorInvoicesRoute
+  '/app/contractor-profile': typeof AppContractorProfileRoute
+  '/app/contractor-quotations': typeof AppContractorQuotationsRouteWithChildren
   '/app/contractors': typeof AppContractorsRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/estimates': typeof AppEstimatesRoute
@@ -235,7 +298,10 @@ export interface FileRoutesByTo {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/service-communications': typeof AppServiceCommunicationsRoute
+  '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -244,6 +310,7 @@ export interface FileRoutesByTo {
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/app/contractor-quotations/new': typeof AppContractorQuotationsNewRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
   '/app/property/$id': typeof AppPropertyIdRoute
 }
@@ -260,6 +327,10 @@ export interface FileRoutesById {
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/appointments': typeof AppAppointmentsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/contractor-availability': typeof AppContractorAvailabilityRoute
+  '/app/contractor-invoices': typeof AppContractorInvoicesRoute
+  '/app/contractor-profile': typeof AppContractorProfileRoute
+  '/app/contractor-quotations': typeof AppContractorQuotationsRouteWithChildren
   '/app/contractors': typeof AppContractorsRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/estimates': typeof AppEstimatesRoute
@@ -267,7 +338,10 @@ export interface FileRoutesById {
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/service-communications': typeof AppServiceCommunicationsRoute
+  '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
@@ -276,6 +350,7 @@ export interface FileRoutesById {
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/app/contractor-quotations/new': typeof AppContractorQuotationsNewRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
   '/app/property/$id': typeof AppPropertyIdRoute
 }
@@ -293,6 +368,10 @@ export interface FileRouteTypes {
     | '/app/analytics'
     | '/app/appointments'
     | '/app/audit-logs'
+    | '/app/contractor-availability'
+    | '/app/contractor-invoices'
+    | '/app/contractor-profile'
+    | '/app/contractor-quotations'
     | '/app/contractors'
     | '/app/dashboard'
     | '/app/estimates'
@@ -300,7 +379,10 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtor-workspace'
     | '/app/realtors'
+    | '/app/service-communications'
+    | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -309,6 +391,7 @@ export interface FileRouteTypes {
     | '/app/users'
     | '/auth/confirm'
     | '/auth/verify'
+    | '/app/contractor-quotations/new'
     | '/app/properties/$id'
     | '/app/property/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -324,6 +407,10 @@ export interface FileRouteTypes {
     | '/app/analytics'
     | '/app/appointments'
     | '/app/audit-logs'
+    | '/app/contractor-availability'
+    | '/app/contractor-invoices'
+    | '/app/contractor-profile'
+    | '/app/contractor-quotations'
     | '/app/contractors'
     | '/app/dashboard'
     | '/app/estimates'
@@ -331,7 +418,10 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtor-workspace'
     | '/app/realtors'
+    | '/app/service-communications'
+    | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -340,6 +430,7 @@ export interface FileRouteTypes {
     | '/app/users'
     | '/auth/confirm'
     | '/auth/verify'
+    | '/app/contractor-quotations/new'
     | '/app/properties/$id'
     | '/app/property/$id'
   id:
@@ -355,6 +446,10 @@ export interface FileRouteTypes {
     | '/app/analytics'
     | '/app/appointments'
     | '/app/audit-logs'
+    | '/app/contractor-availability'
+    | '/app/contractor-invoices'
+    | '/app/contractor-profile'
+    | '/app/contractor-quotations'
     | '/app/contractors'
     | '/app/dashboard'
     | '/app/estimates'
@@ -362,7 +457,10 @@ export interface FileRouteTypes {
     | '/app/leases'
     | '/app/notifications'
     | '/app/properties'
+    | '/app/realtor-workspace'
     | '/app/realtors'
+    | '/app/service-communications'
+    | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
@@ -371,6 +469,7 @@ export interface FileRouteTypes {
     | '/app/users'
     | '/auth/confirm'
     | '/auth/verify'
+    | '/app/contractor-quotations/new'
     | '/app/properties/$id'
     | '/app/property/$id'
   fileRoutesById: FileRoutesById
@@ -495,11 +594,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServiceRequestsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/service-documents': {
+      id: '/app/service-documents'
+      path: '/service-documents'
+      fullPath: '/app/service-documents'
+      preLoaderRoute: typeof AppServiceDocumentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/service-communications': {
+      id: '/app/service-communications'
+      path: '/service-communications'
+      fullPath: '/app/service-communications'
+      preLoaderRoute: typeof AppServiceCommunicationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/realtors': {
       id: '/app/realtors'
       path: '/realtors'
       fullPath: '/app/realtors'
       preLoaderRoute: typeof AppRealtorsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/realtor-workspace': {
+      id: '/app/realtor-workspace'
+      path: '/realtor-workspace'
+      fullPath: '/app/realtor-workspace'
+      preLoaderRoute: typeof AppRealtorWorkspaceRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/properties': {
@@ -551,6 +671,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppContractorsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/contractor-quotations': {
+      id: '/app/contractor-quotations'
+      path: '/contractor-quotations'
+      fullPath: '/app/contractor-quotations'
+      preLoaderRoute: typeof AppContractorQuotationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/contractor-profile': {
+      id: '/app/contractor-profile'
+      path: '/contractor-profile'
+      fullPath: '/app/contractor-profile'
+      preLoaderRoute: typeof AppContractorProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/contractor-invoices': {
+      id: '/app/contractor-invoices'
+      path: '/contractor-invoices'
+      fullPath: '/app/contractor-invoices'
+      preLoaderRoute: typeof AppContractorInvoicesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/contractor-availability': {
+      id: '/app/contractor-availability'
+      path: '/contractor-availability'
+      fullPath: '/app/contractor-availability'
+      preLoaderRoute: typeof AppContractorAvailabilityRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/audit-logs': {
       id: '/app/audit-logs'
       path: '/audit-logs'
@@ -593,8 +741,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPropertiesIdRouteImport
       parentRoute: typeof AppPropertiesRoute
     }
+    '/app/contractor-quotations/new': {
+      id: '/app/contractor-quotations/new'
+      path: '/new'
+      fullPath: '/app/contractor-quotations/new'
+      preLoaderRoute: typeof AppContractorQuotationsNewRouteImport
+      parentRoute: typeof AppContractorQuotationsRoute
+    }
   }
 }
+
+interface AppContractorQuotationsRouteChildren {
+  AppContractorQuotationsNewRoute: typeof AppContractorQuotationsNewRoute
+}
+
+const AppContractorQuotationsRouteChildren: AppContractorQuotationsRouteChildren =
+  {
+    AppContractorQuotationsNewRoute: AppContractorQuotationsNewRoute,
+  }
+
+const AppContractorQuotationsRouteWithChildren =
+  AppContractorQuotationsRoute._addFileChildren(
+    AppContractorQuotationsRouteChildren,
+  )
 
 interface AppPropertiesRouteChildren {
   AppPropertiesIdRoute: typeof AppPropertiesIdRoute
@@ -612,6 +781,10 @@ interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppAppointmentsRoute: typeof AppAppointmentsRoute
   AppAuditLogsRoute: typeof AppAuditLogsRoute
+  AppContractorAvailabilityRoute: typeof AppContractorAvailabilityRoute
+  AppContractorInvoicesRoute: typeof AppContractorInvoicesRoute
+  AppContractorProfileRoute: typeof AppContractorProfileRoute
+  AppContractorQuotationsRoute: typeof AppContractorQuotationsRouteWithChildren
   AppContractorsRoute: typeof AppContractorsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEstimatesRoute: typeof AppEstimatesRoute
@@ -619,7 +792,10 @@ interface AppRouteChildren {
   AppLeasesRoute: typeof AppLeasesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
+  AppRealtorWorkspaceRoute: typeof AppRealtorWorkspaceRoute
   AppRealtorsRoute: typeof AppRealtorsRoute
+  AppServiceCommunicationsRoute: typeof AppServiceCommunicationsRoute
+  AppServiceDocumentsRoute: typeof AppServiceDocumentsRoute
   AppServiceRequestsRoute: typeof AppServiceRequestsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionsRoute: typeof AppSubscriptionsRoute
@@ -633,6 +809,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppAppointmentsRoute: AppAppointmentsRoute,
   AppAuditLogsRoute: AppAuditLogsRoute,
+  AppContractorAvailabilityRoute: AppContractorAvailabilityRoute,
+  AppContractorInvoicesRoute: AppContractorInvoicesRoute,
+  AppContractorProfileRoute: AppContractorProfileRoute,
+  AppContractorQuotationsRoute: AppContractorQuotationsRouteWithChildren,
   AppContractorsRoute: AppContractorsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEstimatesRoute: AppEstimatesRoute,
@@ -640,7 +820,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeasesRoute: AppLeasesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppPropertiesRoute: AppPropertiesRouteWithChildren,
+  AppRealtorWorkspaceRoute: AppRealtorWorkspaceRoute,
   AppRealtorsRoute: AppRealtorsRoute,
+  AppServiceCommunicationsRoute: AppServiceCommunicationsRoute,
+  AppServiceDocumentsRoute: AppServiceDocumentsRoute,
   AppServiceRequestsRoute: AppServiceRequestsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionsRoute: AppSubscriptionsRoute,

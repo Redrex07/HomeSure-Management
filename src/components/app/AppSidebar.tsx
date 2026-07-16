@@ -70,15 +70,54 @@ const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
       { title: "Notifications", url: "/app/notifications", icon: Bell },
     ]},
   ],
-  contractor: [
-    { label: "Workspace", items: COMMON },
-    { label: "Jobs", items: [
-      { title: "Assigned Jobs", url: "/app/service-requests", icon: Wrench },
-      { title: "Appointments", url: "/app/appointments", icon: Calendar },
-      { title: "Estimates", url: "/app/estimates", icon: FileSpreadsheet },
-      { title: "Invoices", url: "/app/invoices", icon: Receipt },
-    ]},
-  ],
+contractor: [
+  {
+    label: "Workspace",
+    items: COMMON,
+  },
+
+  {
+    label: "Jobs",
+    items: [
+      {
+        title: "Assigned Jobs",
+        url: "/app/service-requests",
+        icon: Wrench,
+      },
+      {
+        title: "Appointments",
+        url: "/app/appointments",
+        icon: Calendar,
+      },
+      {
+        title: "Estimates",
+        url: "/app/estimates",
+        icon: FileSpreadsheet,
+      },
+      {
+        title: "Quotations",
+        url: "/app/contractor-quotations",
+        icon: FileText,
+      },
+      {
+        title: "Invoices",
+        url: "/app/contractor-invoices",
+        icon: Receipt,
+      },
+    ],
+  },
+
+  {
+    label: "Profile",
+    items: [
+      {
+        title: "My Profile",
+        url: "/app/contractor-profile",
+        icon: Users,
+      },
+    ],
+  },
+],
   realtor: [
     { label: "Overview", items: COMMON },
     { label: "Listings", items: [
@@ -91,8 +130,8 @@ const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
 
 export function AppSidebar() {
   const session = useSession();
-  const role: Role = session?.role ?? "landlord";
-  const groups = NAV_BY_ROLE[role];
+  const role: Role = session?.role ?? "tenant";
+  const groups = NAV_BY_ROLE[role] || NAV_BY_ROLE.tenant;
   const path = useRouterState({ select: (r) => r.location.pathname });
   const { state } = useSidebar();
   const collapsed = state === "collapsed";

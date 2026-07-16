@@ -78,7 +78,7 @@ function AuthVerifyPage() {
             <p className="mt-2 text-muted-foreground">{errorMessage}</p>
           </div>
           <Button asChild variant="outline" className="w-full">
-            <Link to="/verify-email">Request a new confirmation email</Link>
+            <Link to="/verify-email" search={(prev: any) => prev}>Request a new confirmation email</Link>
           </Button>
         </div>
       </AuthShell>

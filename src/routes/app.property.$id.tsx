@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion, Variants } from "framer-motion";
-import { getPropertyById, updateProperty } from "@/core/db/supabase-queries";
+import { getPropertyById, updateProperty, createFavoriteProperty, removeFavoriteProperty, getFavoriteProperties } from "@/core/db/supabase-queries";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { Button } from "@/shared/components/ui/button";
-import { ChevronLeft, Pencil, ImagePlus, X, CheckCircle } from "lucide-react";
+import { ChevronLeft, Pencil, ImagePlus, X, CheckCircle, Heart } from "lucide-react";
 import { supabase } from "@/core/db/supabase";
 import { toast } from "sonner";
 import {
@@ -32,6 +32,8 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { UnifiedProperty } from "./app.properties";
+import { useSession } from "@/features/auth/store/auth-store";
+import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 
 export const Route = createFileRoute("/app/property/$id")({
   component: PropertyDetailsPage,
@@ -44,6 +46,12 @@ function PropertyDetailsPage() {
   const [property, setProperty] = useState<UnifiedProperty | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const session = useSession();
+  const tenantContext = useTenantContext();
+  const isTenant = session?.role === "tenant";
+  const tenantId = tenantContext.tenantId || Number(session?.id) || 3;
+  const [isFavorite, setIsFavorite] = useState(false);
+
   const [isEditing, setIsEditing] = useState(false);
   const [editStep, setEditStep] = useState(1);
   const [editForm, setEditForm] = useState<any>({});
@@ -53,6 +61,7 @@ function PropertyDetailsPage() {
   const [editVideo, setEditVideo] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   const openEditDialog = () => {
     let loc = {};
@@ -81,7 +90,18 @@ function PropertyDetailsPage() {
     const rentDetails = specs.rent_details || {};
     const amenities = (property as any)?.amenitiesData || {};
     const tenantPrefs = (property as any)?.tenantPreferencesData || {};
-    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs }));
+    const utilities = (property as any)?.utilitiesData || {};
+    const nearbyFacilities = (property as any)?.nearbyFacilitiesData || {};
+    const documents = (property as any)?.documentsData || {};
+    const contactDetails = (property as any)?.contactDetailsData || {};
+    const availability = (property as any)?.availabilityData || {};
+    const additionalInformation = (property as any)?.additionalInformationData || {};
+    const parkingData = (property as any)?.parkingData || {};
+    const propertyVerified = (property as any)?.property_verification?.[0]?.property_verified ?? false;
+    const adminApproval = (property as any)?.property_verification?.[0]?.admin_approval ?? "Pending";
+    const featuredProperty = (property as any)?.property_verification?.[0]?.featured_property ?? false;
+    
+    setEditForm((prev: any) => ({ ...prev, ...specs, ...rentDetails, ...amenities, ...tenantPrefs, ...utilities, ...nearbyFacilities, ...documents, ...contactDetails, ...availability, ...additionalInformation, ...parkingData, property_verified: propertyVerified, admin_approval: adminApproval, featured_property: featuredProperty }));
 
     let images = [];
     try {
@@ -95,7 +115,6 @@ function PropertyDetailsPage() {
     setEditImages(images);
     setEditVideo(property?.Virtual_Tour || null);
 
-    setEditStep(1);
     setIsEditing(true);
   };
 
@@ -174,12 +193,42 @@ function PropertyDetailsPage() {
     }
   };
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editStep < 6) {
-      setEditStep(editStep + 1);
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Document must be less than 10MB");
+      e.target.value = "";
       return;
     }
+
+    setIsUploadingDoc(true);
+    try {
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+      const { error } = await supabase.storage
+        .from('property-documents')
+        .upload(`properties/${fileName}`, file, { cacheControl: '3600', upsert: false });
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('property-documents')
+        .getPublicUrl(`properties/${fileName}`);
+
+      setEditForm((prev: any) => ({ ...prev, [fieldName]: publicUrlData.publicUrl }));
+      toast.success("Document uploaded successfully!");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Failed to upload document: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsUploadingDoc(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!property) return;
     setIsUpdating(true);
     
@@ -258,7 +307,71 @@ function PropertyDetailsPage() {
         smoking_allowed: editForm.smoking_allowed === true,
         drinking_allowed: editForm.drinking_allowed === true,
         maximum_occupants: editForm.maximum_occupants
-      }
+      },
+      property_utilities: {
+        water_supply: editForm.water_supply,
+        electricity_connection: editForm.electricity_connection,
+        internet_available: editForm.internet_available === true,
+        gas_connection: editForm.gas_connection === true,
+        sewage_connection: editForm.sewage_connection === true
+      },
+      nearby_facilities: {
+        school_distance: editForm.school_distance,
+        college_distance: editForm.college_distance,
+        hospital_distance: editForm.hospital_distance,
+        bus_stop_distance: editForm.bus_stop_distance,
+        railway_station_distance: editForm.railway_station_distance,
+        airport_distance: editForm.airport_distance,
+        supermarket_distance: editForm.supermarket_distance,
+        bank_distance: editForm.bank_distance
+      },
+      property_documents: {
+        ownership_proof: editForm.ownership_proof,
+        tax_receipt: editForm.tax_receipt,
+        electricity_bill: editForm.electricity_bill,
+        encumbrance_certificate: editForm.encumbrance_certificate,
+        occupancy_certificate: editForm.occupancy_certificate,
+        property_insurance: editForm.property_insurance,
+        owner_government_id: editForm.owner_government_id
+      },
+      property_availability: {
+        available_from: editForm.available_from,
+        visit_timing: editForm.visit_timing,
+        open_house_date: editForm.open_house_date
+      },
+      property_contact_details: {
+        landlord_name: editForm.landlord_name,
+        mobile_number: editForm.mobile_number,
+        email: editForm.email,
+        preferred_contact_time: editForm.preferred_contact_time,
+        whatsapp_number: editForm.whatsapp_number
+      },
+      property_additional_information: {
+        house_rules: editForm.house_rules,
+        noise_restrictions: editForm.noise_restrictions,
+        visitor_policy: editForm.visitor_policy,
+        society_rules: editForm.society_rules,
+        pets_policy: editForm.pets_policy,
+        smoking_policy: editForm.smoking_policy,
+        maintenance_instructions: editForm.maintenance_instructions
+      },
+      property_parking: {
+        parking_available: editForm.parking_available === true,
+        parking_type: editForm.parking_type,
+        number_of_parking_slots: editForm.number_of_parking_slots ? parseInt(editForm.number_of_parking_slots) : null,
+        vehicle_types_allowed: editForm.vehicle_types_allowed,
+        reserved_parking: editForm.reserved_parking === true,
+        visitor_parking_available: editForm.visitor_parking_available === true,
+        ev_charging_station: editForm.ev_charging_station === true,
+        parking_slot_numbers: editForm.parking_slot_numbers,
+        parking_area: editForm.parking_area,
+        parking_fee: editForm.parking_fee ? parseFloat(editForm.parking_fee) : null,
+        parking_availability_timing: editForm.parking_availability_timing,
+        additional_parking_rules: editForm.additional_parking_rules
+      },
+      property_verified: editForm.property_verified,
+      admin_approval: editForm.admin_approval,
+      featured_property: editForm.featured_property
     };
     
     try {
@@ -283,10 +396,33 @@ function PropertyDetailsPage() {
       setLoading(true);
       const data = await getPropertyById(id);
       setProperty(data as UnifiedProperty);
+      
+      if (isTenant && data) {
+        const favs = await getFavoriteProperties(tenantId);
+        setIsFavorite(favs.some((f: any) => f.property_id === Number(data.property_id)));
+      }
+      
       setLoading(false);
     }
     fetchProperty();
-  }, [id]);
+  }, [id, isTenant, tenantId]);
+
+  const handleToggleFavorite = async () => {
+    if (!property) return;
+    try {
+      if (isFavorite) {
+        await removeFavoriteProperty({ tenant_id: tenantId, property_id: Number(property.property_id) });
+        setIsFavorite(false);
+        toast.success("Property removed from favorites");
+      } else {
+        await createFavoriteProperty({ tenant_id: tenantId, property_id: Number(property.property_id) });
+        setIsFavorite(true);
+        toast.success("Property added to favorites");
+      }
+    } catch (err: any) {
+      toast.error("Could not update favorite: " + (err.message || String(err)));
+    }
+  };
 
 
   let parsedSpecs: any = null;
@@ -408,6 +544,17 @@ function PropertyDetailsPage() {
               <ChevronLeft className="mr-2 h-4 w-4" /> Back to Properties
             </Link>
           </Button>
+          {isTenant && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleToggleFavorite}
+              className="bg-background/20 text-white border-white/30 hover:bg-background/40 hover:text-white backdrop-blur-md"
+            >
+              <Heart className={`mr-2 h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+              {isFavorite ? "Favorited" : "Favorite"}
+            </Button>
+          )}
         </motion.div>
 
         {/* Property Title Overlay */}
@@ -434,22 +581,13 @@ function PropertyDetailsPage() {
       </div>
 
       <motion.div variants={contentVariants} className="max-w-5xl mx-auto flex flex-col gap-8 mt-8">
-        <div className="flex justify-end w-full">
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={openEditDialog}
-            className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white border-none shadow-md transition-all duration-300 group"
-          >
-            <Pencil className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" /> Edit Details
-          </Button>
-        </div>
+
 
         {/* Edit Property Dialog */}
         <Dialog open={isEditing} onOpenChange={(open) => !open && !isUpdating && setIsEditing(false)}>
           <DialogContent className="w-full sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Property Details {editStep && `- Step ${editStep} of 7`}</DialogTitle>
+              <DialogTitle>Edit Property Details</DialogTitle>
             </DialogHeader>
             
             <form onSubmit={(e) => e.preventDefault()} className="grid gap-6 py-4">
@@ -469,26 +607,28 @@ function PropertyDetailsPage() {
                       </div>
                       <div className="grid gap-2">
                         <Label>Category</Label>
-                        <select
-                          className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
-                          value={editForm.Category || ""}
-                          onChange={(e) => setEditForm({ ...editForm, Category: e.target.value })}
-                        >
-                          <option value="Residential">Residential</option>
-                          <option value="Commercial">Commercial</option>
-                        </select>
+                        <Select value={editForm.Category || ""} onValueChange={(val) => setEditForm({ ...editForm, Category: val })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Residential">Residential</SelectItem>
+                            <SelectItem value="Commercial">Commercial</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="grid gap-2 col-span-2">
                         <Label>Status</Label>
-                        <select
-                          className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
-                          value={editForm.availability_status || "Available"}
-                          onChange={(e) => setEditForm({ ...editForm, availability_status: e.target.value })}
-                        >
-                          <option value="Available">Available</option>
-                          <option value="Occupied">Occupied</option>
-                          <option value="Under Maintenance">Under Maintenance</option>
-                        </select>
+                        <Select value={editForm.availability_status || "Available"} onValueChange={(val) => setEditForm({ ...editForm, availability_status: val })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Available">Available</SelectItem>
+                            <SelectItem value="Occupied">Occupied</SelectItem>
+                            <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="grid gap-2 col-span-2">
                         <Label>Description</Label>
@@ -501,10 +641,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
                   
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                    <Button type="button" onClick={() => setEditStep(2)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 2 ? (
                 <>
@@ -555,10 +692,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(1)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(3)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 3 ? (
                 <>
@@ -635,10 +769,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(2)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(4)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 4 ? (
                 <>
@@ -705,10 +836,7 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(3)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(5)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 5 ? (
                 <>
@@ -745,20 +873,13 @@ function PropertyDetailsPage() {
                         <Input placeholder="e.g. 2 Months" value={editForm.advance_payment || ""} onChange={(e) => setEditForm({...editForm, advance_payment: e.target.value})} />
                       </div>
                       <div className="grid gap-2">
-                        <Label>Available From</Label>
-                        <Input type="date" placeholder="e.g. 1-Aug-26" value={editForm.available_from || ""} onChange={(e) => setEditForm({...editForm, available_from: e.target.value})} />
-                      </div>
-                      <div className="grid gap-2">
                         <Label>Lease Duration</Label>
                         <Input placeholder="e.g. 11 Months" value={editForm.lease_duration || ""} onChange={(e) => setEditForm({...editForm, lease_duration: e.target.value})} />
                       </div>
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(4)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(6)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
               ) : editStep === 6 ? (
                 <>
@@ -821,12 +942,9 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(5)}>Back</Button>
-                    <Button type="button" onClick={() => setEditStep(7)}>Next</Button>
-                  </DialogFooter>
+                  
                 </>
-              ) : (
+              ) : editStep === 7 ? (
                 <>
                   {/* Tenant Preferences */}
                   <div>
@@ -893,15 +1011,373 @@ function PropertyDetailsPage() {
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-6 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => setEditStep(6)}>Back</Button>
-                    <Button type="button" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo}>
-                      {(isUpdating || isUploading || isUploadingVideo) ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </DialogFooter>
+                  
                 </>
-              )}
-            </form>
+              ) : editStep === 8 ? (
+                <>
+                  {/* Utility Information */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Utility Information</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2 grid gap-2">
+                        <Label>Water Supply</Label>
+                        <Input placeholder="e.g. 24x7 Corporation Water" value={editForm.water_supply || ""} onChange={(e) => setEditForm({...editForm, water_supply: e.target.value})} />
+                      </div>
+                      <div className="col-span-2 grid gap-2">
+                        <Label>Electricity Connection</Label>
+                        <Input placeholder="e.g. Generator / Invertor" value={editForm.electricity_connection || ""} onChange={(e) => setEditForm({...editForm, electricity_connection: e.target.value})} />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_internet" checked={editForm.internet_available} onCheckedChange={(c) => setEditForm({...editForm, internet_available: !!c})} />
+                        <Label htmlFor="edit_internet" className="cursor-pointer">Internet Available</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_gas" checked={editForm.gas_connection} onCheckedChange={(c) => setEditForm({...editForm, gas_connection: !!c})} />
+                        <Label htmlFor="edit_gas" className="cursor-pointer">Gas Connection</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_sewage" checked={editForm.sewage_connection} onCheckedChange={(c) => setEditForm({...editForm, sewage_connection: !!c})} />
+                        <Label htmlFor="edit_sewage" className="cursor-pointer">Sewage Connection</Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  
+                </>
+              ) : editStep === 9 ? (
+                <>
+                  {/* Nearby Facilities */}
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Nearby Facilities</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>School Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 1.5" value={editForm.school_distance || ""} onChange={(e) => setEditForm({...editForm, school_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>College Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 3.0" value={editForm.college_distance || ""} onChange={(e) => setEditForm({...editForm, college_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Hospital Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 2.0" value={editForm.hospital_distance || ""} onChange={(e) => setEditForm({...editForm, hospital_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Bus Stop Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 0.5" value={editForm.bus_stop_distance || ""} onChange={(e) => setEditForm({...editForm, bus_stop_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Railway Station (km)</Label>
+                        <Input type="number" placeholder="e.g. 5.0" value={editForm.railway_station_distance || ""} onChange={(e) => setEditForm({...editForm, railway_station_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Airport Distance (km)</Label>
+                        <Input type="number" placeholder="e.g. 15.0" value={editForm.airport_distance || ""} onChange={(e) => setEditForm({...editForm, airport_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Supermarket (km)</Label>
+                        <Input type="number" placeholder="e.g. 1.0" value={editForm.supermarket_distance || ""} onChange={(e) => setEditForm({...editForm, supermarket_distance: e.target.value})} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Bank/ATM (km)</Label>
+                        <Input type="number" placeholder="e.g. 0.2" value={editForm.bank_distance || ""} onChange={(e) => setEditForm({...editForm, bank_distance: e.target.value})} />
+                      </div>
+                    </div>
+                  </div>
+
+                  
+                </>
+              ) : editStep === 10 ? (
+                <>
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Property Documents</h3>
+                    <div className="grid gap-4">
+                      <p className="text-sm text-muted-foreground mb-2">Upload relevant property documents. Only PDFs and Images (max 10MB) are allowed.</p>
+                      
+                      <div className="grid gap-2">
+                      <Label>Ownership Proof *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'ownership_proof', true)} disabled={isUploadingDoc} />
+                        {editForm.ownership_proof && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Tax Receipt *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'tax_receipt', true)} disabled={isUploadingDoc} />
+                        {editForm.tax_receipt && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Electricity Bill *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'electricity_bill', true)} disabled={isUploadingDoc} />
+                        {editForm.electricity_bill && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Encumbrance Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'encumbrance_certificate', true)} disabled={isUploadingDoc} />
+                        {editForm.encumbrance_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Occupancy Certificate *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'occupancy_certificate', true)} disabled={isUploadingDoc} />
+                        {editForm.occupancy_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Government ID of Owner *</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'owner_government_id', true)} disabled={isUploadingDoc} />
+                        {editForm.owner_government_id && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Property Insurance (Optional)</Label>
+                      <div className="flex items-center gap-4">
+                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'property_insurance', true)} disabled={isUploadingDoc} />
+                        {editForm.property_insurance && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
+                      </div>
+                    </div>
+                    </div>
+                  </div>
+                  
+                </>
+              ) : editStep === 11 ? (
+                <>
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Contact Details</h3>
+                    <div className="grid gap-4">
+                      <p className="text-sm text-muted-foreground mb-2">Update contact details for the landlord or property manager.</p>
+                      <div className="grid gap-2">
+                      <Label>Landlord Name *</Label>
+                      <Input placeholder="e.g. John Smith" value={editForm.landlord_name || ""} onChange={(e) => setEditForm({...editForm, landlord_name: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Mobile Number *</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={editForm.mobile_number || ""} onChange={(e) => setEditForm({...editForm, mobile_number: e.target.value})} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="e.g. john@email.com" value={editForm.email || ""} onChange={(e) => setEditForm({...editForm, email: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Preferred Contact Time</Label>
+                      <Select value={editForm.preferred_contact_time || "Anytime"} onValueChange={(val) => setEditForm({...editForm, preferred_contact_time: val})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Contact Time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Morning">Morning</SelectItem>
+                          <SelectItem value="Afternoon">Afternoon</SelectItem>
+                          <SelectItem value="Evening">Evening</SelectItem>
+                          <SelectItem value="Anytime">Anytime</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>WhatsApp Number (Optional)</Label>
+                      <Input placeholder="e.g. +91 9876543210" value={editForm.whatsapp_number || ""} onChange={(e) => setEditForm({...editForm, whatsapp_number: e.target.value})} />
+                    </div>
+                    </div>
+                  </div>
+                  
+                </>
+              ) : editStep === 12 ? (
+                <>
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Availability</h3>
+                    <div className="grid gap-4">
+                      <p className="text-sm text-muted-foreground mb-2">Update property availability details.</p>
+                      <div className="grid gap-2">
+                      <Label>Available From</Label>
+                      <Input type="date" placeholder="e.g. 1-Aug-26" value={editForm.available_from || ""} onChange={(e) => setEditForm({...editForm, available_from: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visit Timing</Label>
+                      <Input placeholder="e.g. 10 AM-6 PM" value={editForm.visit_timing || ""} onChange={(e) => setEditForm({...editForm, visit_timing: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Open House Date (Optional)</Label>
+                      <Input type="date" placeholder="e.g. Optional" value={editForm.open_house_date || ""} onChange={(e) => setEditForm({...editForm, open_house_date: e.target.value})} />
+                    </div>
+                    </div>
+                  </div>
+                  
+                </>
+              ) : editStep === 13 ? (
+                <>
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Additional Information</h3>
+                    <div className="grid gap-4">
+                      <p className="text-sm text-muted-foreground mb-2">Update property additional information.</p>
+                      <div className="grid gap-2">
+                      <Label>House Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. No loud music after 10 PM" value={editForm.house_rules || ""} onChange={(e) => setEditForm({...editForm, house_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Noise Restrictions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Keep noise down during afternoon" value={editForm.noise_restrictions || ""} onChange={(e) => setEditForm({...editForm, noise_restrictions: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Visitor Policy</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Visitors allowed until 11 PM" value={editForm.visitor_policy || ""} onChange={(e) => setEditForm({...editForm, visitor_policy: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Society Rules</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Use service lift for moving furniture" value={editForm.society_rules || ""} onChange={(e) => setEditForm({...editForm, society_rules: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Pets Policy</Label>
+                      <Select value={editForm.pets_policy || "Allowed"} onValueChange={(val) => setEditForm({...editForm, pets_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Conditional">Conditional</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Smoking Policy</Label>
+                      <Select value={editForm.smoking_policy || "Allowed"} onValueChange={(val) => setEditForm({...editForm, smoking_policy: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Allowed">Allowed</SelectItem>
+                          <SelectItem value="Not Allowed">Not Allowed</SelectItem>
+                          <SelectItem value="Designated Area">Designated Area</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Maintenance Instructions</Label>
+                      <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="e.g. Call plumber for leaks immediately" value={editForm.maintenance_instructions || ""} onChange={(e) => setEditForm({...editForm, maintenance_instructions: e.target.value})} />
+                    </div>
+                    </div>
+                  </div>
+                  
+                  
+                </>
+              ) : editStep === 14 ? (
+                <>
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Parking Details</h3>
+                    <div className="grid gap-4">
+                      <div className="flex items-center space-x-2">
+                      <Checkbox id="edit_parking_available" checked={editForm.parking_available} onCheckedChange={(c) => setEditForm({...editForm, parking_available: !!c})} />
+                      <Label htmlFor="edit_parking_available">Parking Available</Label>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Type</Label>
+                      <Select value={editForm.parking_type || ""} onValueChange={(val) => setEditForm({...editForm, parking_type: val})}>
+                        <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Covered">Covered</SelectItem>
+                          <SelectItem value="Open">Open</SelectItem>
+                          <SelectItem value="Basement">Basement</SelectItem>
+                          <SelectItem value="Street">Street</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Number of Parking Slots</Label>
+                      <Input type="number" placeholder="e.g. 2" value={editForm.number_of_parking_slots || ""} onChange={(e) => setEditForm({...editForm, number_of_parking_slots: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Vehicle Types Allowed</Label>
+                      <Input placeholder="e.g. Car, Bike, Bicycle, EV" value={editForm.vehicle_types_allowed || ""} onChange={(e) => setEditForm({...editForm, vehicle_types_allowed: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_reserved_parking" checked={editForm.reserved_parking} onCheckedChange={(c) => setEditForm({...editForm, reserved_parking: !!c})} />
+                        <Label htmlFor="edit_reserved_parking">Reserved Parking</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_visitor_parking" checked={editForm.visitor_parking_available} onCheckedChange={(c) => setEditForm({...editForm, visitor_parking_available: !!c})} />
+                        <Label htmlFor="edit_visitor_parking">Visitor Parking</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="edit_ev_charging" checked={editForm.ev_charging_station} onCheckedChange={(c) => setEditForm({...editForm, ev_charging_station: !!c})} />
+                        <Label htmlFor="edit_ev_charging">EV Charging Station</Label>
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Slot Number(s)</Label>
+                      <Input placeholder="e.g. P12, B-04" value={editForm.parking_slot_numbers || ""} onChange={(e) => setEditForm({...editForm, parking_slot_numbers: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Area (sq.ft)</Label>
+                      <Input placeholder="e.g. 180 sq.ft" value={editForm.parking_area || ""} onChange={(e) => setEditForm({...editForm, parking_area: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Parking Fee</Label>
+                      <Input type="number" placeholder="e.g. 500" value={editForm.parking_fee || ""} onChange={(e) => setEditForm({...editForm, parking_fee: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Availability Timing</Label>
+                      <Input placeholder="e.g. 24x7 / Restricted Hours" value={editForm.parking_availability_timing || ""} onChange={(e) => setEditForm({...editForm, parking_availability_timing: e.target.value})} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Additional Rules</Label>
+                      <Input placeholder="e.g. No commercial vehicles" value={editForm.additional_parking_rules || ""} onChange={(e) => setEditForm({...editForm, additional_parking_rules: e.target.value})} />
+                    </div>
+                    </div>
+                  </div>
+                </>
+              ) : editStep === 15 ? (
+                <>
+                  <div>
+                    <h3 className="font-semibold border-b pb-2 mb-4">Verification Status (Admin)</h3>
+                    <div className="grid gap-6 sm:grid-cols-2 mt-2">
+                      <div className="space-y-2">
+                      <Label>Property Verified</Label>
+                      <Select value={editForm.property_verified ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, property_verified: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Admin Approval</Label>
+                      <Select value={editForm.admin_approval} onValueChange={(val) => setEditForm({...editForm, admin_approval: val})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Approved">Approved</SelectItem>
+                          <SelectItem value="Rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Featured Property</Label>
+                      <Select value={editForm.featured_property ? "Yes" : "No"} onValueChange={(val) => setEditForm({...editForm, featured_property: val === "Yes"})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Yes">Yes</SelectItem>
+                          <SelectItem value="No">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  </div>
+                </>
+              ) : null}
+            
+              <DialogFooter className="mt-6 pt-4 border-t flex justify-end items-center w-full">
+                <div className="flex gap-2">
+                   <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                   <Button type="button" variant="default" onClick={handleUpdate} disabled={isUpdating || isUploading || isUploadingVideo || isUploadingDoc}>
+                     {(isUpdating || isUploading || isUploadingVideo || isUploadingDoc) ? "Saving..." : "Save Changes"}
+                   </Button>
+                </div>
+              </DialogFooter>
+</form>
           </DialogContent>
         </Dialog>
 
@@ -910,9 +1386,19 @@ function PropertyDetailsPage() {
           <Accordion type="multiple" className="w-full space-y-4">
             
             {/* Basic Info Accordion */}
-            <AccordionItem value="basic" className="border rounded-xl px-6 bg-card shadow-sm">
+            <AccordionItem value="basic" className="group border rounded-xl px-6 bg-card shadow-sm">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Basic Information
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Basic Information</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(1); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
@@ -945,9 +1431,19 @@ function PropertyDetailsPage() {
             </AccordionItem>
 
             {/* Location Details Accordion */}
-            <AccordionItem value="location" className="border rounded-xl px-6 bg-card shadow-sm">
+            <AccordionItem value="location" className="group border rounded-xl px-6 bg-card shadow-sm">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Location Details
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Location Details</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(2); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
@@ -1005,9 +1501,19 @@ function PropertyDetailsPage() {
             </AccordionItem>
 
             {/* Images & Media Accordion */}
-            <AccordionItem value="media" className="border rounded-xl px-6 bg-card shadow-sm">
+            <AccordionItem value="media" className="group border rounded-xl px-6 bg-card shadow-sm">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Images & Media
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Images & Media</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(3); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-6 pb-6 pt-2">
@@ -1047,9 +1553,19 @@ function PropertyDetailsPage() {
             </AccordionItem>
 
             {/* Property Specifications Accordion */}
-            <AccordionItem value="specifications" className="border rounded-xl px-6 bg-card shadow-sm">
+            <AccordionItem value="specifications" className="group border rounded-xl px-6 bg-card shadow-sm">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Property Specifications
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Property Specifications</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(4); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
@@ -1126,9 +1642,19 @@ function PropertyDetailsPage() {
 
           {/* Rent Details Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="rent" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+            <AccordionItem value="rent" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Rent Details
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Rent Details</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(5); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
@@ -1162,10 +1688,7 @@ function PropertyDetailsPage() {
                         <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Advance Payment</span>
                         <span className="font-medium text-base">{parsedSpecs?.rent_details?.advance_payment || "—"}</span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Available From</span>
-                        <span className="font-medium text-base">{(property as any).rentDetailsData.available_from || "—"}</span>
-                      </div>
+
                       <div>
                         <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Lease Duration</span>
                         <span className="font-medium text-base">{(property as any).rentDetailsData.lease_duration || "—"}</span>
@@ -1201,10 +1724,7 @@ function PropertyDetailsPage() {
                         <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Advance Payment</span>
                         <span className="font-medium text-base">{parsedSpecs.rent_details.advance_payment || "—"}</span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Available From</span>
-                        <span className="font-medium text-base">{parsedSpecs.rent_details.available_from || "—"}</span>
-                      </div>
+
                       <div>
                         <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Lease Duration</span>
                         <span className="font-medium text-base">{parsedSpecs.rent_details.lease_duration || "—"}</span>
@@ -1219,13 +1739,24 @@ function PropertyDetailsPage() {
                 </div>
               </AccordionContent>
             </AccordionItem>
+
           </Accordion>
 
           {/* Amenities Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="amenities" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+            <AccordionItem value="amenities" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Amenities
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Amenities</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(6); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
@@ -1277,9 +1808,19 @@ function PropertyDetailsPage() {
 
           {/* Tenant Preferences Accordion */}
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="tenant_preferences" className="border rounded-xl px-6 bg-card shadow-sm mt-4">
+            <AccordionItem value="tenant_preferences" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
-                Tenant Preferences
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Tenant Preferences</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(7); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
@@ -1338,6 +1879,490 @@ function PropertyDetailsPage() {
 
                     return elements;
                   })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Utility Information Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="utility_info" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Utility Information</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(8); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const utData = (property as any)?.utilitiesData || {};
+                    let elements = [];
+
+                    if (utData.water_supply) {
+                      elements.push(
+                        <div key="water_supply" className="col-span-2 sm:col-span-3 md:col-span-4 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Water Supply</span>
+                          <span className="font-medium text-base">{utData.water_supply}</span>
+                        </div>
+                      );
+                    }
+                    if (utData.electricity_connection) {
+                      elements.push(
+                        <div key="electricity_connection" className="col-span-2 sm:col-span-3 md:col-span-4 mb-4">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Electricity Connection</span>
+                          <span className="font-medium text-base">{utData.electricity_connection}</span>
+                        </div>
+                      );
+                    }
+
+                    const utBools = [
+                      { id: "internet_available", label: "Internet Available" },
+                      { id: "gas_connection", label: "Gas Connection" },
+                      { id: "sewage_connection", label: "Sewage Connection" }
+                    ];
+
+                    const present = utBools.filter(b => utData[b.id] === true);
+                    if (present.length > 0) {
+                      elements.push(...present.map(b => (
+                        <div key={b.id} className="flex items-center space-x-2 text-muted-foreground">
+                          <CheckCircle className="h-4 w-4 text-primary" />
+                          <span>{b.label}</span>
+                        </div>
+                      )));
+                    } else if (Object.keys(utData).length > 0 && elements.length === 0) {
+                      elements.push(
+                        <div key="no_utils" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">No utilities specified</span>
+                        </div>
+                      );
+                    } else if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_utils" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Utility information not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Nearby Facilities Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="nearby_facilities" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Nearby Facilities</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(9); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const nfData = (property as any)?.nearbyFacilitiesData || {};
+                    let elements = [];
+
+                    const distances = [
+                      { id: "school_distance", label: "School" },
+                      { id: "college_distance", label: "College" },
+                      { id: "hospital_distance", label: "Hospital" },
+                      { id: "bus_stop_distance", label: "Bus Stop" },
+                      { id: "railway_station_distance", label: "Railway Station" },
+                      { id: "airport_distance", label: "Airport" },
+                      { id: "supermarket_distance", label: "Supermarket" },
+                      { id: "bank_distance", label: "Bank/ATM" }
+                    ];
+
+                    distances.forEach(d => {
+                      if (nfData[d.id]) {
+                        elements.push(
+                          <div key={d.id} className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                            <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">{d.label}</span>
+                            <span className="font-medium text-base">{nfData[d.id]} km</span>
+                          </div>
+                        );
+                      }
+                    });
+
+                    if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_nf" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Nearby facilities not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Property Documents Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="property_documents" className="group border rounded-xl px-6 bg-card shadow-sm mt-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Property Documents</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(10); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const docData = (property as any)?.documentsData || {};
+                    let elements = [];
+
+                    const docs = [
+                      { id: "ownership_proof", label: "Ownership Proof" },
+                      { id: "tax_receipt", label: "Tax Receipt" },
+                      { id: "electricity_bill", label: "Electricity Bill" },
+                      { id: "encumbrance_certificate", label: "Encumbrance Certificate" },
+                      { id: "occupancy_certificate", label: "Occupancy Certificate" },
+                      { id: "property_insurance", label: "Property Insurance" },
+                      { id: "owner_government_id", label: "Owner Government ID" }
+                    ];
+
+                    docs.forEach(d => {
+                      if (docData[d.id]) {
+                        elements.push(
+                          <div key={d.id} className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                            <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">{d.label}</span>
+                            <a href={docData[d.id]} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium text-base truncate block w-full">View Document</a>
+                          </div>
+                        );
+                      }
+                    });
+
+                    if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_doc" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Property documents not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Contact Details Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="contact_details" className="group border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Contact Details</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(11); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-sm pb-6 pt-2">
+                  {(() => {
+                    const contactData = (property as any)?.contactDetailsData || {};
+                    let elements = [];
+
+                    if (contactData.landlord_name) {
+                      elements.push(
+                        <div key="landlord_name" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Landlord Name</span>
+                          <span className="font-medium text-base">{contactData.landlord_name}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.mobile_number) {
+                      elements.push(
+                        <div key="mobile_number" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Mobile Number</span>
+                          <span className="font-medium text-base">{contactData.mobile_number}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.email) {
+                      elements.push(
+                        <div key="email" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Email</span>
+                          <span className="font-medium text-base">{contactData.email}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.preferred_contact_time) {
+                      elements.push(
+                        <div key="preferred_contact_time" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Preferred Time</span>
+                          <span className="font-medium text-base">{contactData.preferred_contact_time}</span>
+                        </div>
+                      );
+                    }
+                    if (contactData.whatsapp_number) {
+                      elements.push(
+                        <div key="whatsapp_number" className="col-span-2 sm:col-span-1 md:col-span-1 mb-2">
+                          <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">WhatsApp Number</span>
+                          <span className="font-medium text-base">{contactData.whatsapp_number}</span>
+                        </div>
+                      );
+                    }
+
+                    if (elements.length === 0) {
+                      elements.push(
+                        <div key="no_data_contact" className="col-span-2 sm:col-span-3 md:col-span-4">
+                          <span className="text-muted-foreground italic">Contact details not specified</span>
+                        </div>
+                      );
+                    }
+
+                    return elements;
+                  })()}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Availability Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="availability" className="group border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Availability</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(12); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
+                  {(property as any).availabilityData ? (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Available From</span>
+                        <span className="font-medium text-base">{(property as any).availabilityData.available_from || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Visit Timing</span>
+                        <span className="font-medium text-base">{(property as any).availabilityData.visit_timing || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Open House Date</span>
+                        <span className="font-medium text-base">{(property as any).availabilityData.open_house_date || "—"}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2 md:col-span-3">
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Availability</span>
+                      <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* Additional Information Accordion */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="additional_information" className="group border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+              <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full">Additional Information</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(13); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm pb-6 pt-2">
+                  {(property as any).additionalInformationData ? (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">House Rules</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.house_rules || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Noise Restrictions</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.noise_restrictions || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Visitor Policy</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.visitor_policy || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Society Rules</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.society_rules || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Pets Policy</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.pets_policy || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Smoking Policy</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.smoking_policy || "—"}</span>
+                      </div>
+                      <div className="md:col-span-3">
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Maintenance Instructions</span>
+                        <span className="font-medium text-base">{(property as any).additionalInformationData.maintenance_instructions || "—"}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2 md:col-span-3">
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Additional Information</span>
+                      <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="parking" className="group border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full"><div className="flex items-center gap-3">
+                  <span className="font-semibold text-lg">Parking Details</span>
+                </div></div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(14); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-6">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-2">
+                  {(property as any)?.parkingData ? (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Available</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_available ? "Yes" : "No"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Type</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_type || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Number of Slots</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.number_of_parking_slots || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Vehicle Types</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.vehicle_types_allowed || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Reserved</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.reserved_parking ? "Yes" : "No"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Visitor Parking</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.visitor_parking_available ? "Yes" : "No"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">EV Charging</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.ev_charging_station ? "Yes" : "No"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Slot Numbers</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_slot_numbers || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Area</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_area || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Fee</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_fee ? `₹${(property as any).parkingData.parking_fee}` : "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Timing</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.parking_availability_timing || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Additional Rules</span>
+                        <span className="font-medium text-base">{(property as any).parkingData.additional_parking_rules || "—"}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="sm:col-span-2 md:col-span-3">
+                      <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Parking Details</span>
+                      <span className="font-medium text-base text-muted-foreground italic">Not specified</span>
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="verification" className="group border rounded-xl px-6 bg-card shadow-sm mt-4 mb-4">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex flex-1 items-center justify-between mr-4">
+                  <div className="flex items-center w-full"><div className="flex items-center gap-3">
+                  <span className="font-semibold text-lg">Verification Status (Admin)</span>
+                </div></div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => { e.stopPropagation(); setEditStep(15); openEditDialog(); }}
+                    className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+                  </Button>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-6">
+                <div className="grid gap-6 sm:grid-cols-2 mt-2">
+                  <div>
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Property Verified</span>
+                    <span className="font-medium text-base">{(property as any)?.property_verification?.[0]?.property_verified ? "Yes" : "No"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Admin Approval</span>
+                    <span className="font-medium text-base">{(property as any)?.property_verification?.[0]?.admin_approval || "Pending"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider mb-1">Featured Property</span>
+                    <span className="font-medium text-base">{(property as any)?.property_verification?.[0]?.featured_property ? "Yes" : "No"}</span>
+                  </div>
                 </div>
               </AccordionContent>
             </AccordionItem>

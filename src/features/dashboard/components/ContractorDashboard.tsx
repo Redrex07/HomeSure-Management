@@ -13,6 +13,7 @@ import { StatCard } from "@/shared/components/common/StatCard";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { ChartCard } from "@/shared/components/charts/Charts";
+import { revenueSeries } from "@/shared/utils/mock-data";
 import {
   Area,
   AreaChart,
@@ -32,15 +33,17 @@ import {
   TrendingUp,
   DollarSign,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+
 import {
-  serviceRequests,
-  appointments,
-  estimates,
-  invoices,
-  contractors,
-  revenueSeries,
-} from "@/shared/utils/mock-data";
+  getContractorProfile,
+  getContractorServiceRequests,
+  getContractorAppointments,
+  getContractorInvoices,
+  getContractorEstimates,
+} from "@/core/db/supabase-queries";
 import { Link } from "@tanstack/react-router";
+
 
 const fmtUsd = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -123,28 +126,68 @@ const earningsSeries = revenueSeries.map(({ month, revenue }) => ({
 
 /* ---------------- CONTRACTOR ---------------- */
 export function ContractorDashboard() {
-  const contractor = contractors.find((c) => c.name === CONTRACTOR);
-  const contractorJobs = serviceRequests.filter((r) => r.contractor === CONTRACTOR);
-  const assigned = contractorJobs.filter((r) => r.status !== "Completed");
-  const completedJobs = contractorJobs.filter((r) => r.status === "Completed").length;
-  const pendingJobs = assigned.length;
-  const totalAssignedJobs = contractorJobs.length;
-  const completionRate =
-    totalAssignedJobs > 0 ? Math.round((completedJobs / totalAssignedJobs) * 100) : 0;
+const contractorId = 1;
 
-  const averageRating = contractor?.rating ?? 0;
-  const performanceScore = Math.min(
-    100,
-    Math.max(0, completedJobs * 5 + averageRating * 10 - pendingJobs),
+const { data: contractor } = useQuery({
+  queryKey: ["contractor-profile"],
+  queryFn: () => getContractorProfile(contractorId),
+});
+
+const { data: contractorJobs = [] } = useQuery({
+  queryKey: ["contractor-jobs"],
+  queryFn: () => getContractorServiceRequests(contractorId),
+});
+
+const { data: contractorAppointments = [] } = useQuery({
+  queryKey: ["contractor-appointments"],
+  queryFn: () => getContractorAppointments(contractorId),
+});
+
+const { data: contractorInvoices = [] } = useQuery({
+  queryKey: ["contractor-invoices"],
+  queryFn: () => getContractorInvoices(contractorId),
+});
+
+const { data: contractorEstimates = [] } = useQuery({
+  queryKey: ["contractor-estimates"],
+  queryFn: () => getContractorEstimates(contractorId),
+});
+
+const assigned = contractorJobs.filter(
+  (j: any) => j.request_status !== "Completed"
+);
+
+const completedJobs = contractorJobs.filter(
+  (j: any) => j.request_status === "Completed"
+).length;
+
+const pendingJobs = assigned.length;
+
+const totalAssignedJobs = contractorJobs.length;
+
+const completionRate =
+  totalAssignedJobs > 0
+    ? Math.round((completedJobs / totalAssignedJobs) * 100)
+    : 0;
+
+const averageRating = contractor?.rating ?? 5;
+
+const performanceScore = Math.min(
+  100,
+  completedJobs * 5 + averageRating * 10
+);
+
+const totalInv = contractorInvoices.reduce(
+  (sum: number, i: any) => sum + i.invoice_amount,
+  0
+);
+
+const monthlyEarnings = contractorInvoices
+  .filter((i: any) => i.invoice_status === "Paid")
+  .reduce(
+    (sum: number, i: any) => sum + i.invoice_amount,
+    0
   );
-
-  const contractorAppointments = appointments.filter((a) => a.contractor === CONTRACTOR);
-  const contractorRequestIds = new Set(contractorJobs.map((j) => j.id));
-  const recentInvoices = invoices.filter((i) => contractorRequestIds.has(i.request));
-  const totalInv = recentInvoices.reduce((s, i) => s + i.amount, 0);
-  const monthlyEarnings = recentInvoices
-    .filter((i) => i.status === "Paid")
-    .reduce((s, i) => s + i.amount, 0);
 
   return (
     <>
@@ -157,6 +200,7 @@ export function ContractorDashboard() {
           </Button>
         }
       />
+ 
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Assigned jobs" value={String(assigned.length)} icon={Wrench} tone="info" />
@@ -167,7 +211,7 @@ export function ContractorDashboard() {
         />
         <StatCard
           label="Estimates pending"
-          value={String(estimates.filter((e) => e.status === "Pending").length)}
+          value={String(contractorEstimates.filter((e: any) => e.quotation_status === "Pending").length)}
           icon={FileSpreadsheet}
           tone="warning"
         />
@@ -242,7 +286,7 @@ export function ContractorDashboard() {
             <CardTitle className="text-sm font-semibold">Active jobs</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {assigned.map((r) => (
+            {assigned.map((r:any) => (
               <div
                 key={r.id}
                 className="flex items-center justify-between gap-3 rounded-md border border-border/60 p-3"
@@ -272,13 +316,21 @@ export function ContractorDashboard() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">Paid invoices</span>
               <span className="font-semibold">
-                {fmt(recentInvoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0))}
+               {fmt(
+  contractorInvoices
+    .filter((i: any) => i.invoice_status === "Paid")
+    .reduce((s: number, i: any) => s + Number(i.invoice_amount), 0)
+)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pending payment</span>
               <span className="font-semibold">
-                {fmt(recentInvoices.filter((i) => i.status !== "Paid").reduce((s, i) => s + i.amount, 0))}
+                {fmt(
+  contractorInvoices
+    .filter((i: any) => i.invoice_status !== "Paid")
+    .reduce((s: number, i: any) => s + Number(i.invoice_amount), 0)
+)}
               </span>
             </div>
             <div className="flex justify-between">
@@ -323,7 +375,7 @@ export function ContractorDashboard() {
                     </TableCell>
                   </TableRow>
                 )}
-                {contractorAppointments.map((a) => (
+                {contractorAppointments.map((a:any) => (
                   <TableRow key={a.id} className="hover:bg-muted/40">
                     <TableCell>
                       <div className="text-sm font-medium">{a.title}</div>
@@ -371,14 +423,14 @@ export function ContractorDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentInvoices.length === 0 && (
+                {contractorInvoices.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
                       No invoices yet.
                     </TableCell>
                   </TableRow>
                 )}
-                {recentInvoices.map((i) => (
+                {contractorInvoices.map((i: any) => (
                   <TableRow key={i.id} className="hover:bg-muted/40">
                     <TableCell>
                       <div className="font-mono text-xs">{i.id}</div>

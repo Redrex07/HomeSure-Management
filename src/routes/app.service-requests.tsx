@@ -9,6 +9,9 @@ import {
   getServiceRequests,
   createServiceRequest,
   getTenantServiceRequests,
+  updateServiceRequest,
+  deleteServiceRequest,
+  getContractors,
 } from "@/core/db/supabase-queries";
 import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 import {
@@ -30,8 +33,10 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "@/features/auth/store/auth-store";
+import { ContractorServiceRequests } from "@/features/dashboard/components/ContractorServiceRequests";
 
 export const Route = createFileRoute("/app/service-requests")({
   head: () => ({ meta: [{ title: "Service Requests — HomeSure" }] }),
@@ -39,6 +44,16 @@ export const Route = createFileRoute("/app/service-requests")({
 });
 
 function ServiceRequestsPage() {
+  const session = useSession();
+
+  if (session?.role === "contractor") {
+    return <ContractorServiceRequests />;
+  }
+
+  return <StandardServiceRequestsPage />;
+}
+
+function StandardServiceRequestsPage() {
   const [category, setCategory] = useState<string>("all");
   const [priority, setPriority] = useState<string>("all");
   const [open, setOpen] = useState(false);
@@ -48,6 +63,14 @@ function ServiceRequestsPage() {
   const [newCategory, setNewCategory] = useState("Plumbing");
   const [newPriority, setNewPriority] = useState("Medium");
   const [newDesc, setNewDesc] = useState("");
+
+  const [editingRequest, setEditingRequest] = useState<any | null>(null);
+  const [editCategory, setEditCategory] = useState("Plumbing");
+  const [editPriority, setEditPriority] = useState("Medium");
+  const [editStatus, setEditStatus] = useState("Pending");
+  const [editContractorId, setEditContractorId] = useState("unassigned");
+  const [editAssignedDate, setEditAssignedDate] = useState("");
+  const [editCompletedDate, setEditCompletedDate] = useState("");
 
   const queryClient = useQueryClient();
   const tenantContext = useTenantContext();
@@ -63,6 +86,59 @@ function ServiceRequestsPage() {
         ? getTenantServiceRequests(tenantId, serviceTenantId)
         : getServiceRequests(),
     enabled: !isTenant || (!!tenantId && !!serviceTenantId),
+  });
+
+  // Load contractors list
+  const { data: contractors = [] } = useQuery({
+    queryKey: ["contractors"],
+    queryFn: getContractors,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({
+      id,
+      category,
+      priority,
+      status,
+      contractor_id,
+      assigned_date,
+      completed_date,
+    }: {
+      id: string;
+      category: string;
+      priority: string;
+      status: string;
+      contractor_id: number | null;
+      assigned_date: string | null;
+      completed_date: string | null;
+    }) =>
+      updateServiceRequest(id, {
+        category,
+        priority,
+        status,
+        contractor_id,
+        assigned_date,
+        completed_date,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service-requests"] });
+      toast.success("Request updated successfully!");
+      setEditingRequest(null);
+    },
+    onError: (err: any) => {
+      toast.error("Error updating request: " + (err.message || String(err)));
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteServiceRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service-requests"] });
+      toast.success("Request deleted successfully!");
+    },
+    onError: (err: any) => {
+      toast.error("Error deleting request: " + (err.message || String(err)));
+    }
   });
 
   // Create request mutation
@@ -286,9 +362,172 @@ function ServiceRequestsPage() {
                 r.contractor ?? <span className="text-muted-foreground">Unassigned</span>,
             },
             { key: "status", header: "Status", render: (r) => <StatusBadge value={r.status} /> },
+            {
+              key: "actions",
+              header: "",
+              render: (r) => (
+                <div className="flex items-center gap-1 justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-primary-soft hover:text-primary"
+                    onClick={() => {
+                      setEditingRequest(r);
+                      setEditCategory(r.category || "Plumbing");
+                      setEditPriority(r.priority || "Medium");
+                      setEditStatus(r.status || "Pending");
+                      setEditContractorId(r.contractorId ? String(r.contractorId) : "unassigned");
+                      setEditAssignedDate(r.assignedDate ? r.assignedDate.split("T")[0] : "");
+                      setEditCompletedDate(r.completedDate ? r.completedDate.split("T")[0] : "");
+                    }}
+                    title="Edit Request"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      if (confirm("Are you sure you want to delete this service request?")) {
+                        deleteMutation.mutate(r.id);
+                      }
+                    }}
+                    title="Delete Request"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ),
+            },
           ]}
         />
       )}
+
+      <Dialog open={!!editingRequest} onOpenChange={(open) => !open && setEditingRequest(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Service Request {editingRequest?.id}</DialogTitle>
+            <DialogDescription>
+              Update category, priority level, or work progress status.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!editingRequest) return;
+              updateMutation.mutate({
+                id: editingRequest.id,
+                category: editCategory,
+                priority: editPriority,
+                status: editStatus,
+                contractor_id: (editContractorId && editContractorId !== "unassigned") ? Number(editContractorId) : null,
+                assigned_date: editAssignedDate || null,
+                completed_date: editCompletedDate || null,
+              });
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-1.5">
+              <Label htmlFor="editCategorySelect">Category</Label>
+              <Select value={editCategory} onValueChange={setEditCategory}>
+                <SelectTrigger id="editCategorySelect">
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Plumbing", "Electrical", "HVAC", "Landscaping", "Painting", "Appliance", "Locksmith"].map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="editPrioritySelect">Priority</Label>
+              <Select value={editPriority} onValueChange={setEditPriority}>
+                <SelectTrigger id="editPrioritySelect">
+                  <SelectValue placeholder="Select Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Low", "Medium", "High", "Urgent"].map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="editStatusSelect">Status</Label>
+              <Select value={editStatus} onValueChange={setEditStatus}>
+                <SelectTrigger id="editStatusSelect">
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Pending", "Assigned", "In Progress", "Completed", "Resolved"].map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="editContractorSelect">Contractor</Label>
+              <Select value={editContractorId} onValueChange={setEditContractorId}>
+                <SelectTrigger id="editContractorSelect">
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {contractors.map((c: any) => {
+                    const rawId = c.id.replace("C-", "");
+                    return (
+                      <SelectItem key={c.id} value={rawId}>
+                        {c.name} ({c.trade})
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="editAssignedDateInput">Assigned Date</Label>
+                <Input
+                  id="editAssignedDateInput"
+                  type="date"
+                  value={editAssignedDate}
+                  onChange={(e) => setEditAssignedDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="editCompletedDateInput">Completed Date</Label>
+                <Input
+                  id="editCompletedDateInput"
+                  type="date"
+                  value={editCompletedDate}
+                  onChange={(e) => setEditCompletedDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setEditingRequest(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
