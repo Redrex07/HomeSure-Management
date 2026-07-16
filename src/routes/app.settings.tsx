@@ -370,11 +370,13 @@ function SettingsPage() {
     setIsSavingSettings(true);
     try {
       await updateSystemSettings({
-        key,
-        value,
-        adminEmail: s?.email,
-        adminName: s?.name,
-        adminRole: s?.role
+        data: {
+          key,
+          value,
+          adminEmail: s?.email,
+          adminName: s?.name,
+          adminRole: s?.role
+        }
       });
       toast.success(`System Configuration [${key.toUpperCase()}] updated.`);
     } catch (err: any) {

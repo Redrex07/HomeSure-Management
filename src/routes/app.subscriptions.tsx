@@ -16,7 +16,7 @@ import {
   updatePlatformPlan, 
   deletePlatformPlan 
 } from "@/core/api/users.functions";
-import { CreditCard, DollarSign, TrendingUp, Plus, Pencil, Trash2, CalendarClock, Ban, Sparkles, RefreshCw } from "lucide-react";
+import { CreditCard, DollarSign, TrendingUp, Plus, Pencil, Trash2, CalendarClock, Ban, Sparkles, RefreshCw, MoreHorizontal } from "lucide-react";
 import { formatINR } from "@/shared/utils/utils";
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
@@ -28,6 +28,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/shared/components/ui/textarea";
 import { useSession } from "@/features/auth/store/auth-store";
 import { toast } from "sonner";
+import { Badge } from "@/shared/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/shared/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/app/subscriptions")({
   head: () => ({ meta: [{ title: "Subscriptions — HomeSure" }] }),
@@ -194,25 +201,29 @@ function SubsPage() {
     try {
       if (editingPlan) {
         await updatePlatformPlan({
-          planId: editingPlan.plan_id,
-          planName,
-          planType,
-          price,
-          description,
-          adminEmail: session?.email,
-          adminName: session?.name,
-          adminRole: session?.role
+          data: {
+            planId: editingPlan.plan_id,
+            planName,
+            planType,
+            price,
+            description,
+            adminEmail: session?.email,
+            adminName: session?.name,
+            adminRole: session?.role
+          }
         });
         toast.success("Plan updated successfully!");
       } else {
         await createPlatformPlan({
-          planName,
-          planType,
-          price,
-          description,
-          adminEmail: session?.email,
-          adminName: session?.name,
-          adminRole: session?.role
+          data: {
+            planName,
+            planType,
+            price,
+            description,
+            adminEmail: session?.email,
+            adminName: session?.name,
+            adminRole: session?.role
+          }
         });
         toast.success("New subscription plan created!");
       }
@@ -229,10 +240,12 @@ function SubsPage() {
     if (!confirm("Are you sure you want to delete this subscription plan?")) return;
     try {
       await deletePlatformPlan({
-        planId: id,
-        adminEmail: session?.email,
-        adminName: session?.name,
-        adminRole: session?.role
+        data: {
+          planId: id,
+          adminEmail: session?.email,
+          adminName: session?.name,
+          adminRole: session?.role
+        }
       });
       toast.success("Plan deleted successfully.");
       fetchPlansList();

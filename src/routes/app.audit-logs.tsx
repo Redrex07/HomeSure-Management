@@ -4,6 +4,7 @@ import { DataTable } from "@/shared/components/common/DataTable";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPlatformAuditLogs } from "@/core/api/users.functions";
 import { Badge } from "@/shared/components/ui/badge";
+import { Card } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";

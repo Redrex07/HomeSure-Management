@@ -49,6 +49,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/components/ui/alert-dialog";
+import { Card, CardHeader, CardTitle, CardContent } from "@/shared/components/ui/card";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Textarea } from "@/shared/components/ui/textarea";
@@ -123,10 +124,12 @@ function UsersPage() {
   const inviteMutation = useMutation({
     mutationFn: (payload: { email: string; name: string; role: Role }) =>
       invitePlatformUser({
-        ...payload,
-        adminEmail: session?.email,
-        adminName: session?.name,
-        adminRole: session?.role
+        data: {
+          ...payload,
+          adminEmail: session?.email,
+          adminName: session?.name,
+          adminRole: session?.role
+        }
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platform-users"] });
@@ -144,10 +147,12 @@ function UsersPage() {
   const updateMutation = useMutation({
     mutationFn: (payload: any) =>
       updatePlatformUser({
-        ...payload,
-        adminEmail: session?.email,
-        adminName: session?.name,
-        adminRole: session?.role
+        data: {
+          ...payload,
+          adminEmail: session?.email,
+          adminName: session?.name,
+          adminRole: session?.role
+        }
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platform-users"] });
@@ -162,10 +167,12 @@ function UsersPage() {
   const resetPasswordMutation = useMutation({
     mutationFn: (payload: any) =>
       resetPlatformUserPassword({
-        ...payload,
-        adminEmail: session?.email,
-        adminName: session?.name,
-        adminRole: session?.role
+        data: {
+          ...payload,
+          adminEmail: session?.email,
+          adminName: session?.name,
+          adminRole: session?.role
+        }
       }),
     onSuccess: () => {
       toast.success("Password reset successfully!");
@@ -180,12 +187,14 @@ function UsersPage() {
   const deleteMutation = useMutation({
     mutationFn: (user: PlatformUser) =>
       deletePlatformUser({
-        userId: user.userId,
-        authUserId: user.authUserId,
-        userEmail: user.email,
-        adminEmail: session?.email,
-        adminName: session?.name,
-        adminRole: session?.role
+        data: {
+          userId: user.userId,
+          authUserId: user.authUserId,
+          userEmail: user.email,
+          adminEmail: session?.email,
+          adminName: session?.name,
+          adminRole: session?.role
+        }
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platform-users"] });
@@ -200,12 +209,14 @@ function UsersPage() {
   const resendInviteMutation = useMutation({
     mutationFn: (user: PlatformUser) =>
       invitePlatformUser({
-        email: user.email,
-        name: user.name,
-        role: (user.role as Role) || "landlord",
-        adminEmail: session?.email,
-        adminName: session?.name,
-        adminRole: session?.role
+        data: {
+          email: user.email,
+          name: user.name,
+          role: (user.role as Role) || "landlord",
+          adminEmail: session?.email,
+          adminName: session?.name,
+          adminRole: session?.role
+        }
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platform-users"] });
@@ -219,10 +230,12 @@ function UsersPage() {
   const updateClosureMutation = useMutation({
     mutationFn: (payload: any) =>
       updatePlatformClosureRequest({
-        ...payload,
-        adminEmail: session?.email,
-        adminName: session?.name,
-        adminRole: session?.role
+        data: {
+          ...payload,
+          adminEmail: session?.email,
+          adminName: session?.name,
+          adminRole: session?.role
+        }
       }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["platform-closure-requests"] });
@@ -412,7 +425,7 @@ function UsersPage() {
           <div className="grid gap-4 sm:grid-cols-4 mb-6">
             <StatCard label="Total Users" value={String(allUsers.length)} icon={Users} tone="info" />
             <StatCard label="Active Accounts" value={String(active)} icon={UserCheck} tone="success" />
-            <StatCard label="Deactivated Accounts" value={String(deactivated)} icon={X} tone="danger" />
+            <StatCard label="Deactivated Accounts" value={String(deactivated)} icon={X} tone="destructive" />
             <StatCard label="Pending / Invited" value={String(pending + invited)} icon={Mail} tone="warning" />
           </div>
 
