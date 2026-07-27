@@ -91,7 +91,12 @@ function PropertiesPage() {
   const navigate = useNavigate();
   const session = useSession();
   const tenantContext = useTenantContext();
-  const isTenant = session?.role === "tenant";
+  const userRole = session?.role;
+  const isTenant = userRole === "tenant";
+  const isSuperAdmin = userRole === "super_admin" || userRole === "service_admin";
+  const isLandlord = userRole === "landlord" || (!isTenant && !isSuperAdmin);
+  const canManageProperties = isLandlord;
+
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
   const [favoriteProps, setFavoriteProps] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,7 +105,7 @@ function PropertiesPage() {
     setIsLoading(true);
     try {
       const landlordId = "2"; // Force "2" to match Supabase mock data
-      const data = isTenant ? await getAllProperties() : await getLandlordProperties(landlordId);
+      const data = (isTenant || isSuperAdmin) ? await getAllProperties() : await getLandlordProperties(landlordId);
       setSupabaseProps(data as UnifiedProperty[]);
       
       if (isTenant) {
@@ -1182,9 +1187,11 @@ function PropertiesPage() {
               <Download className="mr-2 h-4 w-4" /> Export
             </Button>
 
-            <Button size="sm" onClick={() => setIsAdding(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Add property
-            </Button>
+            {canManageProperties && (
+              <Button size="sm" onClick={() => setIsAdding(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add property
+              </Button>
+            )}
           </>
         }
       />
@@ -2163,8 +2170,14 @@ function PropertiesPage() {
       ) : landlordProps.length === 0 ? (
         <div className="py-24 text-center text-muted-foreground bg-card/50 rounded-xl border border-border border-dashed">
           <h3 className="text-xl font-medium mb-2">No properties found</h3>
-          <p className="mb-4">You haven't added any properties yet.</p>
-          <Button onClick={() => setIsAdding(true)}>Add your first property</Button>
+          <p className="mb-4">
+            {canManageProperties
+              ? "You haven't added any properties yet."
+              : "No properties available at the moment."}
+          </p>
+          {canManageProperties && (
+            <Button onClick={() => setIsAdding(true)}>Add your first property</Button>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
@@ -2256,7 +2269,7 @@ function PropertiesPage() {
                             <StatusBadge value={p.availability_status} />
                           </div>
                           
-                          {!isTenant && (
+                          {canManageProperties && (
                           <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0 z-20">
                             <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
                               <Trash2 className="h-3.5 w-3.5" />
