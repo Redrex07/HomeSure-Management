@@ -91,10 +91,10 @@ function PropertiesPage() {
   const navigate = useNavigate();
   const session = useSession();
   const tenantContext = useTenantContext();
-  const userRole = session?.role;
-  const isTenant = userRole === "tenant";
-  const isSuperAdmin = userRole === "super_admin" || userRole === "service_admin";
-  const isLandlord = userRole === "landlord" || (!isTenant && !isSuperAdmin);
+  const roleStr = String(session?.role || "").toLowerCase();
+  const isTenant = roleStr.includes("tenant");
+  const isSuperAdmin = roleStr.includes("admin") || roleStr.includes("super");
+  const isLandlord = roleStr.includes("landlord");
   const canManageProperties = isLandlord;
 
   const [supabaseProps, setSupabaseProps] = useState<UnifiedProperty[]>([]);
@@ -2356,10 +2356,11 @@ function PropertiesPage() {
       )}
 
       {/* Edit Property Dialog */}
-      <Dialog
-        open={!!editingProperty}
-        onOpenChange={(open) => !open && setEditingProperty(null)}
-      >
+      {canManageProperties && (
+        <Dialog
+          open={!!editingProperty}
+          onOpenChange={(open) => !open && setEditingProperty(null)}
+        >
         <DialogContent className="max-h-[90vh] overflow-y-auto w-full sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Property</DialogTitle>
@@ -2831,6 +2832,7 @@ function PropertiesPage() {
           </form>
         </DialogContent>
       </Dialog>
+      )}
 
       {/* View Amenities Dialog */}
       <Dialog
