@@ -45,7 +45,7 @@ async function logActivityInternal(payload: {
   try {
     const admin = getSupabaseAdmin();
     const headers = getRequestHeaders();
-    const userAgent = headers["user-agent"] || "";
+    const userAgent = (headers as any)["user-agent"] || "";
     const ipAddress = getRequestIP() || "127.0.0.1";
 
     let browser = "Unknown";
