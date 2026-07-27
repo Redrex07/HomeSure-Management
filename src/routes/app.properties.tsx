@@ -2271,6 +2271,9 @@ function PropertiesPage() {
                           
                           {canManageProperties && (
                           <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0 z-20">
+                            <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all bg-white/90 text-foreground hover:bg-white" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEditDialog(p); }} title="Edit Property">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
                             <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full shadow-sm hover:scale-110 transition-all" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteProperty(p); }} title="Delete Property">
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
