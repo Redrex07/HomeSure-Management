@@ -48,7 +48,10 @@ function PropertyDetailsPage() {
 
   const session = useSession();
   const tenantContext = useTenantContext();
-  const isTenant = session?.role === "tenant";
+  const roleStr = String(session?.role || "").toLowerCase();
+  const isTenant = roleStr.includes("tenant");
+  const isLandlord = roleStr.includes("landlord");
+  const canManageProperties = isLandlord;
   const tenantId = tenantContext.tenantId || Number(session?.id) || 3;
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -1364,6 +1367,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Basic Information</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -1372,6 +1376,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1409,6 +1414,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Location Details</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -1417,6 +1423,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1479,6 +1486,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Images & Media</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -1487,6 +1495,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1531,6 +1540,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Property Specifications</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -1539,6 +1549,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1620,6 +1631,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Rent Details</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -1628,6 +1640,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1722,6 +1735,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Amenities</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -1730,6 +1744,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1786,6 +1801,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Tenant Preferences</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -1794,6 +1810,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1864,6 +1881,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Utility Information</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -1872,6 +1890,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1938,6 +1957,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Nearby Facilities</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -1946,6 +1966,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1997,6 +2018,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Property Documents</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -2005,6 +2027,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2055,6 +2078,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Contact Details</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -2063,6 +2087,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2133,6 +2158,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Availability</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -2141,6 +2167,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2177,6 +2204,7 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Additional Information</div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -2185,6 +2213,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2235,6 +2264,7 @@ function PropertyDetailsPage() {
                   <div className="flex items-center w-full"><div className="flex items-center gap-3">
                   <span className="font-semibold text-lg">Parking Details</span>
                 </div></div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -2243,6 +2273,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-6">
@@ -2313,6 +2344,7 @@ function PropertyDetailsPage() {
                   <div className="flex items-center w-full"><div className="flex items-center gap-3">
                   <span className="font-semibold text-lg">Verification Status (Admin)</span>
                 </div></div>
+                  {canManageProperties && (
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -2321,6 +2353,7 @@ function PropertyDetailsPage() {
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
                   </Button>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-6">
