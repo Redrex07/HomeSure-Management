@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
@@ -57,6 +57,13 @@ function StandardServiceRequestsPage() {
   const [category, setCategory] = useState<string>("all");
   const [priority, setPriority] = useState<string>("all");
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("openAdd") === "1") {
+      setOpen(true);
+    }
+  }, []);
 
   // Form states for creation
   const [newTitle, setNewTitle] = useState("");

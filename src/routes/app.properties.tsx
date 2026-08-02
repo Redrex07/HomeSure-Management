@@ -158,6 +158,13 @@ function PropertiesPage() {
   const paginatedProps = filteredProps.slice(page * pageSize, (page + 1) * pageSize);
 
   const [isAdding, setIsAdding] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("openAdd") === "1") {
+      setIsAdding(true);
+    }
+  }, []);
+
   const [step, setStep] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
