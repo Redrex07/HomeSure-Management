@@ -62,7 +62,8 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
     "/app/favorite-properties",
     "/app/property-inquiries",
     "/app/rental-applications",
-    "/app/reviews"
+    "/app/reviews",
+    "/app/pay-rent"
   ],
 contractor: [
   "/app/dashboard",
