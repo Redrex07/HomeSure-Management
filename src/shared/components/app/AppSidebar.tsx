@@ -1,6 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import {
-  LayoutDashboard,
+import { LayoutDashboard,
   Building2,
   Users,
   Wrench,
@@ -18,8 +17,7 @@ import {
   ScrollText,
   Megaphone,
   Settings,
-  Home,
-} from "lucide-react";
+  Home,, Heart, MessageSquare, FileCheck, Star } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
