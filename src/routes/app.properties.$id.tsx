@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageHeader } from "@/components/common/PageHeader";
-import { StatusBadge } from "@/components/common/StatusBadge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { properties, serviceRequests, leaseDocs } from "@/lib/mock-data";
-import { StatCard } from "@/components/common/StatCard";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { PageHeader } from "@/shared/components/common/PageHeader";
+import { StatusBadge } from "@/shared/components/common/StatusBadge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/components/ui/tabs";
+import { properties, serviceRequests, leaseDocs } from "@/shared/utils/mock-data";
+import { StatCard } from "@/shared/components/common/StatCard";
 import { ChevronLeft, DollarSign, Users, Wrench, FileText, MapPin, Edit } from "lucide-react";
+import { useSession } from "@/features/auth/store/auth-store";
 
 export const Route = createFileRoute("/app/properties/$id")({
   head: () => ({ meta: [{ title: "Property details — HomeSure" }] }),
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/app/properties/$id")({
 
 function PropertyDetail() {
   const { id } = Route.useParams();
+  const session = useSession();
+  const isLandlord = session?.role === "landlord";
   const p = properties.find((x) => x.id === id) ?? properties[0];
   const reqs = serviceRequests.filter((r) => r.property === p.name);
 
@@ -26,7 +29,14 @@ function PropertyDetail() {
       <PageHeader
         title={p.name}
         description={p.address}
-        actions={<><Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4" /> Edit</Button><Button size="sm">Manage lease</Button></>}
+        actions={
+          isLandlord ? (
+            <>
+              <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+              <Button size="sm">Manage lease</Button>
+            </>
+          ) : undefined
+        }
       />
 
       <div className="grid gap-4 lg:grid-cols-3">

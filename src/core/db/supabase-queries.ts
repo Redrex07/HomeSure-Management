@@ -3697,4 +3697,27 @@ export async function deleteServiceCommunication(id: number) {
   }
 }
 
-function parsePropertySpecs(prop: any) { if (prop && prop.specifications) { try { const specs = JSON.parse(prop.specifications); prop.additionalInformationData = specs.property_additional_information || null; prop.parkingData = specs.property_parking || null; prop.availabilityData = specs.property_availability || null; prop.admin_approval = specs.admin_approval !== undefined ? specs.admin_approval : null; prop.property_verified = specs.property_verified !== undefined ? specs.property_verified : null; prop.featured_property = specs.featured_property !== undefined ? specs.featured_property : null; } catch (e) {} } return prop; } 
+function parsePropertySpecs(prop: any) {
+  if (prop && prop.specifications) {
+    try {
+      const specs = JSON.parse(prop.specifications);
+      prop.additionalInformationData = specs.property_additional_information || null;
+      prop.parkingData = specs.property_parking || null;
+      prop.availabilityData = specs.property_availability || null;
+      prop.admin_approval = specs.admin_approval !== undefined ? specs.admin_approval : null;
+      prop.property_verified = specs.property_verified !== undefined ? specs.property_verified : null;
+      prop.featured_property = specs.featured_property !== undefined ? specs.featured_property : null;
+    } catch (e) {}
+  }
+  const extractData = (relation: any) => Array.isArray(relation) ? (relation.length > 0 ? relation[0] : null) : (relation || null);
+
+  prop.rentDetailsData = extractData(prop.property_rent_details);
+  prop.amenitiesData = extractData(prop.property_amenities);
+  prop.tenantPreferencesData = extractData(prop.tenant_preferences);
+  prop.utilitiesData = extractData(prop.property_utilities);
+  prop.nearbyFacilitiesData = extractData(prop.nearby_facilities);
+  prop.documentsData = extractData(prop.property_documents);
+  prop.contactDetailsData = extractData(prop.property_contact_details);
+  
+  return prop;
+}

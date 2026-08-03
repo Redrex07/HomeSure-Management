@@ -48,7 +48,10 @@ function PropertyDetailsPage() {
 
   const session = useSession();
   const tenantContext = useTenantContext();
-  const isTenant = session?.role === "tenant";
+  const roleStr = String(session?.role || "").toLowerCase();
+  const isTenant = roleStr.includes("tenant");
+  const isLandlord = roleStr.includes("landlord");
+  const canManageProperties = isLandlord;
   const tenantId = tenantContext.tenantId || Number(session?.id) || 3;
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -1094,55 +1097,29 @@ function PropertyDetailsPage() {
                     <div className="grid gap-4">
                       <p className="text-sm text-muted-foreground mb-2">Upload relevant property documents. Only PDFs and Images (max 10MB) are allowed.</p>
                       
-                      <div className="grid gap-2">
-                      <Label>Ownership Proof *</Label>
-                      <div className="flex items-center gap-4">
-                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'ownership_proof', true)} disabled={isUploadingDoc} />
-                        {editForm.ownership_proof && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Tax Receipt *</Label>
-                      <div className="flex items-center gap-4">
-                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'tax_receipt', true)} disabled={isUploadingDoc} />
-                        {editForm.tax_receipt && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Electricity Bill *</Label>
-                      <div className="flex items-center gap-4">
-                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'electricity_bill', true)} disabled={isUploadingDoc} />
-                        {editForm.electricity_bill && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Encumbrance Certificate *</Label>
-                      <div className="flex items-center gap-4">
-                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'encumbrance_certificate', true)} disabled={isUploadingDoc} />
-                        {editForm.encumbrance_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Occupancy Certificate *</Label>
-                      <div className="flex items-center gap-4">
-                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'occupancy_certificate', true)} disabled={isUploadingDoc} />
-                        {editForm.occupancy_certificate && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Government ID of Owner *</Label>
-                      <div className="flex items-center gap-4">
-                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'owner_government_id', true)} disabled={isUploadingDoc} />
-                        {editForm.owner_government_id && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Property Insurance (Optional)</Label>
-                      <div className="flex items-center gap-4">
-                        <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, 'property_insurance', true)} disabled={isUploadingDoc} />
-                        {editForm.property_insurance && <span className="text-xs text-green-600 font-medium">Uploaded ✓</span>}
-                      </div>
-                    </div>
+                      {[
+                        { key: 'ownership_proof', label: 'Ownership Proof *' },
+                        { key: 'tax_receipt', label: 'Tax Receipt *' },
+                        { key: 'electricity_bill', label: 'Electricity Bill *' },
+                        { key: 'encumbrance_certificate', label: 'Encumbrance Certificate *' },
+                        { key: 'occupancy_certificate', label: 'Occupancy Certificate *' },
+                        { key: 'owner_government_id', label: 'Government ID of Owner *' },
+                        { key: 'property_insurance', label: 'Property Insurance (Optional)' },
+                      ].map(({ key, label }) => (
+                        <div key={key} className="grid gap-2">
+                          <Label>{label}</Label>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                            {(editForm as any)[key] ? (
+                              <>
+                                <a href={(editForm as any)[key]} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate max-w-[200px]">View Document</a>
+                                <Button type="button" variant="outline" size="sm" onClick={() => setEditForm({ ...editForm, [key]: "" })}>Remove</Button>
+                              </>
+                            ) : (
+                              <Input type="file" accept=".pdf,image/*" onChange={(e) => handleDocumentUpload(e, key, true)} disabled={isUploadingDoc} />
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   
@@ -1390,14 +1367,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Basic Information</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(1); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1435,14 +1422,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Location Details</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(2); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1505,14 +1502,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Images & Media</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(3); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1557,14 +1564,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Property Specifications</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(4); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1646,14 +1663,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Rent Details</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(5); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1748,14 +1775,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Amenities</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(6); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1812,14 +1849,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Tenant Preferences</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(7); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1890,14 +1937,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Utility Information</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(8); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1964,14 +2021,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Nearby Facilities</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(9); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2023,14 +2090,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Property Documents</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(10); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2081,14 +2158,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Contact Details</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(11); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2159,14 +2246,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Availability</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(12); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2203,14 +2300,24 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Additional Information</div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(13); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2261,14 +2368,24 @@ function PropertyDetailsPage() {
                   <div className="flex items-center w-full"><div className="flex items-center gap-3">
                   <span className="font-semibold text-lg">Parking Details</span>
                 </div></div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(14); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-6">
@@ -2339,14 +2456,24 @@ function PropertyDetailsPage() {
                   <div className="flex items-center w-full"><div className="flex items-center gap-3">
                   <span className="font-semibold text-lg">Verification Status (Admin)</span>
                 </div></div>
+<<<<<<< HEAD
                   {!isTenant && (<Button 
+=======
+                  {canManageProperties && (
+                  <Button 
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(15); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
+<<<<<<< HEAD
                   </Button>)}
+=======
+                  </Button>
+                  )}
+>>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-6">
