@@ -6,6 +6,7 @@ import { tenants as mockTenants, leaseDocs } from "@/shared/utils/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { FileText, Download, Plus, Trash2, Printer, Pencil, Eye } from "lucide-react";
 import { useState } from "react";
+import { useSession } from "@/features/auth/store/auth-store";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/app/leases")({
 });
 
 function LeasesPage() {
+  const session = useSession();
+  const isTenant = session?.role === "tenant";
   const [leases, setLeases] = useState(() => mockTenants.filter((t) => t.status === "Active"));
   const [showNewLease, setShowNewLease] = useState(false);
   const [form, setForm] = useState({
@@ -254,9 +257,11 @@ function LeasesPage() {
         title="Lease agreements"
         description="All active and upcoming leases."
         actions={
-          <Button size="sm" onClick={() => setShowNewLease(true)}>
-            <Plus className="mr-2 h-4 w-4" /> New lease
-          </Button>
+          !isTenant ? (
+            <Button size="sm" onClick={() => setShowNewLease(true)}>
+              <Plus className="mr-2 h-4 w-4" /> New lease
+            </Button>
+          ) : null
         }
       />
 
@@ -356,7 +361,7 @@ function LeasesPage() {
         ]}
         actions={(t) => (
           <div className="flex items-center gap-1 justify-end">
-            <Button
+            {!isTenant && (<Button
               variant="ghost"
               size="sm"
               className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
@@ -367,7 +372,7 @@ function LeasesPage() {
               title="Edit"
             >
               <Pencil className="h-3.5 w-3.5" />
-            </Button>
+            </Button>)}
             <Button
               variant="ghost"
               size="sm"
@@ -404,7 +409,7 @@ function LeasesPage() {
             >
               <Download className="h-3.5 w-3.5" />
             </Button>
-            <Button
+            {!isTenant && (<Button
               variant="ghost"
               size="sm"
               className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -415,7 +420,7 @@ function LeasesPage() {
               title="Delete"
             >
               <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            </Button>)}
           </div>
         )}
       />

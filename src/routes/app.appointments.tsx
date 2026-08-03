@@ -339,11 +339,7 @@ function AppointmentsPage() {
         description="Schedule and manage service visits."
         actions={
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="mr-2 h-4 w-4" /> New appointment
-              </Button>
-            </DialogTrigger>
+            {!tenantContext.isTenant && (<DialogTrigger asChild><Button size="sm"><Plus className="mr-2 h-4 w-4" /> New appointment</Button></DialogTrigger>)}
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>New Appointment</DialogTitle>
@@ -674,7 +670,7 @@ function AppointmentsPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <StatusBadge value={a.status === "Cancelled" && a.title.includes("[Missed]") ? "Missed" : a.status} />
                           
-                          {a.status === "Scheduled" && (
+                          {a.status === "Scheduled" && !tenantContext.isTenant && (
                             <>
                               <Button 
                                 variant="outline" 
@@ -712,11 +708,9 @@ function AppointmentsPage() {
                             </>
                           )}
                           
-                          <Button variant="outline" size="sm" className="h-8 text-[11px]" onClick={() => openRescheduleDialog(a)}>
-                            Reschedule
-                          </Button>
+                          {!tenantContext.isTenant && (<Button variant="outline" size="sm" className="h-8 text-[11px]" onClick={() => openRescheduleDialog(a)}>Reschedule</Button>)}
                           
-                          <Button 
+                          {!tenantContext.isTenant && (<Button 
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -728,7 +722,7 @@ function AppointmentsPage() {
                             disabled={deleteMutation.isPending}
                           >
                             <Trash2 className="h-4 w-4" />
-                          </Button>
+                          </Button>)}
                         </div>
                       </CardContent>
                     </Card>

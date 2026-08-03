@@ -1390,14 +1390,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Basic Information</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(1); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1435,14 +1435,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Location Details</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(2); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1505,14 +1505,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Images & Media</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(3); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1557,14 +1557,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Property Specifications</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(4); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1646,14 +1646,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Rent Details</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(5); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1748,14 +1748,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Amenities</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(6); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1812,14 +1812,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Tenant Preferences</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(7); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1890,14 +1890,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Utility Information</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(8); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -1964,14 +1964,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Nearby Facilities</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(9); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2023,14 +2023,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Property Documents</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(10); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2081,14 +2081,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Contact Details</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(11); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2159,14 +2159,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Availability</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(12); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2203,14 +2203,14 @@ function PropertyDetailsPage() {
               <AccordionTrigger className="hover:no-underline font-semibold text-lg py-5">
                 <div className="flex flex-1 items-center justify-between mr-4">
                   <div className="flex items-center w-full">Additional Information</div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(13); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -2261,14 +2261,14 @@ function PropertyDetailsPage() {
                   <div className="flex items-center w-full"><div className="flex items-center gap-3">
                   <span className="font-semibold text-lg">Parking Details</span>
                 </div></div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(14); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-6">
@@ -2339,14 +2339,14 @@ function PropertyDetailsPage() {
                   <div className="flex items-center w-full"><div className="flex items-center gap-3">
                   <span className="font-semibold text-lg">Verification Status (Admin)</span>
                 </div></div>
-                  <Button 
+                  {!isTenant && (<Button 
                     variant="outline" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); setEditStep(15); openEditDialog(); }}
                     className="h-8 text-xs border-primary/50 text-primary hover:bg-primary/10 shrink-0 z-10"
                   >
                     <Pencil className="mr-1.5 h-3 w-3" /> Edit Details
-                  </Button>
+                  </Button>)}
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-6">

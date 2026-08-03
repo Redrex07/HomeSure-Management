@@ -1168,15 +1168,17 @@ function PropertiesPage() {
         title="Properties"
         description="All properties in your portfolio."
         actions={
-          <>
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" /> Export
-            </Button>
+          !isTenant && (
+            <>
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="mr-2 h-4 w-4" /> Export
+              </Button>
 
-            <Button size="sm" onClick={() => setIsAdding(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Add property
-            </Button>
-          </>
+              <Button size="sm" onClick={() => setIsAdding(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add property
+              </Button>
+            </>
+          )
         }
       />
 
