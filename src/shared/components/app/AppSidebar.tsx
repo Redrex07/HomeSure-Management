@@ -17,7 +17,7 @@ import { LayoutDashboard,
   ScrollText,
   Megaphone,
   Settings,
-  Home,, Heart, MessageSquare, FileCheck, Star } from "lucide-react";
+  Home, Heart, MessageSquare, FileCheck, Star } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,

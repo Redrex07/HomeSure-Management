@@ -1201,6 +1201,7 @@ function PropertiesPage() {
               </Button>
             )}
           </>
+          )
         }
       />
 
