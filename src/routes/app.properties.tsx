@@ -1195,20 +1195,12 @@ function PropertiesPage() {
                 <Download className="mr-2 h-4 w-4" /> Export
               </Button>
 
-<<<<<<< HEAD
-              <Button size="sm" onClick={() => setIsAdding(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add property
-              </Button>
-            </>
-          )
-=======
             {canManageProperties && (
               <Button size="sm" onClick={() => setIsAdding(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Add property
               </Button>
             )}
           </>
->>>>>>> 397f8e4ba3e3789bc5e2adea20e37ddb64f315d0
         }
       />
 
