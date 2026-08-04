@@ -4,7 +4,7 @@ import { PageHeader } from "@/shared/components/common/PageHeader";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
 import { DataCardGrid } from "@/shared/components/common/DataCardGrid";
 import { Plus, Trash2, Pencil } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sendTenantInviteEmail } from "@/core/api/email.functions";
 import {
   useTenants,
@@ -32,6 +32,13 @@ export const Route = createFileRoute("/app/tenants")({
 function TenantsPage() {
   const landlordTenants = useTenants();
   const [showInviteForm, setShowInviteForm] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("openAdd") === "1") {
+      setShowInviteForm(true);
+    }
+  }, []);
 
   const [form, setForm] = useState({
     tenant_id: "",

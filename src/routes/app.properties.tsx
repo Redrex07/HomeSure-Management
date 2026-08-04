@@ -158,6 +158,13 @@ function PropertiesPage() {
   const paginatedProps = filteredProps.slice(page * pageSize, (page + 1) * pageSize);
 
   const [isAdding, setIsAdding] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("openAdd") === "1") {
+      setIsAdding(true);
+    }
+  }, []);
+
   const [step, setStep] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedPropertyForImage, setSelectedPropertyForImage] =
@@ -1182,10 +1189,11 @@ function PropertiesPage() {
         title="Properties"
         description="All properties in your portfolio."
         actions={
-          <>
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" /> Export
-            </Button>
+          !isTenant && (
+            <>
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="mr-2 h-4 w-4" /> Export
+              </Button>
 
             {canManageProperties && (
               <Button size="sm" onClick={() => setIsAdding(true)}>
@@ -1193,6 +1201,7 @@ function PropertiesPage() {
               </Button>
             )}
           </>
+          )
         }
       />
 

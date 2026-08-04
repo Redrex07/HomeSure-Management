@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -53,6 +53,13 @@ function ServiceCommunicationsPage() {
   const queryClient = useQueryClient();
 
   const [openSend, setOpenSend] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("openAdd") === "1") {
+      setOpenSend(true);
+    }
+  }, []);
+
   const [selectedRequest, setSelectedRequest] = useState("");
   const [selectedReceiver, setSelectedReceiver] = useState("");
   const [commType, setCommType] = useState("Chat");

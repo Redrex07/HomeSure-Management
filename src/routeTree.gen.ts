@@ -20,19 +20,25 @@ import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AppUsersRouteImport } from './routes/app.users'
 import { Route as AppTenantsRouteImport } from './routes/app.tenants'
+import { Route as AppTenantDocumentsRouteImport } from './routes/app.tenant-documents'
 import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as AppSubscriptionsRouteImport } from './routes/app.subscriptions'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppServiceRequestsRouteImport } from './routes/app.service-requests'
 import { Route as AppServiceDocumentsRouteImport } from './routes/app.service-documents'
 import { Route as AppServiceCommunicationsRouteImport } from './routes/app.service-communications'
+import { Route as AppReviewsRouteImport } from './routes/app.reviews'
+import { Route as AppRentalApplicationsRouteImport } from './routes/app.rental-applications'
 import { Route as AppRealtorsRouteImport } from './routes/app.realtors'
 import { Route as AppRealtorWorkspaceRouteImport } from './routes/app.realtor-workspace'
+import { Route as AppPropertyInquiriesRouteImport } from './routes/app.property-inquiries'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppPaymentManagementRouteImport } from './routes/app.payment-management'
+import { Route as AppPayRentRouteImport } from './routes/app.pay-rent'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppLeasesRouteImport } from './routes/app.leases'
 import { Route as AppInvoicesRouteImport } from './routes/app.invoices'
+import { Route as AppFavoritePropertiesRouteImport } from './routes/app.favorite-properties'
 import { Route as AppEstimatesRouteImport } from './routes/app.estimates'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppContractorsRouteImport } from './routes/app.contractors'
@@ -103,6 +109,11 @@ const AppTenantsRoute = AppTenantsRouteImport.update({
   path: '/tenants',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTenantDocumentsRoute = AppTenantDocumentsRouteImport.update({
+  id: '/tenant-documents',
+  path: '/tenant-documents',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSupportRoute = AppSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -134,6 +145,16 @@ const AppServiceCommunicationsRoute =
     path: '/service-communications',
     getParentRoute: () => AppRoute,
   } as any)
+const AppReviewsRoute = AppReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRentalApplicationsRoute = AppRentalApplicationsRouteImport.update({
+  id: '/rental-applications',
+  path: '/rental-applications',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRealtorsRoute = AppRealtorsRouteImport.update({
   id: '/realtors',
   path: '/realtors',
@@ -144,6 +165,11 @@ const AppRealtorWorkspaceRoute = AppRealtorWorkspaceRouteImport.update({
   path: '/realtor-workspace',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPropertyInquiriesRoute = AppPropertyInquiriesRouteImport.update({
+  id: '/property-inquiries',
+  path: '/property-inquiries',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPropertiesRoute = AppPropertiesRouteImport.update({
   id: '/properties',
   path: '/properties',
@@ -152,6 +178,11 @@ const AppPropertiesRoute = AppPropertiesRouteImport.update({
 const AppPaymentManagementRoute = AppPaymentManagementRouteImport.update({
   id: '/payment-management',
   path: '/payment-management',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPayRentRoute = AppPayRentRouteImport.update({
+  id: '/pay-rent',
+  path: '/pay-rent',
   getParentRoute: () => AppRoute,
 } as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
@@ -167,6 +198,11 @@ const AppLeasesRoute = AppLeasesRouteImport.update({
 const AppInvoicesRoute = AppInvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFavoritePropertiesRoute = AppFavoritePropertiesRouteImport.update({
+  id: '/favorite-properties',
+  path: '/favorite-properties',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEstimatesRoute = AppEstimatesRouteImport.update({
@@ -261,19 +297,25 @@ export interface FileRoutesByFullPath {
   '/app/contractors': typeof AppContractorsRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/estimates': typeof AppEstimatesRoute
+  '/app/favorite-properties': typeof AppFavoritePropertiesRoute
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
+  '/app/pay-rent': typeof AppPayRentRoute
   '/app/payment-management': typeof AppPaymentManagementRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/property-inquiries': typeof AppPropertyInquiriesRoute
   '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/rental-applications': typeof AppRentalApplicationsRoute
+  '/app/reviews': typeof AppReviewsRoute
   '/app/service-communications': typeof AppServiceCommunicationsRoute
   '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
   '/app/support': typeof AppSupportRoute
+  '/app/tenant-documents': typeof AppTenantDocumentsRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
@@ -301,19 +343,25 @@ export interface FileRoutesByTo {
   '/app/contractors': typeof AppContractorsRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/estimates': typeof AppEstimatesRoute
+  '/app/favorite-properties': typeof AppFavoritePropertiesRoute
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
+  '/app/pay-rent': typeof AppPayRentRoute
   '/app/payment-management': typeof AppPaymentManagementRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/property-inquiries': typeof AppPropertyInquiriesRoute
   '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/rental-applications': typeof AppRentalApplicationsRoute
+  '/app/reviews': typeof AppReviewsRoute
   '/app/service-communications': typeof AppServiceCommunicationsRoute
   '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
   '/app/support': typeof AppSupportRoute
+  '/app/tenant-documents': typeof AppTenantDocumentsRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
@@ -342,19 +390,25 @@ export interface FileRoutesById {
   '/app/contractors': typeof AppContractorsRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/estimates': typeof AppEstimatesRoute
+  '/app/favorite-properties': typeof AppFavoritePropertiesRoute
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
+  '/app/pay-rent': typeof AppPayRentRoute
   '/app/payment-management': typeof AppPaymentManagementRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/property-inquiries': typeof AppPropertyInquiriesRoute
   '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
+  '/app/rental-applications': typeof AppRentalApplicationsRoute
+  '/app/reviews': typeof AppReviewsRoute
   '/app/service-communications': typeof AppServiceCommunicationsRoute
   '/app/service-documents': typeof AppServiceDocumentsRoute
   '/app/service-requests': typeof AppServiceRequestsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscriptions': typeof AppSubscriptionsRoute
   '/app/support': typeof AppSupportRoute
+  '/app/tenant-documents': typeof AppTenantDocumentsRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
   '/auth/confirm': typeof AuthConfirmRoute
@@ -384,19 +438,25 @@ export interface FileRouteTypes {
     | '/app/contractors'
     | '/app/dashboard'
     | '/app/estimates'
+    | '/app/favorite-properties'
     | '/app/invoices'
     | '/app/leases'
     | '/app/notifications'
+    | '/app/pay-rent'
     | '/app/payment-management'
     | '/app/properties'
+    | '/app/property-inquiries'
     | '/app/realtor-workspace'
     | '/app/realtors'
+    | '/app/rental-applications'
+    | '/app/reviews'
     | '/app/service-communications'
     | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
     | '/app/support'
+    | '/app/tenant-documents'
     | '/app/tenants'
     | '/app/users'
     | '/auth/confirm'
@@ -424,19 +484,25 @@ export interface FileRouteTypes {
     | '/app/contractors'
     | '/app/dashboard'
     | '/app/estimates'
+    | '/app/favorite-properties'
     | '/app/invoices'
     | '/app/leases'
     | '/app/notifications'
+    | '/app/pay-rent'
     | '/app/payment-management'
     | '/app/properties'
+    | '/app/property-inquiries'
     | '/app/realtor-workspace'
     | '/app/realtors'
+    | '/app/rental-applications'
+    | '/app/reviews'
     | '/app/service-communications'
     | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
     | '/app/support'
+    | '/app/tenant-documents'
     | '/app/tenants'
     | '/app/users'
     | '/auth/confirm'
@@ -464,19 +530,25 @@ export interface FileRouteTypes {
     | '/app/contractors'
     | '/app/dashboard'
     | '/app/estimates'
+    | '/app/favorite-properties'
     | '/app/invoices'
     | '/app/leases'
     | '/app/notifications'
+    | '/app/pay-rent'
     | '/app/payment-management'
     | '/app/properties'
+    | '/app/property-inquiries'
     | '/app/realtor-workspace'
     | '/app/realtors'
+    | '/app/rental-applications'
+    | '/app/reviews'
     | '/app/service-communications'
     | '/app/service-documents'
     | '/app/service-requests'
     | '/app/settings'
     | '/app/subscriptions'
     | '/app/support'
+    | '/app/tenant-documents'
     | '/app/tenants'
     | '/app/users'
     | '/auth/confirm'
@@ -578,6 +650,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTenantsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/tenant-documents': {
+      id: '/app/tenant-documents'
+      path: '/tenant-documents'
+      fullPath: '/app/tenant-documents'
+      preLoaderRoute: typeof AppTenantDocumentsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/support': {
       id: '/app/support'
       path: '/support'
@@ -620,6 +699,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServiceCommunicationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/reviews': {
+      id: '/app/reviews'
+      path: '/reviews'
+      fullPath: '/app/reviews'
+      preLoaderRoute: typeof AppReviewsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/rental-applications': {
+      id: '/app/rental-applications'
+      path: '/rental-applications'
+      fullPath: '/app/rental-applications'
+      preLoaderRoute: typeof AppRentalApplicationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/realtors': {
       id: '/app/realtors'
       path: '/realtors'
@@ -634,6 +727,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRealtorWorkspaceRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/property-inquiries': {
+      id: '/app/property-inquiries'
+      path: '/property-inquiries'
+      fullPath: '/app/property-inquiries'
+      preLoaderRoute: typeof AppPropertyInquiriesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/properties': {
       id: '/app/properties'
       path: '/properties'
@@ -646,6 +746,13 @@ declare module '@tanstack/react-router' {
       path: '/payment-management'
       fullPath: '/app/payment-management'
       preLoaderRoute: typeof AppPaymentManagementRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/pay-rent': {
+      id: '/app/pay-rent'
+      path: '/pay-rent'
+      fullPath: '/app/pay-rent'
+      preLoaderRoute: typeof AppPayRentRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/notifications': {
@@ -667,6 +774,13 @@ declare module '@tanstack/react-router' {
       path: '/invoices'
       fullPath: '/app/invoices'
       preLoaderRoute: typeof AppInvoicesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/favorite-properties': {
+      id: '/app/favorite-properties'
+      path: '/favorite-properties'
+      fullPath: '/app/favorite-properties'
+      preLoaderRoute: typeof AppFavoritePropertiesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/estimates': {
@@ -807,19 +921,25 @@ interface AppRouteChildren {
   AppContractorsRoute: typeof AppContractorsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEstimatesRoute: typeof AppEstimatesRoute
+  AppFavoritePropertiesRoute: typeof AppFavoritePropertiesRoute
   AppInvoicesRoute: typeof AppInvoicesRoute
   AppLeasesRoute: typeof AppLeasesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
+  AppPayRentRoute: typeof AppPayRentRoute
   AppPaymentManagementRoute: typeof AppPaymentManagementRoute
   AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
+  AppPropertyInquiriesRoute: typeof AppPropertyInquiriesRoute
   AppRealtorWorkspaceRoute: typeof AppRealtorWorkspaceRoute
   AppRealtorsRoute: typeof AppRealtorsRoute
+  AppRentalApplicationsRoute: typeof AppRentalApplicationsRoute
+  AppReviewsRoute: typeof AppReviewsRoute
   AppServiceCommunicationsRoute: typeof AppServiceCommunicationsRoute
   AppServiceDocumentsRoute: typeof AppServiceDocumentsRoute
   AppServiceRequestsRoute: typeof AppServiceRequestsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionsRoute: typeof AppSubscriptionsRoute
   AppSupportRoute: typeof AppSupportRoute
+  AppTenantDocumentsRoute: typeof AppTenantDocumentsRoute
   AppTenantsRoute: typeof AppTenantsRoute
   AppUsersRoute: typeof AppUsersRoute
   AppPropertyIdRoute: typeof AppPropertyIdRoute
@@ -836,19 +956,25 @@ const AppRouteChildren: AppRouteChildren = {
   AppContractorsRoute: AppContractorsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEstimatesRoute: AppEstimatesRoute,
+  AppFavoritePropertiesRoute: AppFavoritePropertiesRoute,
   AppInvoicesRoute: AppInvoicesRoute,
   AppLeasesRoute: AppLeasesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
+  AppPayRentRoute: AppPayRentRoute,
   AppPaymentManagementRoute: AppPaymentManagementRoute,
   AppPropertiesRoute: AppPropertiesRouteWithChildren,
+  AppPropertyInquiriesRoute: AppPropertyInquiriesRoute,
   AppRealtorWorkspaceRoute: AppRealtorWorkspaceRoute,
   AppRealtorsRoute: AppRealtorsRoute,
+  AppRentalApplicationsRoute: AppRentalApplicationsRoute,
+  AppReviewsRoute: AppReviewsRoute,
   AppServiceCommunicationsRoute: AppServiceCommunicationsRoute,
   AppServiceDocumentsRoute: AppServiceDocumentsRoute,
   AppServiceRequestsRoute: AppServiceRequestsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionsRoute: AppSubscriptionsRoute,
   AppSupportRoute: AppSupportRoute,
+  AppTenantDocumentsRoute: AppTenantDocumentsRoute,
   AppTenantsRoute: AppTenantsRoute,
   AppUsersRoute: AppUsersRoute,
   AppPropertyIdRoute: AppPropertyIdRoute,

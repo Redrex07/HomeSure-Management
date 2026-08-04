@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSession } from "@/features/auth/store/auth-store";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -86,6 +86,7 @@ function loadRazorpayCheckout() {
 
 function InvoicesPage() {
   const session = useSession();
+  const navigate = useNavigate();
   const isContractor = session?.role === "contractor";
   const formatCurrency = (amount: number) =>
     isContractor ? formatUsd.format(amount) : formatINR(amount);
@@ -445,12 +446,14 @@ function InvoicesPage() {
         title="Invoices"
         description="Track billing, payments and overdue accounts."
         actions={
-          <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Receipt className="mr-2 h-4 w-4" /> Create payment
+          <div className="flex items-center gap-2">
+            {session?.role === "tenant" && (
+              <Button size="sm" onClick={() => navigate({ to: "/app/pay-rent" })}>
+                <CreditCard className="mr-2 h-4 w-4" /> Pay Rent
               </Button>
-            </DialogTrigger>
+            )}
+            <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+              {!(session?.role === "tenant") && (<DialogTrigger asChild><Button size="sm"><Receipt className="mr-2 h-4 w-4" /> Create payment</Button></DialogTrigger>)}
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create Payment</DialogTitle>
@@ -531,6 +534,7 @@ function InvoicesPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         }
       />
       <div className="grid gap-4 sm:grid-cols-3">
@@ -561,7 +565,7 @@ function InvoicesPage() {
         <DataTable
           rows={invoices}
           filterKeys={["id", "request", "propertyName", "tenantName", "landlordName", "contractorName", "reference"]}
-          empty="No Invoices Found"
+          empty="No invoices available."
           columns={[
             {
               key: "id",
@@ -612,7 +616,7 @@ function InvoicesPage() {
               header: "",
               render: (i) => (
                 <div className="flex items-center gap-1 justify-end">
-                  <Button
+                  {!(session?.role === "tenant") && (<Button
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0 hover:bg-primary-soft hover:text-primary"
@@ -620,7 +624,7 @@ function InvoicesPage() {
                     title="Edit"
                   >
                     <Pencil className="h-3.5 w-3.5" />
-                  </Button>
+                  </Button>)}
                   {session?.role === "tenant" && i.status !== "Paid" && i.status !== "Successful" && (
                     <Button
                       variant="ghost"
@@ -657,7 +661,7 @@ function InvoicesPage() {
                   >
                     <Download className="h-3.5 w-3.5" />
                   </Button>
-                  <Button
+                  {!(session?.role === "tenant") && (<Button
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -670,7 +674,7 @@ function InvoicesPage() {
                     disabled={deleteMutation.isPending}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  </Button>)}
                 </div>
               ),
             },

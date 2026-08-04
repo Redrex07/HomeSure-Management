@@ -1,8 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { PageHeader } from "@/shared/components/common/PageHeader";
 import { DataTable } from "@/shared/components/common/DataTable";
 import { StatusBadge } from "@/shared/components/common/StatusBadge";
+import { Button } from "@/shared/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import {
   getPropertyReadinessRecords,
@@ -13,6 +15,21 @@ import {
 } from "@/core/db/supabase-queries";
 
 type Row = Record<string, any>;
+type WorkspaceTab = "realtors" | "listings" | "onboarding" | "readiness" | "communications";
+
+const RESPONSIBILITY_LABELS: Record<Exclude<WorkspaceTab, "realtors">, string> = {
+  listings: "Property listings",
+  onboarding: "Tenant onboarding",
+  readiness: "Property readiness",
+  communications: "Communications",
+};
+
+const TAB_ADD_ACTIONS: Record<Exclude<WorkspaceTab, "realtors">, { label: string; to: string }> = {
+  listings: { label: "Add property listing", to: "/app/properties?openAdd=1" },
+  onboarding: { label: "Add tenant onboarding", to: "/app/tenants?openAdd=1" },
+  readiness: { label: "Add property readiness", to: "/app/service-requests?openAdd=1" },
+  communications: { label: "Add communication", to: "/app/service-communications?openAdd=1" },
+};
 
 export const Route = createFileRoute("/app/realtor-workspace")({
   head: () => ({ meta: [{ title: "Realtor Workspace — HomeSure" }] }),
@@ -41,17 +58,34 @@ function LoadingOrError({ isLoading, isError, label }: { isLoading: boolean; isE
 }
 
 function RealtorWorkspacePage() {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>("realtors");
   const realtorProfiles = useQuery<Row[]>({ queryKey: ["realtors"], queryFn: getRealtors });
   const listings = useQuery<Row[]>({ queryKey: ["realtor-property-listings"], queryFn: getRealtorPropertyListings });
   const onboarding = useQuery<Row[]>({ queryKey: ["tenant-onboarding"], queryFn: getTenantOnboardingRecords });
   const readiness = useQuery<Row[]>({ queryKey: ["property-readiness"], queryFn: getPropertyReadinessRecords });
   const communications = useQuery<Row[]>({ queryKey: ["realtor-communications"], queryFn: getRealtorCommunications });
 
+  const isResponsibilityTab = activeTab !== "realtors";
+  const activeAction = isResponsibilityTab ? TAB_ADD_ACTIONS[activeTab] : null;
+
+  const handleAddAction = () => {
+    if (!activeAction) return;
+    navigate({ href: activeAction.to });
+  };
+
   return (
     <>
-      <PageHeader title="Realtor Workspace" description="Manage listings, tenant onboarding, property readiness, and communications." />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <PageHeader title="Realtor Workspace" description="Manage listings, tenant onboarding, property readiness, and communications." />
+        {isResponsibilityTab && activeAction && (
+          <Button type="button" className="shrink-0" onClick={handleAddAction}>
+            {activeAction.label}
+          </Button>
+        )}
+      </div>
 
-      <Tabs defaultValue="listings" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as WorkspaceTab)} className="space-y-4">
         <TabsList className="h-auto flex-wrap justify-start gap-1">
           <TabsTrigger value="realtors">Realtors</TabsTrigger>
           <TabsTrigger value="listings">Property listings</TabsTrigger>
