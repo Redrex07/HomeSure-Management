@@ -624,7 +624,7 @@ function PaymentManagementPage() {
           </DialogHeader>
 
           {selectedPayment && (
-            <div className="space-y-5 py-3 text-sm">
+            <div className="space-y-5 py-3 text-sm max-h-[60vh] overflow-y-auto pr-2">
               <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
                 <div className="flex justify-between items-center border-b pb-2.5">
                   <span className="text-xs text-muted-foreground font-medium">Service Work</span>
@@ -713,7 +713,7 @@ function PaymentManagementPage() {
           </DialogHeader>
 
           {voucherPayment && (
-            <div className="space-y-5 py-2 text-xs border rounded-xl p-5 bg-card shadow-sm">
+            <div className="space-y-5 py-2 text-xs border rounded-xl p-5 bg-card shadow-sm max-h-[60vh] overflow-y-auto custom-scrollbar">
               <div className="flex justify-between items-start border-b pb-4">
                 <div>
                   <h4 className="font-bold text-base text-primary">HomeSure Management</h4>
@@ -807,7 +807,7 @@ function PaymentManagementPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleCreatePayout} className="space-y-4 pt-2 text-xs">
+          <form onSubmit={handleCreatePayout} className="space-y-4 pt-2 text-xs max-h-[65vh] overflow-y-auto pr-2">
             <div className="space-y-2">
               <Label className="text-xs font-semibold">Service Work Title *</Label>
               <Input
