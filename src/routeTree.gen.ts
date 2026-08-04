@@ -29,6 +29,7 @@ import { Route as AppServiceCommunicationsRouteImport } from './routes/app.servi
 import { Route as AppRealtorsRouteImport } from './routes/app.realtors'
 import { Route as AppRealtorWorkspaceRouteImport } from './routes/app.realtor-workspace'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
+import { Route as AppPaymentManagementRouteImport } from './routes/app.payment-management'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppLeasesRouteImport } from './routes/app.leases'
 import { Route as AppInvoicesRouteImport } from './routes/app.invoices'
@@ -148,6 +149,11 @@ const AppPropertiesRoute = AppPropertiesRouteImport.update({
   path: '/properties',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPaymentManagementRoute = AppPaymentManagementRouteImport.update({
+  id: '/payment-management',
+  path: '/payment-management',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -258,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
+  '/app/payment-management': typeof AppPaymentManagementRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
@@ -297,6 +304,7 @@ export interface FileRoutesByTo {
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
+  '/app/payment-management': typeof AppPaymentManagementRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
@@ -337,6 +345,7 @@ export interface FileRoutesById {
   '/app/invoices': typeof AppInvoicesRoute
   '/app/leases': typeof AppLeasesRoute
   '/app/notifications': typeof AppNotificationsRoute
+  '/app/payment-management': typeof AppPaymentManagementRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/realtor-workspace': typeof AppRealtorWorkspaceRoute
   '/app/realtors': typeof AppRealtorsRoute
@@ -378,6 +387,7 @@ export interface FileRouteTypes {
     | '/app/invoices'
     | '/app/leases'
     | '/app/notifications'
+    | '/app/payment-management'
     | '/app/properties'
     | '/app/realtor-workspace'
     | '/app/realtors'
@@ -417,6 +427,7 @@ export interface FileRouteTypes {
     | '/app/invoices'
     | '/app/leases'
     | '/app/notifications'
+    | '/app/payment-management'
     | '/app/properties'
     | '/app/realtor-workspace'
     | '/app/realtors'
@@ -456,6 +467,7 @@ export interface FileRouteTypes {
     | '/app/invoices'
     | '/app/leases'
     | '/app/notifications'
+    | '/app/payment-management'
     | '/app/properties'
     | '/app/realtor-workspace'
     | '/app/realtors'
@@ -629,6 +641,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPropertiesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/payment-management': {
+      id: '/app/payment-management'
+      path: '/payment-management'
+      fullPath: '/app/payment-management'
+      preLoaderRoute: typeof AppPaymentManagementRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/notifications': {
       id: '/app/notifications'
       path: '/notifications'
@@ -791,6 +810,7 @@ interface AppRouteChildren {
   AppInvoicesRoute: typeof AppInvoicesRoute
   AppLeasesRoute: typeof AppLeasesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
+  AppPaymentManagementRoute: typeof AppPaymentManagementRoute
   AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
   AppRealtorWorkspaceRoute: typeof AppRealtorWorkspaceRoute
   AppRealtorsRoute: typeof AppRealtorsRoute
@@ -819,6 +839,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInvoicesRoute: AppInvoicesRoute,
   AppLeasesRoute: AppLeasesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
+  AppPaymentManagementRoute: AppPaymentManagementRoute,
   AppPropertiesRoute: AppPropertiesRouteWithChildren,
   AppRealtorWorkspaceRoute: AppRealtorWorkspaceRoute,
   AppRealtorsRoute: AppRealtorsRoute,

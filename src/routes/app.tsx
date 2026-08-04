@@ -43,6 +43,7 @@ const ALLOWED_ROUTES: Record<string, string[]> = {
     "/app/tenants",
     "/app/leases",
     "/app/invoices",
+    "/app/payment-management",
     "/app/service-requests",
     "/app/analytics",
     "/app/subscriptions",

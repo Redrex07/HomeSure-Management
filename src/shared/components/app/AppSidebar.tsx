@@ -90,6 +90,7 @@ export const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
         { title: "Tenants", url: "/app/tenants", icon: Users },
         { title: "Leases", url: "/app/leases", icon: FileText },
         { title: "Rent Collection", url: "/app/invoices", icon: Receipt },
+        { title: "Payment Management", url: "/app/payment-management", icon: CreditCard },
       ],
     },
     {
