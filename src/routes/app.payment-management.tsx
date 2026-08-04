@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
 import { Badge } from "@/shared/components/ui/badge";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import {
-  CreditCard,
   CheckCircle2,
   Clock,
   ShieldCheck,
@@ -33,12 +32,10 @@ import {
   Search,
   Receipt,
   Sparkles,
-  Database,
   RefreshCw,
   XCircle,
   Building2,
   Check,
-  Copy,
   Info,
   Wallet,
 } from "lucide-react";
@@ -83,8 +80,6 @@ function PaymentManagementPage() {
     adminVerificationNote: "Verified by Service Admin. Work completed satisfactorily.",
     paymentMethod: "Bank Transfer" as ContractorPayment["paymentMethod"],
   });
-
-  const [copiedSql, setCopiedSql] = useState(false);
 
   // Derived metrics
   const totalPaid = payments
@@ -223,72 +218,9 @@ function PaymentManagementPage() {
     }
   };
 
-  const supabaseSql = `-- ==========================================
--- HOMESURE LANDLORD PAYMENT MANAGEMENT SCHEMA
--- Roles: Landlord, Service Admin, Contractor
--- ==========================================
-
-CREATE TABLE IF NOT EXISTS public.contractor_payments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    payment_code VARCHAR(50) UNIQUE NOT NULL,
-    service_request_id VARCHAR(50),
-    service_title TEXT NOT NULL,
-    property_name TEXT NOT NULL,
-    landlord_name TEXT DEFAULT 'Landlord',
-    service_admin_name TEXT DEFAULT 'Service Admin',
-    contractor_name TEXT DEFAULT 'Contractor',
-    contractor_role TEXT DEFAULT 'Contractor',
-    amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
-    category VARCHAR(50) NOT NULL DEFAULT 'Maintenance',
-    status VARCHAR(30) NOT NULL DEFAULT 'Pending Approval' 
-      CHECK (status IN ('Pending Approval', 'Approved', 'Processing', 'Paid', 'Rejected')),
-    verified_by_admin BOOLEAN DEFAULT TRUE,
-    admin_verification_note TEXT,
-    admin_verified_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    landlord_approved_at TIMESTAMP WITH TIME ZONE,
-    landlord_approval_note TEXT,
-    paid_at TIMESTAMP WITH TIME ZONE,
-    payment_method VARCHAR(50) DEFAULT 'Bank Transfer',
-    transaction_ref VARCHAR(100),
-    auto_updated BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Automated Status Update Trigger
-CREATE OR REPLACE FUNCTION public.auto_update_contractor_payment_status()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    IF NEW.status = 'Paid' AND (OLD.status IS NULL OR OLD.status <> 'Paid') THEN
-        NEW.paid_at = COALESCE(NEW.paid_at, NOW());
-        NEW.landlord_approved_at = COALESCE(NEW.landlord_approved_at, NOW());
-        NEW.auto_updated = TRUE;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS trigger_auto_contractor_payment ON public.contractor_payments;
-CREATE TRIGGER trigger_auto_contractor_payment
-    BEFORE UPDATE ON public.contractor_payments
-    FOR EACH ROW
-    EXECUTE FUNCTION public.auto_update_contractor_payment_status();
-
-ALTER TABLE public.contractor_payments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Landlords manage contractor payments" ON public.contractor_payments FOR ALL USING (true);
-`;
-
-  const copySqlToClipboard = () => {
-    navigator.clipboard.writeText(supabaseSql);
-    setCopiedSql(true);
-    toast.success("Supabase SQL Schema copied to clipboard!");
-    setTimeout(() => setCopiedSql(false), 2500);
-  };
-
   return (
     <div className="space-y-8 pb-10">
-      {/* Spacious Clean Header Banner */}
+      {/* Header Banner */}
       <div className="rounded-2xl border bg-card p-6 sm:p-8 shadow-sm transition-all">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
@@ -321,7 +253,7 @@ CREATE POLICY "Landlords manage contractor payments" ON public.contractor_paymen
         </div>
       </div>
 
-      {/* Spacious Metrics Cards */}
+      {/* Metrics Cards */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-6 shadow-sm border-l-4 border-l-primary hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
@@ -381,7 +313,7 @@ CREATE POLICY "Landlords manage contractor payments" ON public.contractor_paymen
         <CardHeader className="border-b bg-card p-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full lg:w-auto">
-              <TabsList className="h-11 p-1 bg-muted/60 rounded-xl grid grid-cols-3 sm:grid-cols-5 w-full lg:w-auto">
+              <TabsList className="h-11 p-1 bg-muted/60 rounded-xl grid grid-cols-2 sm:grid-cols-4 w-full lg:w-auto">
                 <TabsTrigger value="all" className="rounded-lg text-xs font-medium px-4">All ({payments.length})</TabsTrigger>
                 <TabsTrigger value="pending" className="rounded-lg text-xs font-medium px-4 relative">
                   Pending ({pendingCount})
@@ -389,192 +321,162 @@ CREATE POLICY "Landlords manage contractor payments" ON public.contractor_paymen
                 </TabsTrigger>
                 <TabsTrigger value="verified" className="rounded-lg text-xs font-medium px-4">Admin Verified</TabsTrigger>
                 <TabsTrigger value="paid" className="rounded-lg text-xs font-medium px-4">Paid</TabsTrigger>
-                <TabsTrigger value="supabase" className="rounded-lg text-xs font-medium px-4 gap-1.5 text-primary">
-                  <Database className="h-3.5 w-3.5" />
-                  Supabase DB
-                </TabsTrigger>
               </TabsList>
             </Tabs>
 
-            {activeTab !== "supabase" && (
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1 sm:w-72">
-                  <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search payout ID, property..."
-                    className="pl-10 h-10 text-sm rounded-xl border-muted"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </div>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-[140px] h-10 text-xs rounded-xl border-muted">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                    <SelectItem value="plumbing">Plumbing</SelectItem>
-                    <SelectItem value="electrical">Electrical</SelectItem>
-                    <SelectItem value="hvac">HVAC</SelectItem>
-                    <SelectItem value="renovation">Renovation</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 sm:w-72">
+                <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search payout ID, property..."
+                  className="pl-10 h-10 text-sm rounded-xl border-muted"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
               </div>
-            )}
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-[140px] h-10 text-xs rounded-xl border-muted">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="plumbing">Plumbing</SelectItem>
+                  <SelectItem value="electrical">Electrical</SelectItem>
+                  <SelectItem value="hvac">HVAC</SelectItem>
+                  <SelectItem value="renovation">Renovation</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
 
         <CardContent className="p-0">
-          {activeTab === "supabase" ? (
-            <div className="p-8 space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-primary/5 p-6 rounded-2xl border border-primary/20 gap-4">
-                <div className="flex items-start gap-4">
-                  <Database className="h-7 w-7 text-primary mt-1 shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-base">Supabase Database Integration</h3>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      Copyable PostgreSQL schema, status auto-update trigger function, and RLS policies for Supabase.
-                    </p>
-                  </div>
-                </div>
-                <Button onClick={copySqlToClipboard} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 rounded-xl h-10 px-5">
-                  {copiedSql ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  {copiedSql ? "Copied SQL!" : "Copy Supabase SQL"}
-                </Button>
-              </div>
-
-              <div className="rounded-2xl border bg-slate-950 p-6 overflow-x-auto text-xs text-slate-100 font-mono leading-relaxed shadow-inner">
-                <pre>{supabaseSql}</pre>
-              </div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-muted/30 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/30 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <tr>
+                  <th className="px-6 py-4">Payment ID & Service</th>
+                  <th className="px-6 py-4">Property</th>
+                  <th className="px-6 py-4">Contractor</th>
+                  <th className="px-6 py-4">Service Admin</th>
+                  <th className="px-6 py-4">Amount</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredPayments.length === 0 ? (
                   <tr>
-                    <th className="px-6 py-4">Payment ID & Service</th>
-                    <th className="px-6 py-4">Property</th>
-                    <th className="px-6 py-4">Contractor</th>
-                    <th className="px-6 py-4">Service Admin</th>
-                    <th className="px-6 py-4">Amount</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <td colSpan={7} className="px-6 py-16 text-center text-muted-foreground">
+                      <Receipt className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                      <p className="font-medium text-base">No contractor payouts found.</p>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredPayments.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-16 text-center text-muted-foreground">
-                        <Receipt className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                        <p className="font-medium text-base">No contractor payouts found.</p>
+                ) : (
+                  filteredPayments.map((p) => (
+                    <tr key={p.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-6 py-5">
+                        <div className="font-mono text-xs font-bold text-primary mb-1">
+                          {p.id}
+                        </div>
+                        <div className="font-medium text-foreground max-w-xs truncate" title={p.serviceTitle}>
+                          {p.serviceTitle}
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                          <Badge variant="secondary" className="text-[10px] py-0 px-2 font-normal">
+                            {p.category}
+                          </Badge>
+                          <span>SR: {p.serviceRequestId}</span>
+                        </div>
                       </td>
-                    </tr>
-                  ) : (
-                    filteredPayments.map((p) => (
-                      <tr key={p.id} className="hover:bg-muted/20 transition-colors">
-                        <td className="px-6 py-5">
-                          <div className="font-mono text-xs font-bold text-primary mb-1">
-                            {p.id}
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+                          <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span>{p.property}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-2">
+                          <HardHat className="h-4 w-4 text-amber-500 shrink-0" />
+                          <div>
+                            <div className="font-semibold text-xs text-foreground">
+                              Contractor
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">{p.contractorRole}</div>
                           </div>
-                          <div className="font-medium text-foreground max-w-xs truncate" title={p.serviceTitle}>
-                            {p.serviceTitle}
-                          </div>
-                          <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
-                            <Badge variant="secondary" className="text-[10px] py-0 px-2 font-normal">
-                              {p.category}
-                            </Badge>
-                            <span>SR: {p.serviceRequestId}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-2 text-xs font-medium text-foreground">
-                            <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <span>{p.property}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-2">
-                            <HardHat className="h-4 w-4 text-amber-500 shrink-0" />
-                            <div>
-                              <div className="font-semibold text-xs text-foreground">
-                                Contractor
-                              </div>
-                              <div className="text-[11px] text-muted-foreground">{p.contractorRole}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="h-4 w-4 text-cyan-500 shrink-0" />
+                          <div>
+                            <div className="font-semibold text-xs text-foreground">
+                              Service Admin
+                            </div>
+                            <div className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <Check className="h-3 w-3" /> Verified Details
                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-2">
-                            <ShieldCheck className="h-4 w-4 text-cyan-500 shrink-0" />
-                            <div>
-                              <div className="font-semibold text-xs text-foreground">
-                                Service Admin
-                              </div>
-                              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                <Check className="h-3 w-3" /> Verified Details
-                              </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="font-bold text-base text-foreground">
+                          {formatINR(p.amount)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{p.paymentMethod}</div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="space-y-1">
+                          {getStatusBadge(p.status)}
+                          {p.autoUpdated && (
+                            <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
+                              <Sparkles className="h-3 w-3 text-primary" />
+                              Auto-updated status
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="font-bold text-base text-foreground">
-                            {formatINR(p.amount)}
-                          </div>
-                          <div className="text-xs text-muted-foreground">{p.paymentMethod}</div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="space-y-1">
-                            {getStatusBadge(p.status)}
-                            {p.autoUpdated && (
-                              <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                                <Sparkles className="h-3 w-3 text-primary" />
-                                Auto-updated status
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-5 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {p.status === "Pending Approval" ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleOpenApproveModal(p)}
-                                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-9 px-3.5 gap-1.5 rounded-lg shadow-sm font-medium"
-                                >
-                                  <CheckCircle2 className="h-4 w-4" />
-                                  Approve & Pay
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleReject(p)}
-                                  className="text-xs h-9 px-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
-                                >
-                                  Reject
-                                </Button>
-                              </>
-                            ) : (
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {p.status === "Pending Approval" ? (
+                            <>
                               <Button
                                 size="sm"
-                                variant="outline"
-                                onClick={() => handleOpenVoucher(p)}
-                                className="text-xs h-9 px-3 gap-1.5 rounded-lg border-muted"
+                                onClick={() => handleOpenApproveModal(p)}
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs h-9 px-3.5 gap-1.5 rounded-lg shadow-sm font-medium"
                               >
-                                <Receipt className="h-4 w-4 text-primary" />
-                                Receipt Voucher
+                                <CheckCircle2 className="h-4 w-4" />
+                                Approve & Pay
                               </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleReject(p)}
+                                className="text-xs h-9 px-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenVoucher(p)}
+                              className="text-xs h-9 px-3 gap-1.5 rounded-lg border-muted"
+                            >
+                              <Receipt className="h-4 w-4 text-primary" />
+                              Receipt Voucher
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
 
