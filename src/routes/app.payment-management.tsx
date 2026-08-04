@@ -110,6 +110,7 @@ function PaymentManagementPage() {
     if (activeTab === "pending") return p.status === "Pending Approval";
     if (activeTab === "verified") return p.verifiedByAdmin;
     if (activeTab === "paid") return p.status === "Paid";
+    if (activeTab === "rejected") return p.status === "Rejected";
     return true;
   });
 
@@ -353,12 +354,6 @@ function PaymentManagementPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/10 px-3 py-1 font-medium text-xs">
-                Landlord Portal
-              </Badge>
-              <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 text-xs">
-                Auto-Sync Gateway
-              </Badge>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
               <Wallet className="h-8 w-8 text-primary" />
@@ -441,7 +436,7 @@ function PaymentManagementPage() {
         <CardHeader className="border-b bg-card p-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full lg:w-auto">
-              <TabsList className="h-11 p-1 bg-muted/60 rounded-xl grid grid-cols-2 sm:grid-cols-4 w-full lg:w-auto">
+              <TabsList className="h-11 p-1 bg-muted/60 rounded-xl grid grid-cols-2 sm:grid-cols-5 w-full lg:w-auto">
                 <TabsTrigger value="all" className="rounded-lg text-xs font-medium px-4">All ({payments.length})</TabsTrigger>
                 <TabsTrigger value="pending" className="rounded-lg text-xs font-medium px-4 relative">
                   Pending ({pendingCount})
@@ -449,6 +444,7 @@ function PaymentManagementPage() {
                 </TabsTrigger>
                 <TabsTrigger value="verified" className="rounded-lg text-xs font-medium px-4">Admin Verified</TabsTrigger>
                 <TabsTrigger value="paid" className="rounded-lg text-xs font-medium px-4">Paid</TabsTrigger>
+                <TabsTrigger value="rejected" className="rounded-lg text-xs font-medium px-4">Rejected</TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -557,10 +553,16 @@ function PaymentManagementPage() {
                       <td className="px-6 py-5">
                         <div className="space-y-1">
                           {getStatusBadge(p.status)}
-                          {p.autoUpdated && (
+                          {p.status === "Pending Approval" && (
                             <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                              <Sparkles className="h-3 w-3 text-primary" />
-                              Auto-updated status
+                              <Clock className="h-3 w-3 text-amber-500" />
+                              Action Required: Landlord
+                            </div>
+                          )}
+                          {p.status === "Processing" && (
+                            <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
+                              <RefreshCw className="h-3 w-3 text-primary" />
+                              Action: System Processing
                             </div>
                           )}
                         </div>
