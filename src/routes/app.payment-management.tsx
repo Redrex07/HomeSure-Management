@@ -259,13 +259,13 @@ function PaymentManagementPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = \`Receipt-Voucher-\${voucher.id}.html\`;
+    link.download = `Receipt-Voucher-${voucher.id}.html`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    toast.success(\`Professional receipt \${voucher.id} downloaded!\`);
+    toast.success(`Professional receipt ${voucher.id} downloaded!`);
     setVoucherModalOpen(false);
   };
 
