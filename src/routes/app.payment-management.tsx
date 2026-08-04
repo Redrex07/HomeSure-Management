@@ -142,44 +142,129 @@ function PaymentManagementPage() {
   };
 
   const handleDownloadReceipt = (voucher: ContractorPayment) => {
-    const formattedContent = `====================================================
-HOMESURE MANAGEMENT - CONTRACTOR PAYOUT RECEIPT VOUCHER
-====================================================
-Receipt Code       : ${voucher.id}
-Transaction Ref    : ${voucher.transactionRef || "TXN-AUTO-9981"}
-Generated Date     : ${new Date().toLocaleString()}
-----------------------------------------------------
-Payer (Landlord)   : ${voucher.landlordName}
-Verified By        : ${voucher.serviceAdminName}
-Payee (Contractor) : ${voucher.contractorName} (${voucher.contractorRole})
-----------------------------------------------------
-Property           : ${voucher.property}
-Work Description   : ${voucher.serviceTitle}
-Service Category   : ${voucher.category}
-Service Request ID : ${voucher.serviceRequestId}
-Payment Method     : ${voucher.paymentMethod}
-----------------------------------------------------
-TOTAL AMOUNT PAID  : ₹${voucher.amount.toLocaleString("en-IN")}
-Status             : ${voucher.status} (Auto-updated)
-----------------------------------------------------
-Service Admin Note : ${voucher.adminVerificationNote}
-Admin Verified At  : ${voucher.adminVerifiedAt}
-Landlord Approved  : ${voucher.landlordApprovedAt || voucher.createdAt}
-====================================================
-Thank you for using HomeSure Management System.
-`;
+    const formattedContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Receipt Voucher ${voucher.id}</title>
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 40px; display: flex; justify-content: center; }
+    .receipt-container { background: #ffffff; width: 100%; max-width: 800px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; border: 1px solid #e2e8f0; }
+    .header { background: #0f172a; color: #ffffff; padding: 32px 40px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.025em; }
+    .header p { margin: 4px 0 0; font-size: 14px; color: #94a3b8; }
+    .header-right { text-align: right; }
+    .header-right .ref { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 600; margin-top: 8px; display: inline-block; }
+    .content { padding: 40px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px; }
+    .grid-item { background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #f1f5f9; }
+    .grid-item span { display: block; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 4px; }
+    .grid-item strong { display: block; font-size: 15px; color: #0f172a; }
+    .details { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+    .details th, .details td { padding: 16px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    .details th { font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase; background: #f8fafc; }
+    .details td { font-size: 15px; color: #334155; }
+    .details .amount { font-weight: 700; color: #0f172a; text-align: right; }
+    .details th.text-right { text-align: right; }
+    .total-section { display: flex; justify-content: flex-end; margin-bottom: 40px; }
+    .total-box { background: #ecfdf5; border: 1px solid #a7f3d0; padding: 24px 32px; border-radius: 12px; text-align: right; min-width: 300px; }
+    .total-box .label { font-size: 14px; color: #047857; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: block; }
+    .total-box .value { font-size: 32px; font-weight: 800; color: #065f46; letter-spacing: -0.025em; }
+    .footer { border-top: 2px dashed #e2e8f0; padding-top: 32px; font-size: 13px; color: #64748b; line-height: 1.6; }
+    .footer strong { color: #334155; }
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; margin-top: 8px; }
+    @media print {
+      body { background: white; padding: 0; }
+      .receipt-container { box-shadow: none; border: none; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="receipt-container">
+    <div class="header">
+      <div>
+        <h1>HomeSure Management</h1>
+        <p>Contractor Payout Receipt Voucher</p>
+      </div>
+      <div class="header-right">
+        <div>Receipt Code: <strong>${voucher.id}</strong></div>
+        <div class="ref">${voucher.transactionRef || "TXN-AUTO-9981"}</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="grid">
+        <div class="grid-item">
+          <span>Payer (Landlord)</span>
+          <strong>${voucher.landlordName}</strong>
+        </div>
+        <div class="grid-item">
+          <span>Verified By</span>
+          <strong>${voucher.serviceAdminName}</strong>
+        </div>
+        <div class="grid-item">
+          <span>Payee (Contractor)</span>
+          <strong>${voucher.contractorName}</strong>
+          <span style="margin-top: 4px; text-transform: none; font-weight: 400; font-size: 13px;">${voucher.contractorRole}</span>
+        </div>
+      </div>
 
-    const blob = new Blob([formattedContent], { type: "text/plain;charset=utf-8" });
+      <table class="details">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Property</th>
+            <th>Service Request ID</th>
+            <th class="text-right">Payment Method</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div style="font-weight: 600; color: #0f172a; margin-bottom: 4px;">${voucher.serviceTitle}</div>
+              <div style="font-size: 13px; color: #64748b;">Category: ${voucher.category}</div>
+            </td>
+            <td>${voucher.property}</td>
+            <td>${voucher.serviceRequestId}</td>
+            <td class="amount">${voucher.paymentMethod}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="total-section">
+        <div class="total-box">
+          <span class="label">Total Amount Paid</span>
+          <span class="value">₹${voucher.amount.toLocaleString("en-IN")}</span>
+          <div class="status-badge">${voucher.status} (Auto-updated)</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div style="margin-bottom: 16px;">
+          <strong>Service Admin Note:</strong> ${voucher.adminVerificationNote}<br>
+          <strong>Admin Verified At:</strong> ${voucher.adminVerifiedAt}<br>
+          <strong>Landlord Approved At:</strong> ${voucher.landlordApprovedAt || voucher.createdAt}
+        </div>
+        <div>
+          This is an automatically generated receipt voucher by the HomeSure Management System.<br>
+          Generated Date: ${new Date().toLocaleString()}
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([formattedContent], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `Receipt-Voucher-${voucher.id}.txt`;
+    link.download = \`Receipt-Voucher-\${voucher.id}.html\`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    toast.success(`Receipt voucher ${voucher.id} downloaded successfully!`);
+    toast.success(\`Professional receipt \${voucher.id} downloaded!\`);
     setVoucherModalOpen(false);
   };
 
