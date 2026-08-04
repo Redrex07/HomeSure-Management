@@ -38,6 +38,7 @@ import {
   Check,
   Info,
   Wallet,
+  Printer,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatINR } from "@/shared/utils/utils";
@@ -138,6 +139,48 @@ function PaymentManagementPage() {
   const handleOpenVoucher = (p: ContractorPayment) => {
     setVoucherPayment(p);
     setVoucherModalOpen(true);
+  };
+
+  const handleDownloadReceipt = (voucher: ContractorPayment) => {
+    const formattedContent = `====================================================
+HOMESURE MANAGEMENT - CONTRACTOR PAYOUT RECEIPT VOUCHER
+====================================================
+Receipt Code       : ${voucher.id}
+Transaction Ref    : ${voucher.transactionRef || "TXN-AUTO-9981"}
+Generated Date     : ${new Date().toLocaleString()}
+----------------------------------------------------
+Payer (Landlord)   : ${voucher.landlordName}
+Verified By        : ${voucher.serviceAdminName}
+Payee (Contractor) : ${voucher.contractorName} (${voucher.contractorRole})
+----------------------------------------------------
+Property           : ${voucher.property}
+Work Description   : ${voucher.serviceTitle}
+Service Category   : ${voucher.category}
+Service Request ID : ${voucher.serviceRequestId}
+Payment Method     : ${voucher.paymentMethod}
+----------------------------------------------------
+TOTAL AMOUNT PAID  : ₹${voucher.amount.toLocaleString("en-IN")}
+Status             : ${voucher.status} (Auto-updated)
+----------------------------------------------------
+Service Admin Note : ${voucher.adminVerificationNote}
+Admin Verified At  : ${voucher.adminVerifiedAt}
+Landlord Approved  : ${voucher.landlordApprovedAt || voucher.createdAt}
+====================================================
+Thank you for using HomeSure Management System.
+`;
+
+    const blob = new Blob([formattedContent], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Receipt-Voucher-${voucher.id}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success(`Receipt voucher ${voucher.id} downloaded successfully!`);
+    setVoucherModalOpen(false);
   };
 
   const handleCreatePayout = (e: React.FormEvent) => {
@@ -654,10 +697,7 @@ function PaymentManagementPage() {
               Close
             </Button>
             <Button
-              onClick={() => {
-                toast.success("Voucher receipt downloaded as PDF.");
-                setVoucherModalOpen(false);
-              }}
+              onClick={() => voucherPayment && handleDownloadReceipt(voucherPayment)}
               className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 rounded-xl h-10 px-5 font-medium"
             >
               <Download className="h-4 w-4" />
