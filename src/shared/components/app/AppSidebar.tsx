@@ -37,7 +37,7 @@ import { useSession } from "@/features/auth/store/auth-store";
 import { ROLE_LABELS } from "@/features/auth/utils/roles";
 import { Badge } from "@/shared/components/ui/badge";
 
-type Item = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
+type Item = { title: string; url: string; icon: React.ComponentType<{ className?: string }>; hidden?: boolean };
 
 export const COMMON: Item[] = [{ title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard }];
 
@@ -85,8 +85,8 @@ export const NAV_BY_ROLE: Record<Role, { label: string; items: Item[] }[]> = {
       label: "Portfolio",
       items: [
         { title: "Properties", url: "/app/properties", icon: Building2 },
-        { title: "Tenants", url: "/app/tenants", icon: Users },
-        { title: "Leases", url: "/app/leases", icon: FileText },
+        { title: "Tenants", url: "/app/tenants", icon: Users, hidden: true },
+        { title: "Leases", url: "/app/leases", icon: FileText, hidden: true },
         { title: "Rent Collection", url: "/app/invoices", icon: Receipt },
         { title: "Payment Management", url: "/app/payment-management", icon: CreditCard },
       ],
@@ -192,7 +192,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {g.items.map((item) => (
-                  <SidebarMenuItem key={item.url}>
+                  <SidebarMenuItem key={item.url} className={item.hidden ? "hidden" : undefined}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
                       <Link to={item.url} className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
