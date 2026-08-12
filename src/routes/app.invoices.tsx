@@ -27,16 +27,12 @@ import { DataTable } from "@/shared/components/common/DataTable";
 import { useTenantContext } from "@/features/tenant/hooks/useTenantContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  getInvoices,
   recordRentPaymentSuccess,
   updateInvoiceStatus as updateSupabaseInvoice,
   getServiceRequests,
   getContractors,
-  createInvoice,
-  updateInvoice,
-  deleteInvoice,
-  getTenantInvoices,
 } from "@/core/db/supabase-queries";
+import { getInvoices, createInvoice, updateInvoice, deleteInvoice, getTenantInvoices } from "@/shared/utils/invoices-store";
 import { createRazorpayOrder, verifyRazorpayPayment } from "@/core/api/razorpay.functions";
 import { Download, Receipt, DollarSign, AlertTriangle, Clock, Printer, Pencil, CreditCard, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
