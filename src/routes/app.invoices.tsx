@@ -560,7 +560,7 @@ function InvoicesPage() {
       ) : (
         <DataTable
           rows={invoices}
-          filterKeys={["id", "request", "propertyName", "tenantName", "landlordName", "contractorName", "reference"]}
+          filterKeys={["id", "request", "propertyName", "tenantName", "landlordName", "contractorName", "reference"] as any}
           empty="No invoices available."
           columns={[
             {

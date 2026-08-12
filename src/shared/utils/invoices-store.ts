@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { invoices as initialInvoices } from "./mock-data";
 
 // In-memory store initialized with mock data
-let invoices = [...initialInvoices].map(i => ({ ...i, reason: "" }));
+let invoices = [...initialInvoices].map(i => ({ ...i, reason: "", receipt: "" }));
 
 export const getInvoices = async () => invoices;
-export const getTenantInvoices = async (tId: number, sId?: number) => invoices;
+export const getTenantInvoices = async (tId: number, sId?: number | null) => invoices;
 
 export const updateInvoice = async (id: string, updates: any) => {
   invoices = invoices.map(i => (i.id === id ? { ...i, ...updates } : i));
