@@ -1,10 +1,13 @@
-# ⚠️ CAUTION — PROPRIETARY & CONFIDENTIAL
-
-## LEGAL NOTICE
+> [!CAUTION]
+> **PROPRIETARY AND CONFIDENTIAL: LEGAL DISCLAIMER**
+>
+> ## LEGAL NOTICE
 
 This repository, including its source code, software architecture, system design, technical implementations, configurations, and all related intellectual property, is the **exclusive and confidential property of the repository owner**.
 
-### 🚫 Unauthorized Use Prohibited
+> **Strictly Prohibited Actions:**
+>
+> *### 🚫 Unauthorized Use Prohibited
 
 Any unauthorized copying, reproduction, modification, distribution, forking, reverse engineering, or disclosure of any part of this repository is strictly prohibited.
 
@@ -25,7 +28,7 @@ Any unauthorized access, duplication, distribution, reproduction, or use of this
 
 All materials contained within this repository are considered **confidential and proprietary**. Access to this repository does not grant any license, ownership rights, or permission to use, reproduce, modify, distribute, or disclose its contents.
 
-**By accessing this repository, you acknowledge and agree to respect these restrictions.**
+**By accessing this repository, you acknowledge and agree to respect these restrictions.** 
 
 # HomeSure Management
 
